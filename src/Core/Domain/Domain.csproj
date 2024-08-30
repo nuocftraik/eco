@@ -9,5 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
-
+	<ItemGroup>
+		<PackageReference Include="NewId" Version="4.0.1" />
+	</ItemGroup>
 </Project>
