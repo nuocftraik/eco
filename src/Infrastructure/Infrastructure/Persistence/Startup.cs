@@ -2,6 +2,7 @@
 using ECO.WebApi.Infrastructure.Common;
 using ECO.WebApi.Infrastructure.Persistence.ConnectionString;
 using ECO.WebApi.Infrastructure.Persistence.Context;
+using ECO.WebApi.Infrastructure.Persistence.Initialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -30,7 +31,11 @@ internal static class Startup
                 var databaseSettings = p.GetRequiredService<IOptions<DatabaseSettings>>().Value;
                 m.UseDatabase(databaseSettings.DBProvider, databaseSettings.ConnectionString);
             })
-
+            .AddTransient<IDatabaseInitializer, DatabaseInitializer>()
+            .AddTransient<ApplicationDbInitializer>()
+            .AddTransient<ApplicationDbSeeder>()
+            .AddTransient(typeof(ICustomSeeder))
+            .AddTransient<CustomSeederRunner>()
             .AddTransient<IConnectionStringSecurer, ConnectionStringSecurer>()
             .AddTransient<IConnectionStringValidator, ConnectionStringValidator>();
     }
