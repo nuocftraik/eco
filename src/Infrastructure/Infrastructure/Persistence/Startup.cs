@@ -35,7 +35,8 @@ internal static class Startup
             .AddTransient<ApplicationDbInitializer>()
             .AddTransient<ApplicationDbSeeder>()
             .AddTransient(typeof(ICustomSeeder))
-            .AddTransient<CustomSeederRunner>()
+            //.AddTransient<CustomSeederRunner>()
+            .AddServices(typeof(ICustomSeeder), ServiceLifetime.Transient)
             .AddTransient<IConnectionStringSecurer, ConnectionStringSecurer>()
             .AddTransient<IConnectionStringValidator, ConnectionStringValidator>();
     }

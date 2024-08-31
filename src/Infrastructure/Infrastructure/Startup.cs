@@ -1,4 +1,5 @@
-﻿using ECO.WebApi.Infrastructure.Persistence;
+﻿using ECO.WebApi.Infrastructure.Common;
+using ECO.WebApi.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
@@ -11,7 +12,8 @@ public static class Startup
     {
         return services
             .AddPersistence()
-            .AddRouting(options => options.LowercaseUrls = true);
+            .AddRouting(options => options.LowercaseUrls = true)
+            .AddServices(); 
     }
 
 
