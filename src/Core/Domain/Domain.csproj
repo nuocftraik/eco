@@ -13,5 +13,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="NewId" Version="4.0.1" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.1.39" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.0" />
 	</ItemGroup>
 </Project>
