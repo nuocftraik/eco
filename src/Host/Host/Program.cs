@@ -1,3 +1,5 @@
+using ECO.WebApi.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -9,12 +11,12 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+builder.Services.AddInfrastructure();
+await app.Services.InitializeDatabasesAsync();
+
+app.UseInfrastructure();
+app.MapEndpoints();
+app.Run();
 
 app.UseHttpsRedirection();
 

@@ -1,5 +1,6 @@
 ﻿using ECO.WebApi.Infrastructure.Common;
 using ECO.WebApi.Infrastructure.Persistence;
+using ECO.WebApi.Infrastructure.Persistence.Initialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +20,14 @@ public static class Startup
 
 
 
+    public static async Task InitializeDatabasesAsync(this IServiceProvider services, CancellationToken cancellationToken = default)
+    {
+        // Create a new scope to retrieve scoped services
+        using var scope = services.CreateScope();
+
+        await scope.ServiceProvider.GetRequiredService<IDatabaseInitializer>()
+            .InitializeDatabasesAsync(cancellationToken);
+    }
 
 
     public static IApplicationBuilder UseInfrastructure(this IApplicationBuilder builder) =>
