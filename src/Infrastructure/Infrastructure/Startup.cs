@@ -1,4 +1,5 @@
-﻿using ECO.WebApi.Infrastructure.Common;
+﻿using ECO.WebApi.Infrastructure.Auth;
+using ECO.WebApi.Infrastructure.Common;
 using ECO.WebApi.Infrastructure.Persistence;
 using ECO.WebApi.Infrastructure.Persistence.Initialization;
 using Microsoft.AspNetCore.Builder;
@@ -9,9 +10,10 @@ using Microsoft.Extensions.DependencyInjection;
 namespace ECO.WebApi.Infrastructure;
 public static class Startup
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
         return services
+            .AddAuth(config)
             .AddPersistence()
             .AddRouting(options => options.LowercaseUrls = true)
             .AddServices(); 
