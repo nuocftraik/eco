@@ -1,0 +1,7 @@
+{
+  "LoggerSettings": {
+    "AppName": "ECO.WebApi",
+    "WriteToFile": false,
+    "StructuredConsoleLogging": true
+  }
+}

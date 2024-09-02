@@ -1,0 +1,8 @@
+﻿{
+  "LoggerSettings": {
+    "AppName": "ECO.WebApi",
+    "ElasticSearchUrl": "http://localhost:9200",
+    "WriteToFile": true,
+    "StructuredConsoleLogging": false
+  }
+}
