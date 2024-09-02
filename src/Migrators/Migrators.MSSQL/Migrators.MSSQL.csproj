@@ -5,7 +5,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<RootNamespace>ECO.WebApi.Migrators.MSSQL</RootNamespace>
-		<AssemblyName>ECO.WebApi.Migrators.MSSQL</AssemblyName>
+		<AssemblyName>Migrators.MSSQL</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>
