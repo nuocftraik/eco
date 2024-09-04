@@ -1,6 +1,7 @@
 ﻿using ECO.WebApi.Infrastructure.Auth;
 using ECO.WebApi.Infrastructure.Common;
 using ECO.WebApi.Infrastructure.Cors;
+using ECO.WebApi.Infrastructure.Middleware;
 using ECO.WebApi.Infrastructure.Persistence;
 using ECO.WebApi.Infrastructure.Persistence.Initialization;
 using Microsoft.AspNetCore.Builder;
@@ -16,6 +17,7 @@ public static class Startup
         return services
             .AddAuth(config)
             .AddCorsPolicy(config)
+            .AddExceptionMiddleware()
             .AddPersistence()
             .AddRouting(options => options.LowercaseUrls = true)
             .AddServices(); 
@@ -39,6 +41,7 @@ public static class Startup
              //.UseRequestLocalization()
              //.UseStaticFiles()
             .UseCurrentUser()
+            .UseExceptionMiddleware()
             .UseRouting()
             .UseCorsPolicy()
             .UseHttpsRedirection()
