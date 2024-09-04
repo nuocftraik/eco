@@ -36,8 +36,9 @@ public static class Startup
 
     public static IApplicationBuilder UseInfrastructure(this IApplicationBuilder builder) =>
         builder
-            //.UseRequestLocalization()
-            //.UseStaticFiles()
+             //.UseRequestLocalization()
+             //.UseStaticFiles()
+            .UseCurrentUser()
             .UseRouting()
             .UseCorsPolicy()
             .UseHttpsRedirection()

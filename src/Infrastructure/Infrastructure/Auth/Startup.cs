@@ -1,5 +1,7 @@
-﻿using ECO.WebApi.Infrastructure.Auth.Jwt;
+﻿using ECO.WebApi.Application.Common.Interfaces;
+using ECO.WebApi.Infrastructure.Auth.Jwt;
 using ECO.WebApi.Infrastructure.Identity;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,6 +12,7 @@ internal static class Startup
     internal static IServiceCollection AddAuth(this IServiceCollection services, IConfiguration config)
     {
         services
+            .AddCurrentUser()
             // Must add identity before adding auth!
             .AddIdentity();
 
@@ -17,6 +20,15 @@ internal static class Startup
         return services.AddJwtAuth();
 
     }
+
+    internal static IApplicationBuilder UseCurrentUser(this IApplicationBuilder app) =>
+    app.UseMiddleware<CurrentUserMiddleware>();
+
+    private static IServiceCollection AddCurrentUser(this IServiceCollection services) =>
+        services
+            .AddScoped<CurrentUserMiddleware>()
+            .AddScoped<ICurrentUser, CurrentUser>()
+            .AddScoped(sp => (ICurrentUserInitializer)sp.GetRequiredService<ICurrentUser>());
 
 
 }
