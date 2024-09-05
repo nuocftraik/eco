@@ -10,16 +10,13 @@ namespace ECO.WebApi.Infrastructure.Middleware;
 internal class ExceptionMiddleware : IMiddleware
 {
     private readonly ICurrentUser _currentUser;
-    private readonly IStringLocalizer _t;
     private readonly ISerializerService _jsonSerializer;
 
     public ExceptionMiddleware(
         ICurrentUser currentUser,
-        IStringLocalizer<ExceptionMiddleware> localizer,
         ISerializerService jsonSerializer)
     {
         _currentUser = currentUser;
-        _t = localizer;
         _jsonSerializer = jsonSerializer;
     }
 
@@ -45,7 +42,7 @@ internal class ExceptionMiddleware : IMiddleware
                 Source = exception.TargetSite?.DeclaringType?.FullName,
                 Exception = exception.Message.Trim(),
                 ErrorId = errorId,
-                SupportMessage = _t["Provide the ErrorId {0} to the support team for further analysis.", errorId]
+                SupportMessage = $"Provide the ErrorId {errorId} to the support team for further analysis."
             };
 
             if (exception is not CustomException && exception.InnerException != null)

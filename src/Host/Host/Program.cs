@@ -3,6 +3,7 @@ using ECO.WebApi.Host.Configurations;
 using ECO.WebApi.Infrastructure.Common;
 using Serilog;
 using ECO.WebApi.Infrastructure.Logging;
+using ECO.WebApi.Application;
 
 StaticLogger.EnsureInitialized();
 Log.Information("Server Booting Up...");
@@ -14,6 +15,7 @@ try
     builder.AddConfigurations().RegisterSerilog();
     builder.Services.AddControllers();
     builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddApplication();
     // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
