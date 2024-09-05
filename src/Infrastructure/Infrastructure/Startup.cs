@@ -1,4 +1,5 @@
 ﻿using ECO.WebApi.Infrastructure.Auth;
+using ECO.WebApi.Infrastructure.Behaviors;
 using ECO.WebApi.Infrastructure.Common;
 using ECO.WebApi.Infrastructure.Cors;
 using ECO.WebApi.Infrastructure.Middleware;
@@ -18,6 +19,7 @@ public static class Startup
             .AddAuth(config)
             .AddCorsPolicy(config)
             .AddExceptionMiddleware()
+            .AddBehaviours()
             .AddPersistence()
             .AddRouting(options => options.LowercaseUrls = true)
             .AddServices(); 
