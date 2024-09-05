@@ -1,4 +1,6 @@
-﻿using ECO.WebApi.Infrastructure.Auth;
+﻿using System.Reflection;
+using ECO.WebApi.Infrastructure.Auth;
+using ECO.WebApi.Infrastructure.BackgroundJobs;
 using ECO.WebApi.Infrastructure.Behaviors;
 using ECO.WebApi.Infrastructure.Common;
 using ECO.WebApi.Infrastructure.Cors;
@@ -15,9 +17,11 @@ namespace ECO.WebApi.Infrastructure;
 public static class Startup
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
-    {
+    {   
+
         return services
             .AddAuth(config)
+            .AddBackgroundJobs(config)
             .AddCorsPolicy(config)
             .AddExceptionMiddleware()
             .AddBehaviours()
@@ -39,7 +43,7 @@ public static class Startup
     }
 
 
-    public static IApplicationBuilder UseInfrastructure(this IApplicationBuilder builder) =>
+    public static IApplicationBuilder UseInfrastructure(this IApplicationBuilder builder, IConfiguration config) =>
         builder
              //.UseRequestLocalization()
              //.UseStaticFiles()
@@ -50,7 +54,9 @@ public static class Startup
             .UseCorsPolicy()
             .UseHttpsRedirection()
             .UseAuthentication()
-            .UseAuthorization();
+            .UseAuthorization()
+            .UseHangfireDashboard(config)
+        ;
 
 
     public static IEndpointRouteBuilder MapEndpoints(this IEndpointRouteBuilder builder)
