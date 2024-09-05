@@ -11,7 +11,31 @@ internal static class Startup
         if (settings == null)
             return services;
 
-        services.AddTransient<ICacheService, LocalCacheService>();
+        if (settings.UseDistributedCache)
+        {
+            if (settings.PreferRedis)
+            {
+                services.AddStackExchangeRedisCache(options =>
+                {
+                    options.Configuration = settings.RedisURL;
+                    options.ConfigurationOptions = new StackExchange.Redis.ConfigurationOptions()
+                    {
+                        AbortOnConnectFail = true,
+                        EndPoints = { settings.RedisURL }
+                    };
+                });
+            }
+            else
+            {
+                services.AddDistributedMemoryCache();
+            }
+
+            services.AddTransient<ICacheService, DistributedCacheService>();
+        }
+        else
+        {
+            services.AddTransient<ICacheService, LocalCacheService>();
+        }
 
 
         services.AddMemoryCache();
