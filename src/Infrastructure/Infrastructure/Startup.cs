@@ -2,6 +2,7 @@
 using ECO.WebApi.Infrastructure.Behaviors;
 using ECO.WebApi.Infrastructure.Common;
 using ECO.WebApi.Infrastructure.Cors;
+using ECO.WebApi.Infrastructure.FileStorage;
 using ECO.WebApi.Infrastructure.Middleware;
 using ECO.WebApi.Infrastructure.Persistence;
 using ECO.WebApi.Infrastructure.Persistence.Initialization;
@@ -43,6 +44,7 @@ public static class Startup
              //.UseRequestLocalization()
              //.UseStaticFiles()
             .UseCurrentUser()
+            .UseFileStorage()
             .UseExceptionMiddleware()
             .UseRouting()
             .UseCorsPolicy()
