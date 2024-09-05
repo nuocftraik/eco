@@ -1,7 +1,7 @@
-﻿using System.Reflection;
-using ECO.WebApi.Infrastructure.Auth;
+﻿using ECO.WebApi.Infrastructure.Auth;
 using ECO.WebApi.Infrastructure.BackgroundJobs;
 using ECO.WebApi.Infrastructure.Behaviors;
+using ECO.WebApi.Infrastructure.Caching;
 using ECO.WebApi.Infrastructure.Common;
 using ECO.WebApi.Infrastructure.Cors;
 using ECO.WebApi.Infrastructure.FileStorage;
@@ -22,6 +22,7 @@ public static class Startup
         return services
             .AddAuth(config)
             .AddBackgroundJobs(config)
+            .AddCaching(config)
             .AddCorsPolicy(config)
             .AddExceptionMiddleware()
             .AddBehaviours()
