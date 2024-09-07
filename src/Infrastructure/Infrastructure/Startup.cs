@@ -6,6 +6,7 @@ using ECO.WebApi.Infrastructure.Common;
 using ECO.WebApi.Infrastructure.Cors;
 using ECO.WebApi.Infrastructure.FileStorage;
 using ECO.WebApi.Infrastructure.Mailing;
+using ECO.WebApi.Infrastructure.Mapping;
 using ECO.WebApi.Infrastructure.Middleware;
 using ECO.WebApi.Infrastructure.Persistence;
 using ECO.WebApi.Infrastructure.Persistence.Initialization;
@@ -18,8 +19,8 @@ namespace ECO.WebApi.Infrastructure;
 public static class Startup
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
-    {   
-
+    {
+        MapsterSettings.Configure();
         return services
             .AddAuth(config)
             .AddBackgroundJobs(config)
