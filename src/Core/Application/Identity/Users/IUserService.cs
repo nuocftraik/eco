@@ -6,8 +6,9 @@ using ECO.WebApi.Application.Identity.Users.Password;
 
 namespace ECO.WebApi.Application.Identity.Users;
 public interface IUserService : ITransientService
-{
-    Task<PaginationResponse<UserDetailDto>> SearchAsync(UserListFilter filter, CancellationToken cancellationToken);
+{   
+    //Default
+    Task<PaginationResponse<UserDetailDto>> SearchAsync(UserParameterFilter filter, CancellationToken cancellationToken);
 
     Task<bool> ExistsWithNameAsync(string name);
     Task<bool> ExistsWithEmailAsync(string email, string? exceptId = null);
@@ -19,19 +20,21 @@ public interface IUserService : ITransientService
 
     Task<UserDetailDto> GetAsync(string userId, CancellationToken cancellationToken);
 
+    //Role
     Task<List<UserRoleDto>> GetRolesAsync(string userId, CancellationToken cancellationToken);
     Task<string> AssignRolesAsync(string userId, UserRolesRequest request, CancellationToken cancellationToken);
 
+    //Permission
     Task<List<string>> GetPermissionsAsync(string userId, CancellationToken cancellationToken);
     Task<bool> HasPermissionAsync(string userId, string permission, CancellationToken cancellationToken = default);
-    Task InvalidatePermissionCacheAsync(string userId, CancellationToken cancellationToken);
 
+    //Create Update
     Task ToggleStatusAsync(ToggleUserStatusRequest request, CancellationToken cancellationToken);
 
-    Task<string> GetOrCreateFromPrincipalAsync(ClaimsPrincipal principal);
     Task<string> CreateAsync(CreateUserRequest request, string origin);
     Task UpdateAsync(UpdateUserRequest request, string userId);
 
+    //Confirm
     Task<string> ConfirmEmailAsync(string userId, string code, string tenant, CancellationToken cancellationToken);
     Task<string> ConfirmPhoneNumberAsync(string userId, string code);
 

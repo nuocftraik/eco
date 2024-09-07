@@ -13,6 +13,7 @@
 		<ProjectReference Include="..\..\Core\Domain\Domain.csproj" />
 	</ItemGroup>
 	<ItemGroup>
+		<PackageReference Include="Ardalis.Specification.EntityFrameworkCore" Version="8.0.0" />
 		<PackageReference Include="Azure.Storage.Blobs" Version="12.21.2" />
 		<PackageReference Include="Bogus" Version="35.6.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0">

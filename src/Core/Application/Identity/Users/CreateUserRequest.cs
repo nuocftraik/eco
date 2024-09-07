@@ -24,7 +24,7 @@ public class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
             .EmailAddress()
                 .WithMessage("Invalid Email Address.")
             .MustAsync(async (email, _) => !await userService.ExistsWithEmailAsync(email))
-                .WithMessage((_, email) => $"Email {email} is already registered."]);
+                .WithMessage((_, email) => $"Email {email} is already registered.");
 
         RuleFor(u => u.UserName).Cascade(CascadeMode.Stop)
             .NotEmpty()
