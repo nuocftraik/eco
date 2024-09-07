@@ -86,7 +86,7 @@ internal partial class UserService
 
         if (!result.Succeeded)
         {
-            throw new InternalServerException("Update profile failed", result.GetErrors(_t));
+            throw new InternalServerException("Update profile failed", result.GetErrors());
         }
     }
 }

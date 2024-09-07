@@ -43,7 +43,7 @@ internal partial class UserService
 
         return result.Succeeded
             ? "Password Reset Successful!"
-            : throw new InternalServerException("An Error has occurred!";
+            : throw new InternalServerException("An Error has occurred!");
     }
 
     public async Task ChangePasswordAsync(ChangePasswordRequest model, string userId)
