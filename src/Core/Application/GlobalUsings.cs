@@ -1,0 +1,13 @@
+global using Ardalis.Specification;
+global using FluentValidation;
+global using ECO.WebApi.Application.Common.Events;
+global using ECO.WebApi.Application.Common.Exceptions;
+global using ECO.WebApi.Application.Common.FileStorage;
+global using ECO.WebApi.Application.Common.Interfaces;
+global using ECO.WebApi.Application.Common.Models;
+global using ECO.WebApi.Application.Common.Persistence;
+global using ECO.WebApi.Application.Common.Specification;
+global using ECO.WebApi.Domain.Common;
+global using ECO.WebApi.Domain.Common.Contracts;
+global using MediatR;
+global using Microsoft.Extensions.Logging;
