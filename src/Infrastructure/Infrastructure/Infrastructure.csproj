@@ -41,6 +41,7 @@
 		<PackageReference Include="MailKit" Version="3.6.0" />
 		<PackageReference Include="MimeKit" Version="4.7.1" />
 		<PackageReference Include="ClosedXML" Version="0.102.3" />
+		<PackageReference Include="RazorEngineCore" Version="2023.11.2" />
 		<!--<PackageReference Include="NSwag.AspNetCore" Version="13.18.2" />
 		<PackageReference Include="NSwag.Generation.AspNetCore" Version="14.0.7" />-->
 
