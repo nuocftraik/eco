@@ -18,8 +18,14 @@ internal class RoleService : IRoleService
     private readonly ICurrentUser _currentUser;
     private readonly IEventPublisher _events;
 
-
-
+    public RoleService(RoleManager<ApplicationRole> roleManager, UserManager<ApplicationUser> userManager, ApplicationDbContext db, ICurrentUser currentUser, IEventPublisher events)
+    {
+        _roleManager = roleManager;
+        _userManager = userManager;
+        _db = db;
+        _currentUser = currentUser;
+        _events = events;
+    }
 
     public async Task<List<RoleDto>> GetListAsync(CancellationToken cancellationToken)
     {
