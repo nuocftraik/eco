@@ -1,7 +1,4 @@
 ﻿
-using ECO.WebApi.Application.Common.FileStorage;
-using FluentValidation;
-using Microsoft.Extensions.Localization;
 
 namespace ECO.WebApi.Application.Identity.Users;
 public class UpdateUserRequest

@@ -16,6 +16,7 @@ using ECO.WebApi.Shared.Authorization;
 using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace ECO.WebApi.Infrastructure.Identity;
 internal partial class UserService : IUserService
@@ -32,7 +33,7 @@ internal partial class UserService : IUserService
     private readonly IEventPublisher _events;
     private readonly ICacheService _cache;
 
-    public UserService(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, ApplicationDbContext db, IJobService jobService, IMailService mailService, SecuritySettings securitySettings, IEmailTemplateService templateService, IFileStorageService fileStorage, IEventPublisher events, ICacheService cache)
+    public UserService(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, ApplicationDbContext db, IJobService jobService, IMailService mailService, IOptions<SecuritySettings> securitySettings, IEmailTemplateService templateService, IFileStorageService fileStorage, IEventPublisher events, ICacheService cache)
     {
         _signInManager = signInManager;
         _userManager = userManager;
@@ -40,7 +41,7 @@ internal partial class UserService : IUserService
         _db = db;
         _jobService = jobService;
         _mailService = mailService;
-        _securitySettings = securitySettings;
+        _securitySettings = securitySettings.Value;
         _templateService = templateService;
         _fileStorage = fileStorage;
         _events = events;
