@@ -5,6 +5,7 @@ using ECO.WebApi.Infrastructure.Caching;
 using ECO.WebApi.Infrastructure.Common;
 using ECO.WebApi.Infrastructure.Cors;
 using ECO.WebApi.Infrastructure.FileStorage;
+using ECO.WebApi.Infrastructure.Mailing;
 using ECO.WebApi.Infrastructure.Middleware;
 using ECO.WebApi.Infrastructure.Persistence;
 using ECO.WebApi.Infrastructure.Persistence.Initialization;
@@ -26,6 +27,7 @@ public static class Startup
             .AddCorsPolicy(config)
             .AddExceptionMiddleware()
             .AddBehaviours()
+            .AddMailing(config)
             .AddPersistence()
             .AddRouting(options => options.LowercaseUrls = true)
             .AddServices(); 

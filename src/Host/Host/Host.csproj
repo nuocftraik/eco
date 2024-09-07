@@ -9,6 +9,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Content Remove="Email Templates\email-confirmation.cshtml" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
 	</ItemGroup>
 
@@ -41,5 +45,13 @@
 
 	<ItemGroup>
 	  <Folder Include="Files\" />
+	</ItemGroup>
+
+
+
+	<ItemGroup>
+	  <None Include="Email Templates\email-confirmation.cshtml">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 </Project>
