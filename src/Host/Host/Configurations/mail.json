@@ -1,10 +1,12 @@
 ﻿{
-  "MailSettings": {
+  "SMTPEmailSettings": {
     "DisplayName": "NuocFTraiK",
-    "From": "nuocftraik1206@gmail.com",
-    "Host": "smtp.gmail.com",
-    "Password": "AdEqEKB4QwWX9Xey82",
+    "EnableVerification": false,
+    "From": "nuocftraik@gmail.com",
+    "SmtpServer": "smtp.gmail.com",
+    "UseSsl": true,
     "Port": 465,
-    "UserName": "nuocftraik1206@gmail.com"
+    "Username": "nuocftraik1206@gmail.com",
+    "Password": "sqjtzutyylisvrao"
   }
 }

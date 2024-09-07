@@ -1,7 +1,6 @@
 ﻿
 using ECO.WebApi.Application.Common.Mailing;
 using MailKit.Net.Smtp;
-using MailKit.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
@@ -10,13 +9,14 @@ namespace ECO.WebApi.Infrastructure.Mailing;
 
 public class SmtpMailService : IMailService
 {
-    private readonly MailSettings _settings;
+    private readonly SMTPEmailSettings _settings;
     private readonly ILogger<SmtpMailService> _logger;
-
-    public SmtpMailService(IOptions<MailSettings> settings, ILogger<SmtpMailService> logger)
+    private readonly SmtpClient _smtpClient;
+    public SmtpMailService(IOptions<SMTPEmailSettings> settings, ILogger<SmtpMailService> logger)
     {
         _settings = settings.Value;
         _logger = logger;
+        _smtpClient = new SmtpClient();
     }
 
     public async Task SendAsync(MailRequest request, CancellationToken cancellationToken = default)
@@ -72,11 +72,16 @@ public class SmtpMailService : IMailService
 
             email.Body = builder.ToMessageBody();
 
-            using var smtp = new SmtpClient();
-            await smtp.ConnectAsync(_settings.Host, _settings.Port, SecureSocketOptions.StartTls, cancellationToken);
-            await smtp.AuthenticateAsync(_settings.UserName, _settings.Password, cancellationToken);
-            await smtp.SendAsync(email, cancellationToken);
-            await smtp.DisconnectAsync(true, cancellationToken);
+            await _smtpClient.ConnectAsync(_settings.SMTPServer, _settings.Port,
+                  _settings.UseSsl, cancellationToken); // Task
+
+            await _smtpClient.AuthenticateAsync(_settings.Username, _settings.Password, cancellationToken);
+
+            await _smtpClient.SendAsync(email, cancellationToken);
+
+            await _smtpClient.DisconnectAsync(quit: true, cancellationToken);
+
+            await _smtpClient.DisconnectAsync(quit: true, cancellationToken);
         }
         catch (Exception ex)
         {
