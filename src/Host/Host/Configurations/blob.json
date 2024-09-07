@@ -1,0 +1,5 @@
+﻿{
+  "AzureStorageAccount": {
+    "ConnectionString" : "DefaultEnpointsProtocol=https;AccountName=;AccountKey="
+  }
+}
