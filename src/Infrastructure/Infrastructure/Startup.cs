@@ -65,8 +65,8 @@ public static class Startup
 
     public static IEndpointRouteBuilder MapEndpoints(this IEndpointRouteBuilder builder)
     {
-        builder.MapControllers();
-            //.RequireAuthorization();
+        builder.MapControllers()
+            .RequireAuthorization();
 
         return builder;
     }
