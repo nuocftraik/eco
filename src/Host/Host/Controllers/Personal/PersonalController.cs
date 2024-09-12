@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using ECO.WebApi.Application.Auditing;
 using ECO.WebApi.Application.Identity.Users;
 using ECO.WebApi.Application.Identity.Users.Password;
 using NSwag.Annotations;
@@ -54,4 +55,10 @@ public class PersonalController : BaseApiController
             : Ok(await _userService.GetPermissionsAsync(userId, cancellationToken));
     }
 
+    [HttpGet("logs")]
+    [OpenApiOperation("Get audit logs of currently logged in user.", "")]
+    public Task<List<AuditDto>> GetLogsAsync()
+    {
+        return Mediator.Send(new GetMyAuditLogsRequest());
+    }
 }
