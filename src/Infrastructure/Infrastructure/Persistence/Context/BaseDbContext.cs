@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using ECO.WebApi.Infrastructure.Auditing;
 
 namespace ECO.WebApi.Infrastructure.Persistence.Context;
 
@@ -14,6 +15,8 @@ public abstract class BaseDbContext : IdentityDbContext<ApplicationUser, Applica
     {
         _databaseSettings = dbSettings;
     }
+
+    public DbSet<Trail> AuditTrails => Set<Trail>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
