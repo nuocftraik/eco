@@ -1,7 +1,7 @@
 ﻿using ECO.WebApi.Domain.Enum;
 
 namespace ECO.WebApi.Domain.Catalog;
-public class Variant : AuditableEntity, IAggregateRoot
+public class Variant : BaseEntity
 {
     //Basic Info
     public Guid ProductId { get; set; }
@@ -30,11 +30,11 @@ public class Variant : AuditableEntity, IAggregateRoot
 
     //Downloadable
     public bool IncludeDownload { get; set; }
-    public string FileName { get; set; }
-    public string FileUrl { get; set; }
+    public string? FileName { get; set; }
+    public string? FileUrl { get; set; }
     //Navigation
     public virtual Product Product { get; set; }
-    public List<UserReview> UserReviews { get; set; }
+    public List<UserReview> UserReviews { get; set; } = new();
     public virtual List<VariationAttributeValue> VariationAttributeValues { get; set; } = new();
 
 

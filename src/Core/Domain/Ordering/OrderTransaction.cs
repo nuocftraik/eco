@@ -7,7 +7,7 @@ namespace ECO.WebApi.Domain.Ordering;
 public class OrderTransaction : AuditableEntity, IAggregateRoot
 {
     public Guid OrderId { get; set; }
-    public Guid? UserId { get; set; }
+    public Guid UserId { get; set; }
     public TransactionType TransactionType { get; set; }
     public string? AccountNumber { get; set; }
     public string? Note { get; set; }

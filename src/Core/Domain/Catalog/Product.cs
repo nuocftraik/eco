@@ -17,6 +17,8 @@ public class Product : AuditableEntity, IAggregateRoot
 
     //Navigation
     public List<Variant> Variants { get; set; } = new();
+    public List<ProductCategory> ProductCategories { get; set; } = new();
+    public List<ProductTag> ProductTags { get; set; } = new();
     public Product ClearMainImagePath()
     {
         MainImage = string.Empty;

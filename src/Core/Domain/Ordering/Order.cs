@@ -11,10 +11,7 @@ public class Order : AuditableEntity, IAggregateRoot
     public PaymentMethod PaymentMethod { get; set; }
     public ShippingMethod ShippingMethod { get; set; }
     public double ShippingFee { get; set; }
-    public double Tax { get; set; }
-    public double Total { get; set; }
-    public double SubTotal { get; set; }
-    public double Discount { get; set; }
+    public double? Discount { get; set; }
     public double GrandTotal { get; set; }
     public string CustomerName { get; set; }
     public string CustomerPhoneNumber { get; set; }
@@ -25,3 +22,8 @@ public class Order : AuditableEntity, IAggregateRoot
     public virtual ApplicationUser Customer { get; set; }
     public virtual List<OrderItem> OrderItems { get; set; }
 }
+
+////Nếu tính thuế
+//public double Tax { get; set; }
+////Tổng số tiền của đơn hàng trước khi áp dụng giảm giá, thuế, phí vận chuyển.
+//public double SubTotal { get; set; } 

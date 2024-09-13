@@ -4,7 +4,7 @@ using ECO.WebApi.Domain.Catalog;
 
 
 namespace ECO.WebApi.Domain.Basket;
-public class CartItem : AuditableEntity
+public class CartItem : BaseEntity
 {
     public Guid CartId { get; set; }
     public Guid ProductId { get; set; }
