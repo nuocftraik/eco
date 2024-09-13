@@ -35,7 +35,7 @@ public class Variant : BaseEntity
     //Navigation
     public virtual Product Product { get; set; }
     public List<UserReview> UserReviews { get; set; } = new();
-    public virtual List<VariationAttributeValue> VariationAttributeValues { get; set; } = new();
+    public virtual List<VariantAttributeValue> VariantAttributeValues { get; set; } = new();
 
 
     public Variant ClearMainImagePath()

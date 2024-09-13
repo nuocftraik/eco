@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using ECO.WebApi.Domain.Enum;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Model;
+using System.Reflection.Emit;
 
 namespace ECO.WebApi.Infrastructure.Persistence.Configuration;
 
@@ -103,12 +104,25 @@ public class ProductTagConfiguration : IEntityTypeConfiguration<ProductTag>
     }
 }
 
-public class VariationAttributeValueConfiguration : IEntityTypeConfiguration<VariationAttributeValue>
+public class VariantAttributeValueConfiguration : IEntityTypeConfiguration<VariantAttributeValue>
 {
-    public void Configure(EntityTypeBuilder<VariationAttributeValue> builder)
+    public void Configure(EntityTypeBuilder<VariantAttributeValue> builder)
     {
         builder
-            .ToTable("VariationAttributeValues", SchemaNames.Catalog);
+            .ToTable("VariantAttributeValues", SchemaNames.Catalog);
+
+        builder
+            .HasOne(vav => vav.Variant)
+            .WithMany(v => v.VariantAttributeValues)
+            .HasForeignKey(vav => vav.VariantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder
+            .HasOne(vav => vav.AttributeValue)
+            .WithMany(av => av.VariantAttributeValues)
+            .HasForeignKey(vav => vav.AttributeValueId)
+            .OnDelete(DeleteBehavior.Restrict);
+
     }
 }
 

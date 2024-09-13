@@ -6,7 +6,7 @@ namespace ECO.WebApi.Domain.Basket;
 public class Cart : AuditableEntity, IAggregateRoot
 {
 
-    public Guid UserId { get; set; }
+    public string UserId { get; set; }
 
     [ForeignKey(nameof(UserId))]
     public virtual ApplicationUser User { get; set; }

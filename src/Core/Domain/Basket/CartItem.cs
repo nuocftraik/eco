@@ -8,7 +8,7 @@ public class CartItem : BaseEntity
 {
     public Guid CartId { get; set; }
     public Guid ProductId { get; set; }
-    public Guid? VariationId { get; set; }
+    public Guid? VariantId { get; set; }
     public int Quantity { get; set; }
     public decimal Price { get; set; }
 
@@ -16,6 +16,6 @@ public class CartItem : BaseEntity
     public virtual Cart Cart { get; set; }
     [ForeignKey(nameof(ProductId))]
     public virtual Product Product { get; set; }
-    [ForeignKey(nameof(VariationId))]
-    public virtual Variant? Variation { get; set; }
+    [ForeignKey(nameof(VariantId))]
+    public virtual Variant? Variant { get; set; }
 }
