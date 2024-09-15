@@ -58,8 +58,6 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
             .IsUnicode(false)
             .IsRequired();
 
-        builder.Property(x => x.Image)
-           .HasMaxLength(1024);
     }
 }
 
