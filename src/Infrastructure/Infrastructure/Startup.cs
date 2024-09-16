@@ -51,13 +51,14 @@ public static class Startup
         builder
              //.UseRequestLocalization()
              //.UseStaticFiles()
-            .UseCurrentUser()
+          
             .UseFileStorage()
             .UseExceptionMiddleware()
             .UseRouting()
             .UseCorsPolicy()
             .UseHttpsRedirection()
             .UseAuthentication()
+             .UseCurrentUser()
             .UseAuthorization()
             .UseHangfireDashboard(config)
         ;
