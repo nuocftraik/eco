@@ -79,11 +79,12 @@ internal partial class UserService : IUserService
         return await _userManager.Users.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber) is ApplicationUser user && user.Id != exceptId;
     }
 
-    public async Task<string> GetFullName(string userId)
+    public async Task<string> GetFullName(Guid userId)
     {
         var user = await GetAsync(userId.ToString(), CancellationToken.None);
         return string.Join(" ", user.FirstName, user.LastName);
     }
+
     public async Task<List<UserDetailDto>> GetListAsync(CancellationToken cancellationToken) =>
     (await _userManager.Users
             .AsNoTracking()
@@ -122,4 +123,6 @@ internal partial class UserService : IUserService
         await _userManager.UpdateAsync(user);
 
     }
+
+
 }

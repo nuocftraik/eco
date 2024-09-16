@@ -4,6 +4,11 @@ namespace ECO.WebApi.Application.Catalog.Categories;
 public class GetAvailableCategoryOfProductRequest : IRequest<List<AvailableCategoryDto>>
 {
     public Guid ProductId { get; set; }
+
+    public GetAvailableCategoryOfProductRequest(Guid productId)
+    {
+        ProductId = productId;
+    }
 }
 
 //Handler
