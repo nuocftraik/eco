@@ -11,3 +11,4 @@ global using ECO.WebApi.Domain.Common;
 global using ECO.WebApi.Domain.Common.Contracts;
 global using MediatR;
 global using Microsoft.Extensions.Logging;
+using ECO.WebApi.Domain.Catalog;

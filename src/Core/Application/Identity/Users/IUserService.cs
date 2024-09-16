@@ -1,7 +1,4 @@
 ﻿
-using System.Security.Claims;
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Application.Common.Models;
 using ECO.WebApi.Application.Identity.Users.Password;
 
 namespace ECO.WebApi.Application.Identity.Users;
@@ -13,7 +10,7 @@ public interface IUserService : ITransientService
     Task<bool> ExistsWithNameAsync(string name);
     Task<bool> ExistsWithEmailAsync(string email, string? exceptId = null);
     Task<bool> ExistsWithPhoneNumberAsync(string phoneNumber, string? exceptId = null);
-
+    Task<string> GetFullName(Guid userId);
     Task<List<UserDetailDto>> GetListAsync(CancellationToken cancellationToken);
 
     Task<int> GetCountAsync(CancellationToken cancellationToken);
