@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-
+﻿
 namespace ECO.WebApi.Domain.Catalog;
 public class Category : AuditableEntity, IAggregateRoot
 {
@@ -33,8 +31,13 @@ public class Category : AuditableEntity, IAggregateRoot
         ProductCategories.Add(new ProductCategory(productId, Id));
     }
 
-    public void UpdateProducts(List<Guid> newProductIds)
+    public void UpdateProducts(List<Guid>? newProductIds)
     {
+        if (newProductIds == null || newProductIds.Count == 0)
+        {
+            ProductCategories.Clear();
+            return;
+        }
         // Xóa các sản phẩm không có trong danh sách mới
         ProductCategories.RemoveAll(pc => !newProductIds.Contains(pc.ProductId));
 
@@ -48,6 +51,7 @@ public class Category : AuditableEntity, IAggregateRoot
             }
         }
     }
+
 
 
 

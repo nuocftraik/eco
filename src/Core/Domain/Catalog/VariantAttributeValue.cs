@@ -7,11 +7,21 @@ namespace ECO.WebApi.Domain.Catalog;
 [PrimaryKey(nameof(VariantId), nameof(AttributeValueId))]
 public class VariantAttributeValue
 {
-    public Guid VariantId { get; set; }
-    public Guid AttributeValueId { get; set; }
-    public virtual Attributes.AttributeValue AttributeValue { get; set; }
-    public virtual Variant Variant { get; set; }
+    public Guid VariantId { get; private set; }
+    public Guid AttributeValueId { get; private set; }
+    public virtual Attributes.AttributeValue AttributeValue { get;private set; }
+    public virtual Variant Variant { get; private set; }
+
+    public VariantAttributeValue()
+    {
+        
+    }
+    public VariantAttributeValue(Guid attributeValueId)
+    {
+        AttributeValueId = attributeValueId;
+    }
 }
+
 
 
 //Cụ thể, khi bạn xóa một Product, hệ thống sẽ thực hiện xóa như sau:

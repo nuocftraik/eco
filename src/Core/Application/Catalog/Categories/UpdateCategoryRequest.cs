@@ -48,7 +48,7 @@ public class UpdateCategoryRequestHandler : IRequestHandler<UpdateCategoryReques
       ?? throw new NotFoundException($"Category with ID {request.Id} was not found.");
 
         category.Update(request.Name, request.Slug, request.IsActive);
-        category.UpdateProducts(request.ProductIds ?? new List<Guid>());
+        category.UpdateProducts(request.ProductIds);
         await _repository.UpdateAsync(category, cancellationToken);
 
         return category.Id;

@@ -1,4 +1,6 @@
 ﻿using ECO.WebApi.Application.Catalog.Categories;
+using ECO.WebApi.Application.Catalog.Products;
+using ECO.WebApi.Domain.Attributes;
 using ECO.WebApi.Domain.Catalog;
 using Mapster;
 
@@ -23,6 +25,12 @@ public class MapsterSettings
 
         TypeAdapterConfig<Category, CategoryInListDto>.NewConfig()
             .Map(dest => dest.NumberOfProduct, src => src.ProductCategories.Count);
+
+        //Attribute 
+        TypeAdapterConfig<Domain.Attributes.Attribute, AttributeDto>.NewConfig()
+            .Map(dest => dest.AttributeValues, src => src.AttributeValues.Adapt<List<AttributeValueDto>>());
+
+        TypeAdapterConfig<AttributeValue, AttributeValueDto>.NewConfig();
 
     }
 }
