@@ -1,5 +1,4 @@
 ﻿using ECO.WebApi.Application.Identity.Users;
-using ECO.WebApi.Domain.Catalog;
 using Mapster;
 
 namespace ECO.WebApi.Application.Catalog.Categories;
