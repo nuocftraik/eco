@@ -1,0 +1,32 @@
+name: eco_application
+
+networks:
+  econetwork:
+    driver: bridge
+
+services:
+  ecodb:
+    container_name: eco-db
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - 8002:1433
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Password@12345
+    networks:
+      - econetwork
+
+  eco.api:
+    container_name: eco-host-api
+    image: ${DOCKER_REGISTRY-}eco_api
+    build: 
+      context: ../
+      dockerfile: docker/eco-api.Dockerfile
+    ports:
+      - "8000:80"
+      - "8001:443"
+    depends_on:
+      - ecodb
+    networks:
+      - econetwork
+    entrypoint: ["dotnet", "Host.dll"]

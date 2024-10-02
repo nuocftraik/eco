@@ -9,9 +9,11 @@ using ECO.WebApi.Infrastructure.Mailing;
 using ECO.WebApi.Infrastructure.Mapping;
 using ECO.WebApi.Infrastructure.Middleware;
 using ECO.WebApi.Infrastructure.Persistence;
+using ECO.WebApi.Infrastructure.Persistence.Context;
 using ECO.WebApi.Infrastructure.Persistence.Initialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -41,6 +43,10 @@ public static class Startup
     {
         // Create a new scope to retrieve scoped services
         using var scope = services.CreateScope();
+
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        // Apply pending migrations
+        dbContext.Database.Migrate();
 
         await scope.ServiceProvider.GetRequiredService<IDatabaseInitializer>()
             .InitializeDatabasesAsync(cancellationToken);
