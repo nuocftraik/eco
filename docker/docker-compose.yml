@@ -1,3 +1,5 @@
+version: '3.8'
+
 name: eco_application
 
 networks:
@@ -12,21 +14,22 @@ services:
       - 8002:1433
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=Password@12345
+      - MSSQL_SA_PASSWORD=${MSSQL_Password}
     networks:
       - econetwork
 
   eco.api:
     container_name: eco-host-api
-    image: ${DOCKER_REGISTRY-}eco_api
     build: 
       context: ../
       dockerfile: docker/eco-api.Dockerfile
+    image: ${DOCKER_REGISTRY-}eco_api
+    environment:
+      -  ConnectionStrings__ConnectionString=${ConnectionStrings_Default}
     ports:
-      - "8000:80"
-      - "8001:443"
+      - "${ASPNETCORE_API_PORT}:80"
     depends_on:
       - ecodb
     networks:
       - econetwork
-    entrypoint: ["dotnet", "Host.dll"]
+    entrypoint: ["dotnet", "ECO.WebApi.Host.dll"]

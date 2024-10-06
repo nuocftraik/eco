@@ -1,6 +1,6 @@
 ﻿{
   "DatabaseSettings": {
     "DBProvider": "mssql",
-    "ConnectionString": "server=eco-db; database=ECO;user=sa;password=Password@12345;Integrated Security=true;TrustServerCertificate=Yes"
+    "ConnectionString": "Server=eco-db,1433;Database=ECO;User Id=sa;Password=Password@12345;TrustServerCertificate=Yes;"
   }
 }
