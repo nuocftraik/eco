@@ -1,7 +1,7 @@
 ﻿
 
 namespace ECO.WebApi.Application.Catalog.Products;
-internal class DeleteVariantRequest : IRequest<Guid>
+public class DeleteVariantRequest : IRequest<Guid>
 {
     public Guid ProductId { get; set; }
     public Guid Id { get; set; }

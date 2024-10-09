@@ -91,7 +91,7 @@ public class CreateProductRequestHandler : IRequestHandler<CreateProductRequest,
             {
                 ProductId = product.Id,
                 SKU = $"{product.Name.Substring(0, 3).ToUpper()}-DEFAULT",
-                Price = 0.0,
+                Price = request.Price.Value,
                 MainImage = request.MainImage,
                 IsActive = request.IsActive,
                 IsDefault = request.IsDefault,
@@ -105,7 +105,8 @@ public class CreateProductRequestHandler : IRequestHandler<CreateProductRequest,
             };
 
             // Tạo Variant từ Factory
-            var defaultVariant = _variantFactory.CreateVariant(variantRequest);
+            var variantFactory = VariantFactoryProvider.GetFactory(ProductType.Simple);
+            var defaultVariant = variantFactory.CreateVariant(variantRequest);
             product.AddVariant(defaultVariant);
         }
 
