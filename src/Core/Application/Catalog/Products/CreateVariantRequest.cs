@@ -1,5 +1,6 @@
 ﻿
 
+using ECO.WebApi.Application.Catalog.Products.Factory;
 using ECO.WebApi.Domain.Enum;
 
 namespace ECO.WebApi.Application.Catalog.Products;
@@ -108,15 +109,8 @@ public class CreateVariantRequestHandler : IRequestHandler<CreateVariantRequest,
         var product = await _productRepository.GetByIdAsync(new ProductByIdSpec(request.ProductId), cancellationToken)
                 ?? throw new NotFoundException($"Product with ID {request.ProductId} was not found.");
 
-        var variant = new Variant(request.ProductId, request.SKU, request.Price, request.MainImage, request.IsActive, request.IsDefault);
-        // Thiết lập các thuộc tính cho Variant
-        variant.TrackingBilling(request.Price,request.ComparePrice);
-        variant.TrackingInventory(request.TrackInventory,request.Quantity);
-        variant.TrackingShipping(request.RequireShipping,request.Weight,request.Width,request.Height,request.Length);
-        variant.TrackingDownload(request.IncludeDownload,request.FileName,request.FileUrl);
-
-        //Thêm attribute value
-        variant.AddAttributeValue(request.AttributeValueIds);
+        var variantFactory = VariantFactoryProvider.GetFactory(product.ProductType);
+        var variant = variantFactory.CreateVariant(request);
 
         product.AddVariant(variant);
 

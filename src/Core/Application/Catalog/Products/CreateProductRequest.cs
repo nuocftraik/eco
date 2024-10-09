@@ -1,5 +1,6 @@
 ﻿
 using ECO.WebApi.Application.Catalog.Products.Dtos;
+using ECO.WebApi.Application.Catalog.Products.Factory;
 using ECO.WebApi.Domain.Enum;
 
 namespace ECO.WebApi.Application.Catalog.Products;
@@ -11,8 +12,21 @@ public class CreateProductRequest : IRequest<Guid>
     public string? Description { get; set; }
     public string? MainImage { get; set; }
     public List<CreateAttributeDto>? Attributes { get; set; }
-    public List<Guid>? CategoryIds { get; set; } 
+    public List<Guid>? CategoryIds { get; set; }
 
+    // Thêm các trường cho Variant nếu productType là Simple
+
+    public string? SKU { get; set; }
+    public double? Price { get; set; }
+    public bool IsActive { get; set; }
+    public bool IsDefault { get; set; }
+    public bool TrackInventory { get; set; }
+    public int? Quantity { get; set; }
+    public bool RequireShipping { get; set; }
+    public double? Weight { get; set; }
+    public double? Width { get; set; }
+    public double? Height { get; set; }
+    public double? Length { get; set; }
 }
 
 //Validator
@@ -44,10 +58,11 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
 public class CreateProductRequestHandler : IRequestHandler<CreateProductRequest, Guid>
 {
     private readonly IRepository<Product> _productRepository;
-
-    public CreateProductRequestHandler(IRepository<Product> productRepository)
+    private readonly IVariantFactory _variantFactory;
+    public CreateProductRequestHandler(IRepository<Product> productRepository, IVariantFactory variantFactory)
     {
         _productRepository = productRepository;
+        _variantFactory = variantFactory;
     }
 
     public async Task<Guid> Handle(CreateProductRequest request, CancellationToken cancellationToken)
@@ -67,6 +82,33 @@ public class CreateProductRequestHandler : IRequestHandler<CreateProductRequest,
                 product.AddAttribute(attribute.Name,attribute.AttributeType,attribute.Values);
             }
         }
+
+        // Nếu là Simple Product thì tạo một variant mặc định
+        if (request.ProductType == ProductType.Simple)
+        {
+            // Sử dụng CreateVariantRequest để tạo variant cho Simple Product
+            var variantRequest = new CreateVariantRequest
+            {
+                ProductId = product.Id,
+                SKU = $"{product.Name.Substring(0, 3).ToUpper()}-DEFAULT",
+                Price = 0.0,
+                MainImage = request.MainImage,
+                IsActive = request.IsActive,
+                IsDefault = request.IsDefault,
+                TrackInventory = request.TrackInventory,
+                Quantity = request.Quantity,
+                RequireShipping = request.RequireShipping,
+                Weight = request.Weight,
+                Width = request.Width,
+                Height = request.Height,
+                Length = request.Length
+            };
+
+            // Tạo Variant từ Factory
+            var defaultVariant = _variantFactory.CreateVariant(variantRequest);
+            product.AddVariant(defaultVariant);
+        }
+
         await _productRepository.AddAsync(product, cancellationToken);
         return product.Id;
     }

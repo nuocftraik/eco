@@ -11,20 +11,7 @@ public class SimpleProductVariantFactory : IVariantFactory
         variant.TrackingBilling(request.Price, request.ComparePrice);
         variant.TrackingInventory(request.TrackInventory, request.Quantity);
         variant.TrackingShipping(request.RequireShipping, request.Weight, request.Width, request.Height, request.Length);
-        variant.TrackingDownload(request.IncludeDownload, request.FileName, request.FileUrl);
 
-        variant.AddAttributeValue(request.AttributeValueIds);
-
-        return variant;
-    }
-}
-public class GroupedProductVariantFactory : IVariantFactory
-{
-    public Variant CreateVariant(CreateVariantRequest request)
-    {
-        // Logic tạo Variant cho sản phẩm dạng nhóm
-        var variant = new Variant(request.ProductId, request.SKU, request.Price, request.MainImage, request.IsActive, request.IsDefault);
-        // Implement logic specific to grouped product
         return variant;
     }
 }
@@ -33,9 +20,32 @@ public class ConfigurableProductVariantFactory : IVariantFactory
 {
     public Variant CreateVariant(CreateVariantRequest request)
     {
-        // Logic tạo Variant cho sản phẩm cấu hình
         var variant = new Variant(request.ProductId, request.SKU, request.Price, request.MainImage, request.IsActive, request.IsDefault);
-        // Implement logic specific to configurable product
+
+        // Áp dụng logic cho sản phẩm đơn giản (Simple Product)
+        variant.TrackingBilling(request.Price, request.ComparePrice);
+        variant.TrackingInventory(request.TrackInventory, request.Quantity);
+        variant.TrackingShipping(request.RequireShipping, request.Weight, request.Width, request.Height, request.Length);
+        variant.TrackingDownload(request.IncludeDownload, request.FileName, request.FileUrl);
+
+        variant.AddAttributeValue(request.AttributeValueIds);
+
+        return variant;
+    }
+}
+
+public class DownloadableProductVariantFactory : IVariantFactory
+{
+    public Variant CreateVariant(CreateVariantRequest request)
+    {
+        var variant = new Variant(request.ProductId, request.SKU, request.Price, request.MainImage, request.IsActive, request.IsDefault);
+
+        // Áp dụng logic cho sản phẩm đơn giản (Simple Product)
+        variant.TrackingBilling(request.Price, request.ComparePrice);
+        variant.TrackingInventory(request.TrackInventory, request.Quantity);
+        variant.TrackingDownload(request.IncludeDownload, request.FileName, request.FileUrl);
+        variant.AddAttributeValue(request.AttributeValueIds);
+
         return variant;
     }
 }

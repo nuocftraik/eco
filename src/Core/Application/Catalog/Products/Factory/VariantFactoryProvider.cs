@@ -10,11 +10,8 @@ public class VariantFactoryProvider
         return productType switch
         {
             ProductType.Simple => new SimpleProductVariantFactory(),
-            ProductType.Grouped => new GroupedProductVariantFactory(),
             ProductType.Configurable => new ConfigurableProductVariantFactory(),
-            //ProductType.Bundle => new BundleProductVariantFactory(),
-            //ProductType.Virtual => new VirtualProductVariantFactory(),
-            //ProductType.Downloadable => new DownloadableProductVariantFactory(),
+            ProductType.Downloadable => new DownloadableProductVariantFactory(),
             _ => throw new ArgumentException("Invalid product type", nameof(productType)),
         };
     }
