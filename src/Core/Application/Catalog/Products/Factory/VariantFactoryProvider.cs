@@ -11,7 +11,6 @@ public class VariantFactoryProvider
         {
             ProductType.Simple => new SimpleProductVariantFactory(),
             ProductType.Configurable => new ConfigurableProductVariantFactory(),
-            ProductType.Downloadable => new DownloadableProductVariantFactory(),
             _ => throw new ArgumentException("Invalid product type", nameof(productType)),
         };
     }

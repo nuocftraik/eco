@@ -15,18 +15,26 @@ public class CreateProductRequest : IRequest<Guid>
     public List<Guid>? CategoryIds { get; set; }
 
     // Thêm các trường cho Variant nếu productType là Simple
-
+   
     public string? SKU { get; set; }
-    public double? Price { get; set; }
     public bool IsActive { get; set; }
     public bool IsDefault { get; set; }
+    //Billing
+    public double Price { get; set; }
+    public double? ComparePrice { get; set; }
+    //Inventory
     public bool TrackInventory { get; set; }
     public int? Quantity { get; set; }
+    //Shipping
     public bool RequireShipping { get; set; }
     public double? Weight { get; set; }
     public double? Width { get; set; }
     public double? Height { get; set; }
     public double? Length { get; set; }
+    //Downloadable
+    public bool IncludeDownload { get; set; }
+    public string? FileName { get; set; }
+    public string? FileUrl { get; set; }
 }
 
 //Validator
@@ -90,9 +98,10 @@ public class CreateProductRequestHandler : IRequestHandler<CreateProductRequest,
             var variantRequest = new CreateVariantRequest
             {
                 ProductId = product.Id,
-                SKU = $"{product.Name.Substring(0, 3).ToUpper()}-DEFAULT",
-                Price = request.Price.Value,
+                Price = request.Price,
+                ComparePrice = request.ComparePrice,
                 MainImage = request.MainImage,
+                SKU = $"{product.Name.Substring(0, 3).ToUpper()}-DEFAULT",
                 IsActive = request.IsActive,
                 IsDefault = request.IsDefault,
                 TrackInventory = request.TrackInventory,
@@ -101,7 +110,10 @@ public class CreateProductRequestHandler : IRequestHandler<CreateProductRequest,
                 Weight = request.Weight,
                 Width = request.Width,
                 Height = request.Height,
-                Length = request.Length
+                Length = request.Length,
+                IncludeDownload = request.IncludeDownload,
+                FileName = request.FileName,
+                FileUrl = request.FileUrl
             };
 
             // Tạo Variant từ Factory

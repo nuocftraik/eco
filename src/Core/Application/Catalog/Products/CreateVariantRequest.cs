@@ -36,7 +36,7 @@ public class CreateVariantRequest : IRequest<Guid>
     public string? FileName { get; set; }
     public string? FileUrl { get; set; }
 
-    public List<Guid> AttributeValueIds { get; set; }
+    public List<Guid>? AttributeValueIds { get; set; }
 }
 
 
