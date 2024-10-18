@@ -63,7 +63,7 @@ internal class TokenService : ITokenService
 
         return await GenerateTokensAndUpdateUser(user, ipAddress);
     }
-    private async Task<TokenResponse> GenerateTokensAndUpdateUser(ApplicationUser user, string ipAddress)
+    public async Task<TokenResponse> GenerateTokensAndUpdateUser(ApplicationUser user, string ipAddress)
     {
         string token = GenerateJwt(user, ipAddress);
 

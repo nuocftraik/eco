@@ -13,5 +13,11 @@
       "ApiScope": "api://<Your ClientId of the AzureAd Server App Registration>/access_as_user",
       "OpenIdClientId": "<Your ClientId of the AzureAd Client App Registration>"
     }
+  },
+  "Authentication": {
+    "Google": {
+      "ClientId": "1023196294291-shhj66sk824th978fd2eqcfd1omnf0or.apps.googleusercontent.com",
+      "ClientSecret": "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"
+    }
   }
 }

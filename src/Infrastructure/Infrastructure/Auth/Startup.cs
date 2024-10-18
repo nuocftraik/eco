@@ -1,5 +1,6 @@
 ﻿using ECO.WebApi.Application.Common.Interfaces;
 using ECO.WebApi.Infrastructure.Auth.Jwt;
+using ECO.WebApi.Infrastructure.Auth.OAuth2;
 using ECO.WebApi.Infrastructure.Identity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -17,6 +18,7 @@ internal static class Startup
             .AddIdentity();
 
         services.Configure<SecuritySettings>(config.GetSection(nameof(SecuritySettings)));
+        services.AddO2Authentication(config);
         return services.AddJwtAuth();
 
     }
