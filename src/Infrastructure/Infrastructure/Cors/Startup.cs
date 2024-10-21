@@ -15,7 +15,7 @@ internal static class Startup
                 policy.AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials()
-                    .WithOrigins("https://localhost:5001")));
+                    .WithOrigins("http://localhost:4200")));
     }
 
     internal static IApplicationBuilder UseCorsPolicy(this IApplicationBuilder app) =>

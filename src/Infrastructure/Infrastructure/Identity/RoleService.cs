@@ -1,4 +1,6 @@
-﻿using DocumentFormat.OpenXml.Office2010.Excel;
+﻿using System.Linq;
+using System.Reflection;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using ECO.WebApi.Application.Common.Events;
 using ECO.WebApi.Application.Common.Exceptions;
 using ECO.WebApi.Application.Common.Interfaces;
@@ -51,16 +53,41 @@ internal class RoleService : IRoleService
           ? role.Adapt<RoleDto>()
           : throw new NotFoundException("Role Not Found");
     }
-    public async Task<RoleDto> GetByIdWithPermissionsAsync(string roleId, CancellationToken cancellationToken)
+    public async Task<RolePermissionDto> GetByIdWithPermissionsAsync(string roleId, CancellationToken cancellationToken)
     {
-        var role = await GetByIdAsync(roleId);
+        var model = new RolePermissionDto();
+        var allPermissions = new List<PermissionDto>();
 
-        role.Permissions = await _db.RoleClaims
-            .Where(c => c.RoleId == roleId && c.ClaimType == ECOClaims.Permission)
-            .Select(c => c.ClaimValue!)
-            .ToListAsync(cancellationToken);
+        // Lấy tất cả các permission từ ECOPermissions
+        var permissions = ECOPermissions.All; // Lấy tất cả quyền từ ECOPermissions.All
+        foreach (var permission in permissions)
+        {
+            allPermissions.Add(new PermissionDto
+            {
+                Value = ECOPermission.NameFor(permission.Action, permission.Resource),
+                Type = "Permission",
+                DisplayName = permission.Description
+            });
+        }
 
-        return role;
+        // Tìm role theo roleId
+        var role = await _roleManager.FindByIdAsync(roleId) ?? throw new Exception("Role not found");
+
+        model.RoleId = roleId;
+
+        // Lấy tất cả các claim của role
+        var claims = await _roleManager.GetClaimsAsync(role);
+
+        var roleClaimValues = claims.Select(a => a.Value).ToList();
+
+        // Đánh dấu các quyền đã được gán cho role
+        foreach (var permission in allPermissions)
+        {
+            permission.Selected = roleClaimValues.Contains(permission.Value);
+        }
+
+        model.Permissions = allPermissions;
+        return model;
     }
 
     public async Task<string> CreateOrUpdateAsync(CreateOrUpdateRoleRequest request)
@@ -87,7 +114,7 @@ internal class RoleService : IRoleService
 
             if (ECORoles.IsDefault(role.Name!))
             {
-                throw new ConflictException(string.Format("Not allowed to modify {0} Role."));
+                throw new ConflictException(string.Format("Not allowed to modify {0} Role.", role.Name));
             }
 
             role.Name = request.Name;
@@ -99,7 +126,7 @@ internal class RoleService : IRoleService
             {
                 throw new InternalServerException("Update role failed");
             }
-            return string.Format("Role {0} Updated.");
+            return string.Format("Role {0} Updated.", role.Name);
         }
     }
 
