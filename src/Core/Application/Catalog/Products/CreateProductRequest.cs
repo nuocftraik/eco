@@ -91,30 +91,13 @@ public class CreateProductRequestHandler : IRequestHandler<CreateProductRequest,
             }
         }
 
+        await _productRepository.AddAsync(product, cancellationToken);
+
         // Nếu là Simple Product thì tạo một variant mặc định
         if (request.ProductType == ProductType.Simple)
         {
             // Sử dụng CreateVariantRequest để tạo variant cho Simple Product
-            var variantRequest = new CreateVariantRequest
-            {
-                ProductId = product.Id,
-                Price = request.Price,
-                ComparePrice = request.ComparePrice,
-                MainImage = request.MainImage,
-                SKU = $"{product.Name.Substring(0, 3).ToUpper()}-DEFAULT",
-                IsActive = request.IsActive,
-                IsDefault = request.IsDefault,
-                TrackInventory = request.TrackInventory,
-                Quantity = request.Quantity,
-                RequireShipping = request.RequireShipping,
-                Weight = request.Weight,
-                Width = request.Width,
-                Height = request.Height,
-                Length = request.Length,
-                IncludeDownload = request.IncludeDownload,
-                FileName = request.FileName,
-                FileUrl = request.FileUrl
-            };
+            var variantRequest = new CreateVariantRequest(product.Id,product.Status, request.MainImage, request.Price, request.ComparePrice,  request.SKU, request.IsActive, request.IsDefault, request.TrackInventory, request.Quantity, request.RequireShipping, request.Weight, request.Width, request.Height, request.Length, request.IncludeDownload, request.FileName, request.FileUrl);
 
             // Tạo Variant từ Factory
             var variantFactory = VariantFactoryProvider.GetFactory(ProductType.Simple);
@@ -122,7 +105,6 @@ public class CreateProductRequestHandler : IRequestHandler<CreateProductRequest,
             product.AddVariant(defaultVariant);
         }
 
-        await _productRepository.AddAsync(product, cancellationToken);
         return product.Id;
     }
 }

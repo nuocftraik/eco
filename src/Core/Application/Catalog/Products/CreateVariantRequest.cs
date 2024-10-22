@@ -37,6 +37,28 @@ public class CreateVariantRequest : IRequest<Guid>
     public string? FileUrl { get; set; }
 
     public List<Guid>? AttributeValueIds { get; set; }
+
+    public CreateVariantRequest(Guid productId, ProductStatus status, string? mainImage, double price, double? comparePrice, string sKU, bool isActive, bool isDefault, bool trackInventory, int? quantity, bool requireShipping, double? weight, double? width, double? height, double? length, bool includeDownload, string? fileName, string? fileUrl)
+    {
+        ProductId = productId;
+        Status = status;
+        MainImage = mainImage;
+        Price = price;
+        ComparePrice = comparePrice;
+        SKU = sKU;
+        IsActive = isActive;
+        IsDefault = isDefault;
+        TrackInventory = trackInventory;
+        Quantity = quantity;
+        RequireShipping = requireShipping;
+        Weight = weight;
+        Width = width;
+        Height = height;
+        Length = length;
+        IncludeDownload = includeDownload;
+        FileName = fileName;
+        FileUrl = fileUrl;
+    }
 }
 
 

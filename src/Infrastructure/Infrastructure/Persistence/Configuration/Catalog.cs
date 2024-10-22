@@ -113,13 +113,13 @@ public class VariantAttributeValueConfiguration : IEntityTypeConfiguration<Varia
             .HasOne(vav => vav.Variant)
             .WithMany(v => v.VariantAttributeValues)
             .HasForeignKey(vav => vav.VariantId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder
             .HasOne(vav => vav.AttributeValue)
             .WithMany(av => av.VariantAttributeValues)
             .HasForeignKey(vav => vav.AttributeValueId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
     }
 }
