@@ -5,7 +5,7 @@ public class SimpleProductVariantFactory : IVariantFactory
 {
     public Variant CreateVariant(CreateVariantRequest request)
     {
-        var variant = new Variant(request.ProductId, request.SKU, request.Price, request.MainImage, request.IsActive, request.IsDefault);
+        var variant = new Variant( request.SKU, request.Price, request.MainImage, request.IsActive, request.IsDefault);
 
         // Áp dụng logic cho sản phẩm đơn giản (Simple Product)
         variant.TrackingBilling(request.Price, request.ComparePrice);
@@ -21,7 +21,7 @@ public class ConfigurableProductVariantFactory : IVariantFactory
 {
     public Variant CreateVariant(CreateVariantRequest request)
     {
-        var variant = new Variant(request.ProductId, request.SKU, request.Price, request.MainImage, request.IsActive, request.IsDefault);
+        var variant = new Variant(request.SKU, request.Price, request.MainImage, request.IsActive, request.IsDefault);
 
         // Áp dụng logic cho sản phẩm đơn giản (Simple Product)
         variant.TrackingBilling(request.Price, request.ComparePrice);

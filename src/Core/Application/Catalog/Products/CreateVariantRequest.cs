@@ -78,7 +78,7 @@ public class CreateVariantRequestValidator : AbstractValidator<CreateVariantRequ
 
         // ComparePrice validation: ComparePrice should be greater than Price if provided
         RuleFor(x => x.ComparePrice)
-            .GreaterThan(x => x.Price).When(x => x.ComparePrice.HasValue)
+            .GreaterThanOrEqualTo(x => x.Price).When(x => x.ComparePrice.HasValue)
             .WithMessage("ComparePrice must be greater than Price.");
 
         // SKU validation
@@ -120,21 +120,23 @@ public class CreateVariantRequestValidator : AbstractValidator<CreateVariantRequ
 public class CreateVariantRequestHandler : IRequestHandler<CreateVariantRequest, Guid>
 {
     private readonly IRepository<Product> _productRepository;
-
-    public CreateVariantRequestHandler(IRepository<Product> productRepository)
+    private readonly IRepository<Variant> _variantRepository;
+    public CreateVariantRequestHandler(IRepository<Product> productRepository,IRepository<Variant> variantRepository)
     {
         _productRepository = productRepository;
+        _variantRepository = variantRepository;
     }
 
     public async Task<Guid> Handle(CreateVariantRequest request, CancellationToken cancellationToken)
     {
-        var product = await _productRepository.GetByIdAsync(new ProductByIdSpec(request.ProductId), cancellationToken)
+        var product = await _productRepository.FirstOrDefaultAsync(new ProductByIdSpec(request.ProductId), cancellationToken)
                 ?? throw new NotFoundException($"Product with ID {request.ProductId} was not found.");
 
         var variantFactory = VariantFactoryProvider.GetFactory(product.ProductType);
         var variant = variantFactory.CreateVariant(request);
 
         product.AddVariant(variant);
+        await _variantRepository.AddAsync(variant,cancellationToken);
 
         return variant.Id;
     }

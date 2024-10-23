@@ -66,11 +66,11 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
 public class CreateProductRequestHandler : IRequestHandler<CreateProductRequest, Guid>
 {
     private readonly IRepository<Product> _productRepository;
-    private readonly IVariantFactory _variantFactory;
-    public CreateProductRequestHandler(IRepository<Product> productRepository, IVariantFactory variantFactory)
+   private readonly IMediator _mediator;
+    public CreateProductRequestHandler(IRepository<Product> productRepository, IMediator mediator)
     {
         _productRepository = productRepository;
-        _variantFactory = variantFactory;
+        _mediator = mediator;
     }
 
     public async Task<Guid> Handle(CreateProductRequest request, CancellationToken cancellationToken)
@@ -98,11 +98,7 @@ public class CreateProductRequestHandler : IRequestHandler<CreateProductRequest,
         {
             // Sử dụng CreateVariantRequest để tạo variant cho Simple Product
             var variantRequest = new CreateVariantRequest(product.Id,product.Status, request.MainImage, request.Price, request.ComparePrice,  request.SKU, request.IsActive, request.IsDefault, request.TrackInventory, request.Quantity, request.RequireShipping, request.Weight, request.Width, request.Height, request.Length, request.IncludeDownload, request.FileName, request.FileUrl);
-
-            // Tạo Variant từ Factory
-            var variantFactory = VariantFactoryProvider.GetFactory(ProductType.Simple);
-            var defaultVariant = variantFactory.CreateVariant(variantRequest);
-            product.AddVariant(defaultVariant);
+            await _mediator.Send(variantRequest, cancellationToken);
         }
 
         return product.Id;

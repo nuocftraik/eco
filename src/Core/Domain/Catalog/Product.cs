@@ -15,11 +15,11 @@ public class Product : AuditableEntity, IAggregateRoot
     //Media
     public string? MainImage { get; private set; }
     //Billing
-    public double Price { get; set; }
+    public double? Price { get; set; }
     public double? ComparePrice { get; set; }
 
     //Identifiers
-    public string SKU { get; set; }
+    public string? SKU { get; set; }
     public bool IsActive { get; set; }
     public int ViewCount { get; private set; }
     //Inventory

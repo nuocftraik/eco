@@ -1,7 +1,7 @@
 ﻿using ECO.WebApi.Domain.Enum;
 
 namespace ECO.WebApi.Domain.Catalog;
-public class Variant : BaseEntity
+public class Variant : BaseEntity, IAggregateRoot
 {
     //Basic Info
     public Guid ProductId { get; set; }
@@ -37,20 +37,19 @@ public class Variant : BaseEntity
     public virtual List<UserReview> UserReviews { get; set; } = new();
     public virtual List<VariantAttributeValue> VariantAttributeValues { get; set; } = new();
 
-    //Methods
-    private Variant() { }
-
-    // Constructor for creating new variant
-    public Variant(Guid productId, string sku, double price, string? image, bool isActive, bool isDefault)
+    public Variant()
     {
-        ProductId = productId;
+        
+    }
+    // Constructor for creating new variant
+    public Variant(string sku, double price, string? image, bool isActive, bool isDefault)
+    {
         SKU = sku;
         Price = price;
         MainImage = image;
         IsActive = isActive;
         IsDefault = isDefault;
         Status = ProductStatus.InStock;
-        Quantity = 0;
     }
     public void Update(string sku, double price, string? mainImage, bool isActive, bool isDefault,
                    ProductStatus status, bool trackInventory, int? quantity,
