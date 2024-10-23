@@ -140,24 +140,35 @@ public class Variant : BaseEntity, IAggregateRoot
         }
     }
 
+    //public void UpdateAttributeValues(List<Guid> newAttributeValueIds)
+    //{
+    //    // Xóa những giá trị không còn trong danh sách mới
+    //    VariantAttributeValues.RemoveAll(vav => !newAttributeValueIds.Contains(vav.AttributeValueId));
+
+    //    // Tạo HashSet để tối ưu hóa kiểm tra tồn tại
+    //    var existingAttributeValueIds = VariantAttributeValues.Select(vav => vav.AttributeValueId).ToHashSet();
+
+    //    // Thêm các giá trị mới nếu chưa tồn tại
+    //    foreach (var attributeValueId in newAttributeValueIds)
+    //    {
+    //        if (!existingAttributeValueIds.Contains(attributeValueId))
+    //        {
+    //            VariantAttributeValues.Add(new VariantAttributeValue(attributeValueId));
+    //        }
+    //    }
+    //}
+
     public void UpdateAttributeValues(List<Guid> newAttributeValueIds)
     {
-        // Xóa những giá trị không còn trong danh sách mới
-        VariantAttributeValues.RemoveAll(vav => !newAttributeValueIds.Contains(vav.AttributeValueId));
+        // Xóa tất cả các VariantAttributeValues hiện có trước
+        VariantAttributeValues.Clear();
 
-        // Tạo HashSet để tối ưu hóa kiểm tra tồn tại
-        var existingAttributeValueIds = VariantAttributeValues.Select(vav => vav.AttributeValueId).ToHashSet();
-
-        // Thêm các giá trị mới nếu chưa tồn tại
+        // Thêm các giá trị mới
         foreach (var attributeValueId in newAttributeValueIds)
         {
-            if (!existingAttributeValueIds.Contains(attributeValueId))
-            {
-                VariantAttributeValues.Add(new VariantAttributeValue(attributeValueId));
-            }
+            VariantAttributeValues.Add(new VariantAttributeValue(attributeValueId));
         }
     }
-
 
 
 }

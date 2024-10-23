@@ -7,7 +7,6 @@ namespace ECO.WebApi.Application.Catalog.Products;
 public class UpdateProductRequest : IRequest<Guid>
 {
     public Guid Id { get; set; }
-    public ProductType ProductType { get; set; }
     public string Name { get; set; }
     public string Slug { get; set; }
     public ProductStatus Status { get; set; }
@@ -46,9 +45,6 @@ public class UpdateProductRequestValidator : AbstractValidator<UpdateProductRequ
 {
     public UpdateProductRequestValidator()
     {
-        // ProductType validation
-        RuleFor(x => x.ProductType)
-            .IsInEnum().WithMessage("ProductType is not valid.");
 
         // Name validation
         RuleFor(x => x.Name)
@@ -85,13 +81,14 @@ public class UpdateProductRequestHandler : IRequestHandler<UpdateProductRequest,
         }
         else
         {
-            product.UpdateConfigurableProduct(request.ProductType, request.Name, request.Slug, request.Status, request.Description, request.MainImage);
+            product.UpdateConfigurableProduct(request.Name, request.Slug, request.Status, request.Description, request.MainImage);
+            var newAttributes = request.Attributes?.Adapt<List<Domain.Attributes.Attribute>>();
+            product.UpdateAttributes(newAttributes);
         }
 
         product.UpdateCategories(request.CategoryIds);
 
-        var newAttributes = request.Attributes?.Adapt<List<Domain.Attributes.Attribute>>();
-        product.UpdateAttributes(newAttributes);
+      
         await _productRepository.UpdateAsync(product);
         return product.Id;
     }

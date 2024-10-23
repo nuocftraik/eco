@@ -59,9 +59,8 @@ public class Product : AuditableEntity, IAggregateRoot
     }
 
     // Method to update product
-    public void UpdateConfigurableProduct(ProductType productType, string name, string slug, ProductStatus status, string? description, string? mainImage)
+    public void UpdateConfigurableProduct(string name, string slug, ProductStatus status, string? description, string? mainImage)
     {
-        ProductType = productType;
         Name = name;
         Slug = slug;
         Status = status;
