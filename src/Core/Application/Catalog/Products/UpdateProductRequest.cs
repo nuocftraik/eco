@@ -77,7 +77,7 @@ public class UpdateProductRequestHandler : IRequestHandler<UpdateProductRequest,
         var product = await _productRepository.FirstOrDefaultAsync(new ProductByIdSpec(request.Id));
         if (product.ProductType == ProductType.Simple)
         {
-            product.UpdateSimpleProduct(request.SKU, request.Price, request.MainImage, request.IsActive,product.Status, request.TrackInventory, request.Quantity, request.RequireShipping, request.Weight, request.Width, request.Height, request.Length, request.IncludeDownload, request.FileName, request.FileUrl);
+            product.UpdateSimpleProduct(request.SKU, request.Price, request.MainImage, request.IsActive,product.Status, request.TrackInventory, request.Quantity, request.RequireShipping, request.Weight, request.Width, request.Height, request.Length, request.IncludeDownload, request.FileName, request.FileUrl,request.ComparePrice);
         }
         else
         {

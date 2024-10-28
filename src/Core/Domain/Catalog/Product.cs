@@ -202,9 +202,9 @@ public class Product : AuditableEntity, IAggregateRoot
     public void TrackingBilling(double price, double? comparePrice = 0)
     {
         Price = price;
-        if (comparePrice <= Price)
+        if (comparePrice < Price)
         {
-            throw new ArgumentException("Compare price must be greater than the actual price.");
+            throw new ArgumentException("Compare price must be greater than or equal the actual price.");
         }
         ComparePrice = comparePrice;
     }
