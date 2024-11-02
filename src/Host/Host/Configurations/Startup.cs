@@ -22,6 +22,8 @@ internal static class Startup
                 .AddJsonFile($"{configurationsDirectory}/mail.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
                 .AddJsonFile($"{configurationsDirectory}/blob.json", optional: false, reloadOnChange: true)
                 .AddJsonFile($"{configurationsDirectory}/blob.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
+                .AddJsonFile($"{configurationsDirectory}/drive.json", optional: false, reloadOnChange: true)
+                .AddJsonFile($"{configurationsDirectory}/drive.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables();
         return builder;
     }
