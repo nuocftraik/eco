@@ -5,4 +5,5 @@ namespace ECO.WebApi.Application.Identity.O2Auth;
 public interface IAuthenticationService : ITransientService
 {
     Task<TokenResponse> GoogleSignIn(string token, string ipAddress);
+    Task<TokenResponse> FacebookSignIn(string token, string ipAddress);
 }

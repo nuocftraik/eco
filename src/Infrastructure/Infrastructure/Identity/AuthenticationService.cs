@@ -26,6 +26,11 @@ public class AuthenticationService : IAuthenticationService
         _tokenService = tokenService;
     }
 
+    public Task<TokenResponse> FacebookSignIn(string token, string ipAddress)
+    {
+        throw new NotImplementedException();
+    }
+
     public async Task<TokenResponse> GoogleSignIn(string token, string ipAddress)
     {
         var payload = await GoogleJsonWebSignature
@@ -45,6 +50,8 @@ public class AuthenticationService : IAuthenticationService
                 Email = emailLogin,
                 FirstName = payload.GivenName,
                 LastName = payload.FamilyName,
+                UserName = payload.Email,
+                EmailConfirmed = true,
                 IsActive = true
             };
 

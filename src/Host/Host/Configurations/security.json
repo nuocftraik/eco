@@ -18,6 +18,10 @@
     "Google": {
       "ClientId": "1023196294291-shhj66sk824th978fd2eqcfd1omnf0or.apps.googleusercontent.com",
       "ClientSecret": "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"
+    },
+    "Facebook": {
+      "AppId": "513301611588410",
+      "AppSecret": "aeb784b736fa8d58fb5019906d34f38d"
     }
   }
 }

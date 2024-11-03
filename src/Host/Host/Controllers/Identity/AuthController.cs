@@ -15,8 +15,19 @@ public class AuthController : BaseApiController
     [HttpPost("google")]
     [AllowAnonymous]
     [OpenApiOperation("Request token using google provider")]
-    public async Task<IActionResult> GoogleLogin([FromBody] string token){
-        var response = await _authenticationService.GoogleSignIn(token, GetIpAddress()!);
+    public async Task<IActionResult> GoogleLogin([FromBody] OAuthRequest request)
+    {
+        var response = await _authenticationService.GoogleSignIn(request.IdToken, GetIpAddress()!);
+
+        return Ok(response);
+    }
+
+    [HttpPost("facebook")]
+    [AllowAnonymous]
+    [OpenApiOperation("Request token using facebook provider")]
+    public async Task<IActionResult> FacebookLogin([FromBody] OAuthRequest request)
+    {
+        var response = await _authenticationService.FacebookSignIn(request.IdToken, GetIpAddress()!);
 
         return Ok(response);
     }
@@ -25,4 +36,9 @@ public class AuthController : BaseApiController
         Request.Headers.ContainsKey("X-Forwarded-For")
             ? Request.Headers["X-Forwarded-For"]
             : HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "N/A";
+
+}
+
+public class OAuthRequest {
+    public string IdToken { get; set; } = default!;
 }
