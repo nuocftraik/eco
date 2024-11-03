@@ -5,6 +5,7 @@ using ECO.WebApi.Infrastructure.Caching;
 using ECO.WebApi.Infrastructure.Common;
 using ECO.WebApi.Infrastructure.Cors;
 using ECO.WebApi.Infrastructure.FileStorage;
+using ECO.WebApi.Infrastructure.GoogleDrive;
 using ECO.WebApi.Infrastructure.Mailing;
 using ECO.WebApi.Infrastructure.Mapping;
 using ECO.WebApi.Infrastructure.Middleware;
@@ -31,6 +32,7 @@ public static class Startup
             .AddMailing(config)
             .AddPersistence()
             .AddRouting(options => options.LowercaseUrls = true)
+            .AddGoogleDrive(config)
             .AddServices(); 
     }
 

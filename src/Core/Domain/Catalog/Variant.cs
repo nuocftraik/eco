@@ -1,7 +1,7 @@
 ﻿using ECO.WebApi.Domain.Enum;
 
 namespace ECO.WebApi.Domain.Catalog;
-public class Variant : BaseEntity
+public class Variant : BaseEntity, IAggregateRoot
 {
     //Basic Info
     public Guid ProductId { get; set; }
@@ -37,20 +37,19 @@ public class Variant : BaseEntity
     public virtual List<UserReview> UserReviews { get; set; } = new();
     public virtual List<VariantAttributeValue> VariantAttributeValues { get; set; } = new();
 
-    //Methods
-    private Variant() { }
-
-    // Constructor for creating new variant
-    public Variant(Guid productId, string sku, double price, string? image, bool isActive, bool isDefault)
+    public Variant()
     {
-        ProductId = productId;
+        
+    }
+    // Constructor for creating new variant
+    public Variant(string sku, double price, string? image, bool isActive, bool isDefault)
+    {
         SKU = sku;
         Price = price;
         MainImage = image;
         IsActive = isActive;
         IsDefault = isDefault;
         Status = ProductStatus.InStock;
-        Quantity = 0;
     }
     public void Update(string sku, double price, string? mainImage, bool isActive, bool isDefault,
                    ProductStatus status, bool trackInventory, int? quantity,
@@ -141,24 +140,35 @@ public class Variant : BaseEntity
         }
     }
 
+    //public void UpdateAttributeValues(List<Guid> newAttributeValueIds)
+    //{
+    //    // Xóa những giá trị không còn trong danh sách mới
+    //    VariantAttributeValues.RemoveAll(vav => !newAttributeValueIds.Contains(vav.AttributeValueId));
+
+    //    // Tạo HashSet để tối ưu hóa kiểm tra tồn tại
+    //    var existingAttributeValueIds = VariantAttributeValues.Select(vav => vav.AttributeValueId).ToHashSet();
+
+    //    // Thêm các giá trị mới nếu chưa tồn tại
+    //    foreach (var attributeValueId in newAttributeValueIds)
+    //    {
+    //        if (!existingAttributeValueIds.Contains(attributeValueId))
+    //        {
+    //            VariantAttributeValues.Add(new VariantAttributeValue(attributeValueId));
+    //        }
+    //    }
+    //}
+
     public void UpdateAttributeValues(List<Guid> newAttributeValueIds)
     {
-        // Xóa những giá trị không còn trong danh sách mới
-        VariantAttributeValues.RemoveAll(vav => !newAttributeValueIds.Contains(vav.AttributeValueId));
+        // Xóa tất cả các VariantAttributeValues hiện có trước
+        VariantAttributeValues.Clear();
 
-        // Tạo HashSet để tối ưu hóa kiểm tra tồn tại
-        var existingAttributeValueIds = VariantAttributeValues.Select(vav => vav.AttributeValueId).ToHashSet();
-
-        // Thêm các giá trị mới nếu chưa tồn tại
+        // Thêm các giá trị mới
         foreach (var attributeValueId in newAttributeValueIds)
         {
-            if (!existingAttributeValueIds.Contains(attributeValueId))
-            {
-                VariantAttributeValues.Add(new VariantAttributeValue(attributeValueId));
-            }
+            VariantAttributeValues.Add(new VariantAttributeValue(attributeValueId));
         }
     }
-
 
 
 }

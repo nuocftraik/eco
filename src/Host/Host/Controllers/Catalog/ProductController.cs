@@ -7,6 +7,16 @@ namespace ECO.WebApi.Host.Controllers.Catalog;
 public class ProductController : BaseApiController
 {
 
+
+    //write controller for SearchProductRequest
+    [HttpPost("search")]
+    [OpenApiOperation("Search products.", "")]
+    public Task<PaginationResponse<ProductInListDto>> SearchAsync(SearchProductRequest request)
+    {
+        return Mediator.Send(request);
+    }
+
+
     //write controller for CreateProductRequest
     [HttpPost("create")]
     [OpenApiOperation("Create a new product.", "")]

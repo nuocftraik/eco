@@ -36,7 +36,29 @@ public class CreateVariantRequest : IRequest<Guid>
     public string? FileName { get; set; }
     public string? FileUrl { get; set; }
 
-    public List<Guid> AttributeValueIds { get; set; }
+    public List<Guid>? AttributeValueIds { get; set; }
+
+    public CreateVariantRequest(Guid productId, ProductStatus status, string? mainImage, double price, double? comparePrice, string sKU, bool isActive, bool isDefault, bool trackInventory, int? quantity, bool requireShipping, double? weight, double? width, double? height, double? length, bool includeDownload, string? fileName, string? fileUrl)
+    {
+        ProductId = productId;
+        Status = status;
+        MainImage = mainImage;
+        Price = price;
+        ComparePrice = comparePrice;
+        SKU = sKU;
+        IsActive = isActive;
+        IsDefault = isDefault;
+        TrackInventory = trackInventory;
+        Quantity = quantity;
+        RequireShipping = requireShipping;
+        Weight = weight;
+        Width = width;
+        Height = height;
+        Length = length;
+        IncludeDownload = includeDownload;
+        FileName = fileName;
+        FileUrl = fileUrl;
+    }
 }
 
 
@@ -56,7 +78,7 @@ public class CreateVariantRequestValidator : AbstractValidator<CreateVariantRequ
 
         // ComparePrice validation: ComparePrice should be greater than Price if provided
         RuleFor(x => x.ComparePrice)
-            .GreaterThan(x => x.Price).When(x => x.ComparePrice.HasValue)
+            .GreaterThanOrEqualTo(x => x.Price).When(x => x.ComparePrice.HasValue)
             .WithMessage("ComparePrice must be greater than Price.");
 
         // SKU validation
@@ -98,21 +120,23 @@ public class CreateVariantRequestValidator : AbstractValidator<CreateVariantRequ
 public class CreateVariantRequestHandler : IRequestHandler<CreateVariantRequest, Guid>
 {
     private readonly IRepository<Product> _productRepository;
-
-    public CreateVariantRequestHandler(IRepository<Product> productRepository)
+    private readonly IRepository<Variant> _variantRepository;
+    public CreateVariantRequestHandler(IRepository<Product> productRepository,IRepository<Variant> variantRepository)
     {
         _productRepository = productRepository;
+        _variantRepository = variantRepository;
     }
 
     public async Task<Guid> Handle(CreateVariantRequest request, CancellationToken cancellationToken)
     {
-        var product = await _productRepository.GetByIdAsync(new ProductByIdSpec(request.ProductId), cancellationToken)
+        var product = await _productRepository.FirstOrDefaultAsync(new ProductByIdSpec(request.ProductId), cancellationToken)
                 ?? throw new NotFoundException($"Product with ID {request.ProductId} was not found.");
 
         var variantFactory = VariantFactoryProvider.GetFactory(product.ProductType);
         var variant = variantFactory.CreateVariant(request);
 
         product.AddVariant(variant);
+        await _variantRepository.AddAsync(variant,cancellationToken);
 
         return variant.Id;
     }

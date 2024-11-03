@@ -41,7 +41,9 @@ public class MapsterSettings
         TypeAdapterConfig<Category, CategoryInProductDto>.NewConfig()
              .Map(dest => dest.CategoryId, src => src.Id)
             .Map(dest => dest.CategoryName, src => src.Name);
-        
+
+        TypeAdapterConfig<Product, ProductInListDto>.NewConfig();
+
         //Variant
         TypeAdapterConfig<Variant, VariantDto>.NewConfig()
             .Map(dest => dest.AttributeValues, src => src.VariantAttributeValues.Select(x => x.AttributeValue).Adapt<List<AttributeValueDto>>());

@@ -1,0 +1,8 @@
+﻿{
+  "DriveSettings": {
+    "ClientId": "704105840076-i7e0snd1ilsgi9puns1ng76c37ugicpe.apps.googleusercontent.com",
+    "ClientSecret": "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",
+    "Scopes": [ "https://www.googleapis.com/auth/drive" ],
+    "CredentialStore": "Drive.Auth.Store"
+  }
+}

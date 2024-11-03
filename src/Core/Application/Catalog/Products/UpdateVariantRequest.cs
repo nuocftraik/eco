@@ -1,4 +1,5 @@
-﻿using ECO.WebApi.Domain.Enum;
+﻿using ECO.WebApi.Domain.Catalog;
+using ECO.WebApi.Domain.Enum;
 
 namespace ECO.WebApi.Application.Catalog.Products;
 
@@ -99,16 +100,17 @@ public class UpdateVariantRequestValidator : AbstractValidator<UpdateVariantRequ
 public class UpdateVariantRequestHandler : IRequestHandler<UpdateVariantRequest, Guid>
 {
     private readonly IRepository<Product> _productRepository;
-
-    public UpdateVariantRequestHandler(IRepository<Product> productRepository)
+    private readonly IRepository<Variant> _variantRepository;
+    public UpdateVariantRequestHandler(IRepository<Product> productRepository, IRepository<Variant> variantRepository)
     {
         _productRepository = productRepository;
+        _variantRepository = variantRepository;
     }
 
     public async Task<Guid> Handle(UpdateVariantRequest request, CancellationToken cancellationToken)
     {
         // Lấy Product từ DB
-        var product = await _productRepository.GetByIdAsync(new ProductByIdSpec(request.ProductId), cancellationToken)
+        var product = await _productRepository.FirstOrDefaultAsync(new ProductByIdSpec(request.ProductId), cancellationToken)
                 ?? throw new NotFoundException($"Product with ID {request.ProductId} was not found.");
 
         // Lấy Variant cần cập nhật
@@ -146,7 +148,19 @@ public class UpdateVariantRequestHandler : IRequestHandler<UpdateVariantRequest,
         {
             throw new ValidationException("One or more attribute values are invalid for the given product.");
         }
-        variant.UpdateAttributeValues(request.AttributeValueIds);
+        //variant.UpdateAttributeValues(request.AttributeValueIds);
+
+
+        product.Attributes
+       .SelectMany(attr => attr.AttributeValues)
+       .ToList()
+       .ForEach(av => av.VariantAttributeValues.Clear()); 
+
+
+        foreach (var attributeValueId in request.AttributeValueIds)
+        {
+            variant.VariantAttributeValues.Add(new VariantAttributeValue(attributeValueId)); // Thêm mới
+        }
 
         // Lưu thay đổi vào DB
         await _productRepository.UpdateAsync(product, cancellationToken);

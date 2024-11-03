@@ -5,8 +5,7 @@ public enum ProductType
 {
     Simple = 1,
     Configurable = 2,
-    Downloadable = 4,
-    //Virtual = 3,
+    Virtual = 3,
     //Grouped = 2,
     //Bundle = 4,
 

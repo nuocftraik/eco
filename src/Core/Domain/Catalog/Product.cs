@@ -1,5 +1,6 @@
 ﻿
 
+using System.Diagnostics;
 using ECO.WebApi.Domain.Enum;
 
 namespace ECO.WebApi.Domain.Catalog;
@@ -10,10 +11,31 @@ public class Product : AuditableEntity, IAggregateRoot
     public string Name { get; private set; }
     public string Slug { get; private set; }
     public string? Description { get; private set; }
+    public ProductStatus Status { get; private set; }
     //Media
     public string? MainImage { get; private set; }
-    public ProductStatus Status { get; private set; }
+    //Billing
+    public double? Price { get; set; }
+    public double? ComparePrice { get; set; }
+
+    //Identifiers
+    public string? SKU { get; set; }
+    public bool IsActive { get; set; }
     public int ViewCount { get; private set; }
+    //Inventory
+    public bool TrackInventory { get; set; }
+    public int? Quantity { get; set; }
+    //Shipping
+    public bool RequireShipping { get; set; }
+    public double? Weight { get; set; }
+    public double? Width { get; set; }
+    public double? Height { get; set; }
+    public double? Length { get; set; }
+
+    //Downloadable
+    public bool IncludeDownload { get; set; }
+    public string? FileName { get; set; }
+    public string? FileUrl { get; set; }
 
     //Navigation
     public List<Variant> Variants { get; private set; } = new();
@@ -37,15 +59,42 @@ public class Product : AuditableEntity, IAggregateRoot
     }
 
     // Method to update product
-    public void Update(ProductType productType, string name, string slug, ProductStatus status, string? description, string? mainImage)
+    public void UpdateConfigurableProduct(string name, string slug, ProductStatus status, string? description, string? mainImage)
     {
-        ProductType = productType;
         Name = name;
         Slug = slug;
         Status = status;
         Description = description;
         MainImage = mainImage;
     }
+
+    public void UpdateSimpleProduct(string sku, double price, string? mainImage, bool isActive,
+                   ProductStatus status, bool trackInventory, int? quantity,
+                   bool requireShipping, double? weight, double? width, double? height, double? length,
+                   bool includeDownload, string? fileName, string? fileUrl, double? comparePrice = 0)
+    {
+        // Cập nhật thông tin cơ bản
+        SKU = sku;
+        Price = price;
+        MainImage = mainImage;
+        IsActive = isActive;
+        Status = status;
+
+        // Cập nhật thông tin billing
+        TrackingBilling(price, comparePrice);
+
+        // Cập nhật thông tin kho hàng
+        TrackingInventory(trackInventory, quantity);
+
+        // Cập nhật thông tin shipping
+        TrackingShipping(requireShipping, weight, width, height, length);
+
+        // Cập nhật thông tin download nếu có
+        TrackingDownload(includeDownload, fileName, fileUrl);
+
+
+    }
+
 
 
     public void AddCategory(Guid categoryId)
@@ -149,5 +198,58 @@ public class Product : AuditableEntity, IAggregateRoot
     }
 
 
+    //Billing
+    public void TrackingBilling(double price, double? comparePrice = 0)
+    {
+        Price = price;
+        if (comparePrice < Price)
+        {
+            throw new ArgumentException("Compare price must be greater than or equal the actual price.");
+        }
+        ComparePrice = comparePrice;
+    }
+
+    //Tracking inventory
+    public void TrackingInventory(bool trackInventory, int? quantity = 0)
+    {
+        TrackInventory = trackInventory;
+        if (quantity <= 0)
+        {
+            throw new ArgumentException("Quantity must be greater or equal 0.");
+        }
+        Quantity = quantity;
+    }
+
+    public void TrackingDownload(bool includeDownload, string? fileName, string? fileUrl)
+    {
+        IncludeDownload = includeDownload;
+        if (includeDownload)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+                throw new ArgumentException("FileName cannot be null or empty.", nameof(fileName));
+
+            if (!Uri.IsWellFormedUriString(fileUrl, UriKind.Absolute))
+                throw new ArgumentException("FileUrl must be a valid URL.", nameof(fileUrl));
+        }
+        FileName = fileName;
+        FileUrl = fileUrl;
+    }
+
+
+    public void TrackingShipping(bool requireShipping, double? weight = 0, double? width = 0, double? height = 0, double? length = 0)
+    {
+        RequireShipping = requireShipping;
+        if (requireShipping)
+        {
+            if (weight <= 0 || width <= 0 || height <= 0 || length <= 0)
+            {
+                throw new ArgumentException("Dimensions must be greater than or equal to zero.");
+            }
+        }
+        Weight = weight;
+        Width = width;
+        Height = height;
+        Length = length;
+    }
 
 }

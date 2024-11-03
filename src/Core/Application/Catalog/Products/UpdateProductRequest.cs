@@ -7,7 +7,6 @@ namespace ECO.WebApi.Application.Catalog.Products;
 public class UpdateProductRequest : IRequest<Guid>
 {
     public Guid Id { get; set; }
-    public ProductType ProductType { get; set; }
     public string Name { get; set; }
     public string Slug { get; set; }
     public ProductStatus Status { get; set; }
@@ -15,6 +14,30 @@ public class UpdateProductRequest : IRequest<Guid>
     public string? MainImage { get; set; }
     public List<AttributeDto>? Attributes { get; set; }
     public List<Guid>? CategoryIds { get; set; }
+
+    // Billing
+    public double Price { get; set; }
+    public double? ComparePrice { get; set; }
+
+    // Identifiers
+    public string SKU { get; set; }
+    public bool IsActive { get; set; }
+
+    // Inventory
+    public bool TrackInventory { get; set; }
+    public int? Quantity { get; set; }
+
+    // Shipping
+    public bool RequireShipping { get; set; }
+    public double? Weight { get; set; }
+    public double? Width { get; set; }
+    public double? Height { get; set; }
+    public double? Length { get; set; }
+
+    // Downloadable
+    public bool IncludeDownload { get; set; }
+    public string? FileName { get; set; }
+    public string? FileUrl { get; set; }
 }
 
 //Validator
@@ -22,9 +45,6 @@ public class UpdateProductRequestValidator : AbstractValidator<UpdateProductRequ
 {
     public UpdateProductRequestValidator()
     {
-        // ProductType validation
-        RuleFor(x => x.ProductType)
-            .IsInEnum().WithMessage("ProductType is not valid.");
 
         // Name validation
         RuleFor(x => x.Name)
@@ -55,12 +75,20 @@ public class UpdateProductRequestHandler : IRequestHandler<UpdateProductRequest,
     public async Task<Guid> Handle(UpdateProductRequest request, CancellationToken cancellationToken)
     {
         var product = await _productRepository.FirstOrDefaultAsync(new ProductByIdSpec(request.Id));
-        product.Update(request.ProductType, request.Name, request.Slug ,request.Status, request.Description, request.MainImage);
+        if (product.ProductType == ProductType.Simple)
+        {
+            product.UpdateSimpleProduct(request.SKU, request.Price, request.MainImage, request.IsActive,product.Status, request.TrackInventory, request.Quantity, request.RequireShipping, request.Weight, request.Width, request.Height, request.Length, request.IncludeDownload, request.FileName, request.FileUrl,request.ComparePrice);
+        }
+        else
+        {
+            product.UpdateConfigurableProduct(request.Name, request.Slug, request.Status, request.Description, request.MainImage);
+            var newAttributes = request.Attributes?.Adapt<List<Domain.Attributes.Attribute>>();
+            product.UpdateAttributes(newAttributes);
+        }
 
         product.UpdateCategories(request.CategoryIds);
 
-        var newAttributes = request.Attributes?.Adapt<List<Domain.Attributes.Attribute>>();
-        product.UpdateAttributes(newAttributes);
+      
         await _productRepository.UpdateAsync(product);
         return product.Id;
     }

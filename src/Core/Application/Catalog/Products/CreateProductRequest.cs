@@ -15,18 +15,26 @@ public class CreateProductRequest : IRequest<Guid>
     public List<Guid>? CategoryIds { get; set; }
 
     // Thêm các trường cho Variant nếu productType là Simple
-
+   
     public string? SKU { get; set; }
-    public double? Price { get; set; }
     public bool IsActive { get; set; }
     public bool IsDefault { get; set; }
+    //Billing
+    public double Price { get; set; }
+    public double? ComparePrice { get; set; }
+    //Inventory
     public bool TrackInventory { get; set; }
     public int? Quantity { get; set; }
+    //Shipping
     public bool RequireShipping { get; set; }
     public double? Weight { get; set; }
     public double? Width { get; set; }
     public double? Height { get; set; }
     public double? Length { get; set; }
+    //Downloadable
+    public bool IncludeDownload { get; set; }
+    public string? FileName { get; set; }
+    public string? FileUrl { get; set; }
 }
 
 //Validator
@@ -58,11 +66,11 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
 public class CreateProductRequestHandler : IRequestHandler<CreateProductRequest, Guid>
 {
     private readonly IRepository<Product> _productRepository;
-    private readonly IVariantFactory _variantFactory;
-    public CreateProductRequestHandler(IRepository<Product> productRepository, IVariantFactory variantFactory)
+   private readonly IMediator _mediator;
+    public CreateProductRequestHandler(IRepository<Product> productRepository, IMediator mediator)
     {
         _productRepository = productRepository;
-        _variantFactory = variantFactory;
+        _mediator = mediator;
     }
 
     public async Task<Guid> Handle(CreateProductRequest request, CancellationToken cancellationToken)
@@ -83,34 +91,16 @@ public class CreateProductRequestHandler : IRequestHandler<CreateProductRequest,
             }
         }
 
+        await _productRepository.AddAsync(product, cancellationToken);
+
         // Nếu là Simple Product thì tạo một variant mặc định
         if (request.ProductType == ProductType.Simple)
         {
             // Sử dụng CreateVariantRequest để tạo variant cho Simple Product
-            var variantRequest = new CreateVariantRequest
-            {
-                ProductId = product.Id,
-                SKU = $"{product.Name.Substring(0, 3).ToUpper()}-DEFAULT",
-                Price = request.Price.Value,
-                MainImage = request.MainImage,
-                IsActive = request.IsActive,
-                IsDefault = request.IsDefault,
-                TrackInventory = request.TrackInventory,
-                Quantity = request.Quantity,
-                RequireShipping = request.RequireShipping,
-                Weight = request.Weight,
-                Width = request.Width,
-                Height = request.Height,
-                Length = request.Length
-            };
-
-            // Tạo Variant từ Factory
-            var variantFactory = VariantFactoryProvider.GetFactory(ProductType.Simple);
-            var defaultVariant = variantFactory.CreateVariant(variantRequest);
-            product.AddVariant(defaultVariant);
+            var variantRequest = new CreateVariantRequest(product.Id,product.Status, request.MainImage, request.Price, request.ComparePrice,  request.SKU, request.IsActive, request.IsDefault, request.TrackInventory, request.Quantity, request.RequireShipping, request.Weight, request.Width, request.Height, request.Length, request.IncludeDownload, request.FileName, request.FileUrl);
+            await _mediator.Send(variantRequest, cancellationToken);
         }
 
-        await _productRepository.AddAsync(product, cancellationToken);
         return product.Id;
     }
 }
