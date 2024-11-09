@@ -24,6 +24,7 @@ public static class Startup
         MapsterSettings.Configure();
         return services
             .AddAuth(config)
+            .AddGoogleDrive(config)
             .AddBackgroundJobs(config)
             .AddCaching(config)
             .AddCorsPolicy(config)
@@ -32,7 +33,7 @@ public static class Startup
             .AddMailing(config)
             .AddPersistence()
             .AddRouting(options => options.LowercaseUrls = true)
-            .AddGoogleDrive(config)
+            
             .AddServices(); 
     }
 

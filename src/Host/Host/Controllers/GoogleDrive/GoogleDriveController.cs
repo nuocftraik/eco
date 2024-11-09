@@ -39,11 +39,13 @@ public class GoogleDriveController : BaseApiController
     [OpenApiOperation("Download a file from Google Drive by ID.", "")]
     public async Task<IActionResult> DownloadFile(string fileId)
     {
-        var stream = await _googleDriveService.DownloadFile(fileId);
+        // Gọi phương thức để tải về và lấy thông tin file
+        var (stream, fileName, mimeType) = await _googleDriveService.DownloadFile(fileId);
+
         if (stream == null)
             return NotFound("File not found.");
 
-        return File(stream, "application/octet-stream");
+        return File(stream, mimeType ?? "application/octet-stream", fileName ?? "downloadedFile");
     }
 
     [HttpDelete("delete-file/{fileId}")]

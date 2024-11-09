@@ -31,7 +31,8 @@ internal static class Startup
                 new[] { DriveService.Scope.Drive },
                 "user",
                 CancellationToken.None,
-                new FileDataStore("Drive.Auth.Store")).Result;
+                new FileDataStore("Drive.Auth.Store"),
+                new LocalServerCodeReceiver()).Result;
 
             return new DriveService(new BaseClientService.Initializer
             {

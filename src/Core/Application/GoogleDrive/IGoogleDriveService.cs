@@ -8,7 +8,7 @@ public interface IGoogleDriveService : ITransientService
     Task<List<GoogleDriveFile>> GetDriveFiles();
     Task<List<GoogleDriveFile>> GetDriveFolders();
     Task<string> UploadFileInRoot(IFormFile file);
-    Task<Stream> DownloadFile(string fileId);
+    Task<(Stream, string, string)> DownloadFile(string fileId);
     Task DeleteFile(string fileId);
     Task<string> CreateFolderInRoot(string folderName);
 

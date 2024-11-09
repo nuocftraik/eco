@@ -98,18 +98,23 @@ public class GoogleDriveService : IGoogleDriveService
         }
     }
 
-    public async Task<Stream> DownloadFile(string fileId)
+    public async Task<(Stream, string, string)> DownloadFile(string fileId)
     {
         var request = _driveService.Files.Get(fileId);
         var memoryStream = new MemoryStream();
+
+        // Lấy thông tin về tệp
+        var file = await request.ExecuteAsync();
+        string fileName = file.Name; // Tên file
+        string mimeType = file.MimeType; // Loại MIME
 
         // Tải tệp xuống và sao chép vào memoryStream
         await request.DownloadAsync(memoryStream);
 
         // Đặt vị trí về đầu stream để có thể đọc lại từ đầu
         memoryStream.Position = 0;
-        return memoryStream;
 
+        return (memoryStream, fileName, mimeType);
     }
 
     public async Task<string> DownloadGoogleFileAsync(string fileId, string destinationFolderPath)
