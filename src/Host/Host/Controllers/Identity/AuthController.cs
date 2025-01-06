@@ -22,6 +22,17 @@ public class AuthController : BaseApiController
         return Ok(response);
     }
 
+    [HttpPost("google2")]
+    [AllowAnonymous]
+    [OpenApiOperation("Request token using google provider")]
+    public async Task<IActionResult> GoogleLogin2([FromBody] string authorizedCode)
+    {
+        var response = await _authenticationService.GoogleSignIn2(authorizedCode, GetIpAddress()!);
+
+        return Ok(response);
+    }
+
+
     [HttpPost("facebook")]
     [AllowAnonymous]
     [OpenApiOperation("Request token using facebook provider")]
