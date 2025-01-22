@@ -25,7 +25,7 @@ public class RoleController : BaseApiController
 
     [HttpGet("{id}/permissions")]
     [OpenApiOperation("Get role details with its permissions.", "")]
-    public Task<RolePermissionDto> GetByIdWithPermissionsAsync(string id, CancellationToken cancellationToken)
+    public Task<List<FunctionDto>> GetByIdWithPermissionsAsync(string id, CancellationToken cancellationToken)
     {
         return _roleService.GetByIdWithPermissionsAsync(id, cancellationToken);
     }

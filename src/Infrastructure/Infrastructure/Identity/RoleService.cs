@@ -13,6 +13,7 @@ using Google.Apis.Drive.v3.Data;
 using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace ECO.WebApi.Infrastructure.Identity;
 internal class RoleService : IRoleService
 {
@@ -21,14 +22,16 @@ internal class RoleService : IRoleService
     private readonly ApplicationDbContext _db;
     private readonly ICurrentUser _currentUser;
     private readonly IEventPublisher _events;
+    private readonly IFunctionService _functionService;
 
-    public RoleService(RoleManager<ApplicationRole> roleManager, UserManager<ApplicationUser> userManager, ApplicationDbContext db, ICurrentUser currentUser, IEventPublisher events)
+    public RoleService(RoleManager<ApplicationRole> roleManager, UserManager<ApplicationUser> userManager, ApplicationDbContext db, ICurrentUser currentUser, IEventPublisher events, IFunctionService functionService)
     {
         _roleManager = roleManager;
         _userManager = userManager;
         _db = db;
         _currentUser = currentUser;
         _events = events;
+        _functionService = functionService;
     }
 
     public async Task<List<RoleDto>> GetListAsync(CancellationToken cancellationToken)
@@ -55,45 +58,34 @@ internal class RoleService : IRoleService
           ? role.Adapt<RoleDto>()
           : throw new NotFoundException("Role Not Found");
     }
-    public async Task<RolePermissionDto> GetByIdWithPermissionsAsync(string roleId, CancellationToken cancellationToken)
+    public async Task<List<FunctionDto>> GetByIdWithPermissionsAsync(string roleId, CancellationToken cancellationToken)
     {
-        var model = new RolePermissionDto();
-        // Lấy tất cả các quyền từ database
-        var allPermissions = await _db.Permissions.Include(x => x.Function).Include(x => x.Action)
-            .Select(p => new PermissionDto
-            {
-                Value = ECOPermission.NameFor(p.Function.Name, p.Action.Name),
-                RoleId = p.RoleId,
-                ActionId = p.ActionId.ToString(),
-                FunctionId = p.FunctionId.ToString(),
-            })
-            .ToListAsync(cancellationToken);
+        var functions = await _db.Functions.Include(f => f.ActionInFunctions).ThenInclude(x => x.Action).ToListAsync(cancellationToken);
 
-        // Tìm role theo roleId
-        var role = await _roleManager.FindByIdAsync(roleId) ?? throw new Exception("Role not found");
+        var permissions = await _db.Permissions.Where(p => p.RoleId == roleId).ToListAsync(cancellationToken);
 
-        model.RoleId = roleId;
+        // Tạo danh sách FunctionDto
+        var functionDtos = new List<FunctionDto>();
 
-        var rolePermissions = await GetPermissionsByRole(roleId, cancellationToken);
-
-        // Đánh dấu các quyền đã được gán cho role
-        foreach (var permission in allPermissions)
+        foreach (var function in functions)
         {
-            permission.Selected = rolePermissions.Contains(permission.Value);
+            var functionDto = new FunctionDto
+            {
+                Id = function.Id,
+                Name = function.Name,
+                ActionDtos = function.ActionInFunctions.Select(aif => new ActionDto
+                {
+                    Id = aif.Action.Id,
+                    Name = aif.Action.Name,
+                    Selected = permissions.Any(p => p.ActionId == aif.Action.Id)
+                }).ToList()
+            };
+
+            functionDtos.Add(functionDto);
         }
 
-        model.Permissions = allPermissions;
-        return model;
+        return functionDtos;
     }
-
-    private async Task<List<string>> GetPermissionsByRole(string roleId, CancellationToken cancellationToken)
-    {
-        return await _db.Permissions.Include(x => x.Function).Include(x => x.Action)
-            .Where(p => p.RoleId == roleId)
-            .Select(p => ECOPermission.NameFor(p.Function.Name, p.Action.Name))
-            .ToListAsync(cancellationToken);
-    }
-
 
 
     public async Task<string> CreateOrUpdateAsync(CreateOrUpdateRoleRequest request)
@@ -184,8 +176,34 @@ internal class RoleService : IRoleService
 
         return string.Format("Role {0} Deleted.", role.Name);
     }
+    private string GetSchemaName(object instance, MethodInfo method)
+    {
+        // Sử dụng reflection để lấy schema name từ phương thức Configure
+        // Trong ví dụ này, chúng ta giả định rằng schema name được truyền vào phương thức ToTable
+        var parameters = new object[] { null, null };
+        var tableMethod = method.DeclaringType.GetMethod("ToTable", new[] { typeof(string), typeof(string) });
+        if (tableMethod != null)
+        {
+            tableMethod.Invoke(instance, parameters);
+            return parameters[1] as string;
+        }
 
+        return null;
+    }
+    private string GetTableName(object instance, MethodInfo method)
+    {
+        // Sử dụng reflection để lấy table name từ phương thức Configure
+        // Trong ví dụ này, chúng ta giả định rằng table name được truyền vào phương thức ToTable
+        var parameters = new object[] { null, null };
+        var tableMethod = method.DeclaringType.GetMethod("ToTable", new[] { typeof(string), typeof(string) });
+        if (tableMethod != null)
+        {
+            tableMethod.Invoke(instance, parameters);
+            return parameters[0] as string;
+        }
 
+        return null;
+    }
 }
 
 
