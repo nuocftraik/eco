@@ -6,8 +6,12 @@ namespace ECO.WebApi.Host.Controllers.Identity;
 public class RoleController : BaseApiController
 {
     private readonly IRoleService _roleService;
-
-    public RoleController(IRoleService roleService) => _roleService = roleService;
+    private readonly IFunctionService _funtionService;
+    public RoleController(IRoleService roleService,IFunctionService functionService)
+    {
+        _roleService = roleService;
+        _funtionService = functionService;
+    }
 
     [HttpGet]
     [OpenApiOperation("Get a list of all roles.", "")]
@@ -61,4 +65,42 @@ public class RoleController : BaseApiController
         var result = await _roleService.DeleteAsync(id);
         return Ok(new { message = result });
     }
+
+    //write controller for get function list
+    [HttpGet("functions")]
+    [OpenApiOperation("Get a list of all functions.", "")]
+    public Task<List<FunctionDto>> GetFunctionListAsync(CancellationToken cancellationToken)
+    {
+        return _funtionService.GetListAsync(cancellationToken);
+    }
+
+    //write controller for get function by id
+    [HttpGet("function/{id}")]
+    [OpenApiOperation("Get function details.", "")]
+    public Task<FunctionDto> GetFunctionByIdAsync(Guid id)
+    {
+        return _funtionService.GetByIdAsync(id);
+    }
+
+    //write controller for create function 
+    [HttpPost("function/create/update")]
+    [OpenApiOperation("Create or update a function.", "")]
+    public async Task<ActionResult> CreateUpdateFunctionAsync(CreateOrUpdateFunctionRequest request)
+    {
+        var result = await _funtionService.CreateOrUpdateAsync(request);
+
+        return Ok(new { message = result });
+    }
+
+    //write controller for delete function
+    [HttpDelete("function/{id}")]
+    [OpenApiOperation("Delete a function.", "")]
+    public async Task<ActionResult> DeleteFunctionAsync(Guid id)
+    {
+        var result = await _funtionService.DeleteAsync(id);
+        return Ok(new { message = result });
+    }
+
+
+
 }
