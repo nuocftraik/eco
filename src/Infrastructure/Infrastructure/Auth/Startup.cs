@@ -1,7 +1,9 @@
 ﻿using ECO.WebApi.Application.Common.Interfaces;
 using ECO.WebApi.Infrastructure.Auth.Jwt;
 using ECO.WebApi.Infrastructure.Auth.OAuth2;
+using ECO.WebApi.Infrastructure.Auth.Permissions;
 using ECO.WebApi.Infrastructure.Identity;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +16,7 @@ internal static class Startup
     {
         services
             .AddCurrentUser()
+            .AddPermissions()
             // Must add identity before adding auth!
             .AddIdentity();
 
@@ -32,5 +35,8 @@ internal static class Startup
             .AddScoped<ICurrentUser, CurrentUser>()
             .AddScoped(sp => (ICurrentUserInitializer)sp.GetRequiredService<ICurrentUser>());
 
-
+    private static IServiceCollection AddPermissions(this IServiceCollection services) =>
+       services
+           .AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>()
+           .AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 }

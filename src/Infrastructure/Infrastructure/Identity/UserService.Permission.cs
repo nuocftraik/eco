@@ -13,16 +13,13 @@ internal partial class UserService
         _ = user ?? throw new UnauthorizedException("Authentication Failed.");
 
         var userRoles = await _userManager.GetRolesAsync(user);
-        var permissions = new List<string>();
-        foreach (var role in await _roleManager.Roles
-            .Where(r => userRoles.Contains(r.Name!))
-            .ToListAsync(cancellationToken))
-        {
-            permissions.AddRange(await _db.RoleClaims
-                .Where(rc => rc.RoleId == role.Id && rc.ClaimType == ECOClaims.Permission)
-                .Select(rc => rc.ClaimValue!)
-                .ToListAsync(cancellationToken));
-        }
+
+        var permissions = await _db.Permissions.Include(x => x.Role).Include(x => x.Action).Include(x => x.Function)
+        .Where(p => userRoles.Contains(p.Role.Id)) 
+        .Select(p => $"{p.Function.Name}.{p.Action.Name}") 
+        .Distinct()
+        .ToListAsync(cancellationToken);
+
 
         return permissions.Distinct().ToList();
     }

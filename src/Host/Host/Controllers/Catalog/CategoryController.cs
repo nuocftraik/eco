@@ -1,5 +1,6 @@
 ﻿
 using ECO.WebApi.Application.Catalog.Categories;
+using ECO.WebApi.Infrastructure.Auth.Permissions;
 using NSwag.Annotations;
 
 namespace ECO.WebApi.Host.Controllers.Catalog;
@@ -7,6 +8,7 @@ public class CategoryController : BaseApiController
 {
     [HttpGet("get")]
     [OpenApiOperation("Get a category by ID.", "")]
+    [MustHavePermission(ECOAction.View, ECOFunction.Category)]
     public Task<CategoryDto> GetAsync(Guid id)
     {
         return Mediator.Send(new GetCategoryRequest(id));

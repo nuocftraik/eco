@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ECO.WebApi.Migrators.MSSQL.Migrations.Application
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250117072931_Permission_Tables")]
-    partial class Permission_Tables
+    [Migration("20250122023424_Add_Permission_Tables")]
+    partial class Add_Permission_Tables
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -477,9 +477,10 @@ namespace ECO.WebApi.Migrators.MSSQL.Migrations.Application
 
             modelBuilder.Entity("ECO.WebApi.Domain.Identity.Action", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -493,11 +494,11 @@ namespace ECO.WebApi.Migrators.MSSQL.Migrations.Application
 
             modelBuilder.Entity("ECO.WebApi.Domain.Identity.ActionInFunction", b =>
                 {
-                    b.Property<string>("ActionId")
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<Guid>("ActionId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("FunctionId")
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<Guid>("FunctionId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("ActionId", "FunctionId");
 
@@ -659,9 +660,9 @@ namespace ECO.WebApi.Migrators.MSSQL.Migrations.Application
 
             modelBuilder.Entity("ECO.WebApi.Domain.Identity.Function", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -678,11 +679,11 @@ namespace ECO.WebApi.Migrators.MSSQL.Migrations.Application
                     b.Property<string>("RoleId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("FunctionId")
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<Guid>("FunctionId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("ActionId")
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<Guid>("ActionId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("RoleId", "FunctionId", "ActionId");
 
@@ -1112,17 +1113,21 @@ namespace ECO.WebApi.Migrators.MSSQL.Migrations.Application
 
             modelBuilder.Entity("ECO.WebApi.Domain.Identity.ActionInFunction", b =>
                 {
-                    b.HasOne("ECO.WebApi.Domain.Identity.Action", null)
+                    b.HasOne("ECO.WebApi.Domain.Identity.Action", "Action")
                         .WithMany("ActionInFunctions")
                         .HasForeignKey("ActionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ECO.WebApi.Domain.Identity.Function", null)
+                    b.HasOne("ECO.WebApi.Domain.Identity.Function", "Function")
                         .WithMany("ActionInFunctions")
                         .HasForeignKey("FunctionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Action");
+
+                    b.Navigation("Function");
                 });
 
             modelBuilder.Entity("ECO.WebApi.Domain.Identity.ApplicationRoleClaim", b =>
@@ -1136,17 +1141,29 @@ namespace ECO.WebApi.Migrators.MSSQL.Migrations.Application
 
             modelBuilder.Entity("ECO.WebApi.Domain.Identity.Permission", b =>
                 {
-                    b.HasOne("ECO.WebApi.Domain.Identity.Action", null)
-                        .WithMany("Permissions")
+                    b.HasOne("ECO.WebApi.Domain.Identity.Action", "Action")
+                        .WithMany()
                         .HasForeignKey("ActionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ECO.WebApi.Domain.Identity.Function", null)
-                        .WithMany("Permissions")
+                    b.HasOne("ECO.WebApi.Domain.Identity.Function", "Function")
+                        .WithMany()
                         .HasForeignKey("FunctionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("ECO.WebApi.Domain.Identity.ApplicationRole", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Action");
+
+                    b.Navigation("Function");
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("ECO.WebApi.Domain.Ordering.Order", b =>
@@ -1283,15 +1300,11 @@ namespace ECO.WebApi.Migrators.MSSQL.Migrations.Application
             modelBuilder.Entity("ECO.WebApi.Domain.Identity.Action", b =>
                 {
                     b.Navigation("ActionInFunctions");
-
-                    b.Navigation("Permissions");
                 });
 
             modelBuilder.Entity("ECO.WebApi.Domain.Identity.Function", b =>
                 {
                     b.Navigation("ActionInFunctions");
-
-                    b.Navigation("Permissions");
                 });
 
             modelBuilder.Entity("ECO.WebApi.Domain.Ordering.Order", b =>

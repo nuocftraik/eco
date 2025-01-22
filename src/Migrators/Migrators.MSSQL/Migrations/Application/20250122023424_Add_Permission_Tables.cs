@@ -1,11 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace ECO.WebApi.Migrators.MSSQL.Migrations.Application;
 
 /// <inheritdoc />
-public partial class Permission_Tables : Migration
+public partial class Add_Permission_Tables : Migration
 {
     /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,7 +16,7 @@ public partial class Permission_Tables : Migration
             schema: "Identity",
             columns: table => new
             {
-                Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                Id = table.Column<Guid>(type: "uniqueidentifier", maxLength: 50, nullable: false),
                 Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false)
             },
             constraints: table =>
@@ -28,7 +29,7 @@ public partial class Permission_Tables : Migration
             schema: "Identity",
             columns: table => new
             {
-                Id = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                 Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false)
             },
             constraints: table =>
@@ -41,8 +42,8 @@ public partial class Permission_Tables : Migration
             schema: "Identity",
             columns: table => new
             {
-                ActionId = table.Column<string>(type: "nvarchar(50)", nullable: false),
-                FunctionId = table.Column<string>(type: "nvarchar(50)", nullable: false)
+                ActionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                FunctionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
             },
             constraints: table =>
             {
@@ -69,8 +70,8 @@ public partial class Permission_Tables : Migration
             columns: table => new
             {
                 RoleId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                FunctionId = table.Column<string>(type: "nvarchar(50)", nullable: false),
-                ActionId = table.Column<string>(type: "nvarchar(50)", nullable: false)
+                FunctionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                ActionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
             },
             constraints: table =>
             {
@@ -87,6 +88,13 @@ public partial class Permission_Tables : Migration
                     column: x => x.FunctionId,
                     principalSchema: "Identity",
                     principalTable: "Functions",
+                    principalColumn: "Id",
+                    onDelete: ReferentialAction.Cascade);
+                table.ForeignKey(
+                    name: "FK_Permissions_Roles_RoleId",
+                    column: x => x.RoleId,
+                    principalSchema: "Identity",
+                    principalTable: "Roles",
                     principalColumn: "Id",
                     onDelete: ReferentialAction.Cascade);
             });

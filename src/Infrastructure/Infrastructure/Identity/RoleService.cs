@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Reflection;
+using System.Threading;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using ECO.WebApi.Application.Common.Events;
 using ECO.WebApi.Application.Common.Exceptions;
@@ -8,6 +9,7 @@ using ECO.WebApi.Application.Identity.Roles;
 using ECO.WebApi.Domain.Identity;
 using ECO.WebApi.Infrastructure.Persistence.Context;
 using ECO.WebApi.Shared.Authorization;
+using Google.Apis.Drive.v3.Data;
 using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -56,39 +58,43 @@ internal class RoleService : IRoleService
     public async Task<RolePermissionDto> GetByIdWithPermissionsAsync(string roleId, CancellationToken cancellationToken)
     {
         var model = new RolePermissionDto();
-        var allPermissions = new List<PermissionDto>();
-
-        // Lấy tất cả các permission từ ECOPermissions
-        var permissions = ECOPermissions.All; // Lấy tất cả quyền từ ECOPermissions.All
-        foreach (var permission in permissions)
-        {
-            allPermissions.Add(new PermissionDto
+        // Lấy tất cả các quyền từ database
+        var allPermissions = await _db.Permissions.Include(x => x.Function).Include(x => x.Action)
+            .Select(p => new PermissionDto
             {
-                Value = ECOPermission.NameFor(permission.Action, permission.Resource),
-                Type = "Permission",
-                DisplayName = permission.Description
-            });
-        }
+                Value = ECOPermission.NameFor(p.Function.Name, p.Action.Name),
+                RoleId = p.RoleId,
+                ActionId = p.ActionId.ToString(),
+                FunctionId = p.FunctionId.ToString(),
+            })
+            .ToListAsync(cancellationToken);
 
         // Tìm role theo roleId
         var role = await _roleManager.FindByIdAsync(roleId) ?? throw new Exception("Role not found");
 
         model.RoleId = roleId;
 
-        // Lấy tất cả các claim của role
-        var claims = await _roleManager.GetClaimsAsync(role);
-
-        var roleClaimValues = claims.Select(a => a.Value).ToList();
+        var rolePermissions = await GetPermissionsByRole(roleId, cancellationToken);
 
         // Đánh dấu các quyền đã được gán cho role
         foreach (var permission in allPermissions)
         {
-            permission.Selected = roleClaimValues.Contains(permission.Value);
+            permission.Selected = rolePermissions.Contains(permission.Value);
         }
 
         model.Permissions = allPermissions;
         return model;
     }
+
+    private async Task<List<string>> GetPermissionsByRole(string roleId, CancellationToken cancellationToken)
+    {
+        return await _db.Permissions.Include(x => x.Function).Include(x => x.Action)
+            .Where(p => p.RoleId == roleId)
+            .Select(p => ECOPermission.NameFor(p.Function.Name, p.Action.Name))
+            .ToListAsync(cancellationToken);
+    }
+
+
 
     public async Task<string> CreateOrUpdateAsync(CreateOrUpdateRoleRequest request)
     {
@@ -138,36 +144,21 @@ internal class RoleService : IRoleService
         {
             throw new ConflictException("Not allowed to modify Permissions for this Role.");
         }
+        var currentPermissions = await _db.Permissions.Where(p => p.RoleId == role.Id).ToListAsync(cancellationToken);
 
+        _db.Permissions.RemoveRange(currentPermissions);
+        await _db.SaveChangesAsync(cancellationToken);
 
-        var currentClaims = await _roleManager.GetClaimsAsync(role);
-
-        // Remove permissions that were previously selected
-        foreach (var claim in currentClaims.Where(c => !request.Permissions.Any(p => p == c.Value)))
+        // Thêm các quyền mới từ request.Permissions
+        foreach (var permissionRequest in request.Permissions)
         {
-            var removeResult = await _roleManager.RemoveClaimAsync(role, claim);
-            if (!removeResult.Succeeded)
+            if (!string.IsNullOrEmpty(permissionRequest.FunctionId.ToString()) && !string.IsNullOrEmpty(permissionRequest.ActionId.ToString()))
             {
-                throw new InternalServerException("Update permissions failed.");
-            }
-        }
-
-        // Add all permissions that were not previously selected
-        foreach (string permission in request.Permissions.Where(c => !currentClaims.Any(p => p.Value == c)))
-        {
-            if (!string.IsNullOrEmpty(permission))
-            {
-                _db.RoleClaims.Add(new ApplicationRoleClaim
-                {
-                    RoleId = role.Id,
-                    ClaimType = ECOClaims.Permission,
-                    ClaimValue = permission,
-                    CreatedBy = _currentUser.GetUserId().ToString()
-                });
+                // Thêm quyền mới vào bảng Permission
+                _db.Permissions.Add(new Domain.Identity.Permission(role.Id, permissionRequest.FunctionId, permissionRequest.ActionId));
                 await _db.SaveChangesAsync(cancellationToken);
             }
         }
-
 
         return "Permissions Updated.";
     }
@@ -195,8 +186,8 @@ internal class RoleService : IRoleService
     }
 
 
-
-
-
-
 }
+
+
+
+
