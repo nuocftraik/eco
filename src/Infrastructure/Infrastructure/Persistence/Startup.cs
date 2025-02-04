@@ -5,6 +5,7 @@ using ECO.WebApi.Infrastructure.Persistence.ConnectionString;
 using ECO.WebApi.Infrastructure.Persistence.Context;
 using ECO.WebApi.Infrastructure.Persistence.Initialization;
 using ECO.WebApi.Infrastructure.Persistence.Repository;
+using ECO.WebApi.Infrastructure.VNPAY;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -41,7 +42,7 @@ internal static class Startup
             .AddServices(typeof(ICustomSeeder), ServiceLifetime.Transient)
             .AddTransient<IConnectionStringSecurer, ConnectionStringSecurer>()
             .AddTransient<IConnectionStringValidator, ConnectionStringValidator>()
-
+            .AddSingleton<IVnpay, Vnpay>()
             .AddRepositories();
     }
 

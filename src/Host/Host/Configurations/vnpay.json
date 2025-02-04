@@ -1,0 +1,8 @@
+﻿{
+  "Vnpay": {
+    "TmnCode": "P2A0B4YO",
+    "HashSecret": "8RP51X6IK3MYLY630TXZ3RKZOEWCX7GI",
+    "BaseUrl": "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
+    "CallbackUrl": "https://localhost:5001/api/VnPay/Callback"
+  }
+}
