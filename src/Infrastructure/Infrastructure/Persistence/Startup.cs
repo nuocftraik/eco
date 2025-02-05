@@ -1,4 +1,5 @@
-﻿using ECO.WebApi.Application.Common.Persistence;
+﻿using System.ComponentModel.DataAnnotations;
+using ECO.WebApi.Application.Common.Persistence;
 using ECO.WebApi.Domain.Common.Contracts;
 using ECO.WebApi.Infrastructure.Common;
 using ECO.WebApi.Infrastructure.Persistence.ConnectionString;
@@ -6,6 +7,7 @@ using ECO.WebApi.Infrastructure.Persistence.Context;
 using ECO.WebApi.Infrastructure.Persistence.Initialization;
 using ECO.WebApi.Infrastructure.Persistence.Repository;
 using ECO.WebApi.Infrastructure.VNPAY;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -32,7 +34,13 @@ internal static class Startup
             .AddDbContext<ApplicationDbContext>((p, m) =>
             {
                 var databaseSettings = p.GetRequiredService<IOptions<DatabaseSettings>>().Value;
-                m.UseDatabase(databaseSettings.DBProvider, databaseSettings.ConnectionString);
+                // Validate the connection string
+                var validator = p.GetRequiredService<IConnectionStringValidator>();
+                validator.TryValidate(databaseSettings.ConnectionString, databaseSettings.DBProvider);
+
+                var securer = p.GetRequiredService<IConnectionStringSecurer>();
+                var secureConnectionString = securer.MakeSecure(databaseSettings.ConnectionString, databaseSettings.DBProvider);
+                m.UseDatabase(databaseSettings.DBProvider, secureConnectionString);
             })
             .AddTransient<IDatabaseInitializer, DatabaseInitializer>()
             .AddTransient<ApplicationDbInitializer>()
