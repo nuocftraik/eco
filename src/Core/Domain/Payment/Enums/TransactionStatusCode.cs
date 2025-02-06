@@ -1,7 +1,7 @@
 ﻿
 using System.ComponentModel;
 
-namespace ECO.WebApi.Infrastructure.VNPAY.Enums;
+namespace ECO.WebApi.Domain.Payment.Enums;
 /// <summary>
 /// Mã phản hồi trạng thái giao dịch từ VNPAY</see>.
 /// </summary>

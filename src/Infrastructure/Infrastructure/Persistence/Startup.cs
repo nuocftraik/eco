@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using ECO.WebApi.Application.Common.Persistence;
+using ECO.WebApi.Application.Payment;
 using ECO.WebApi.Domain.Common.Contracts;
 using ECO.WebApi.Infrastructure.Common;
 using ECO.WebApi.Infrastructure.Persistence.ConnectionString;

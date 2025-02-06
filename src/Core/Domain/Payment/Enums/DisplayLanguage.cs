@@ -2,7 +2,7 @@
 using System.ComponentModel;
 
 
-namespace ECO.WebApi.Infrastructure.VNPAY.Enums;
+namespace ECO.WebApi.Domain.Payment.Enums;
 /// <summary>
 /// Ngôn ngữ hiển thị trên giao diện thanh toán VNPAY.  
 /// </summary>

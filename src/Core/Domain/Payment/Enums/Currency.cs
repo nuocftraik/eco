@@ -1,6 +1,6 @@
 ﻿
 using System.ComponentModel;
-namespace ECO.WebApi.Infrastructure.VNPAY.Enums;
+namespace ECO.WebApi.Domain.Payment.Enums;
 
 /// <summary>
 /// Đơn vị tiền tệ sử dụng cho giao dịch

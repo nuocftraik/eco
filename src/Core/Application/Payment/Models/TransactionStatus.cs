@@ -1,11 +1,10 @@
-﻿
-using ECO.WebApi.Infrastructure.VNPAY.Enums;
+﻿using ECO.WebApi.Domain.Payment.Enums;
 
-namespace ECO.WebApi.Infrastructure.VNPAY.Models;
-    /// <summary>
-    /// Trạng thái của giao dịch sau khi được xử lý.
-    /// </summary>
-    public class TransactionStatus
+namespace ECO.WebApi.Application.Payment.Models;
+/// <summary>
+/// Trạng thái của giao dịch sau khi được xử lý.
+/// </summary>
+public class TransactionStatus
 {
     /// <summary>
     /// Mã trạng thái của giao dịch do VNPAY định nghĩa.

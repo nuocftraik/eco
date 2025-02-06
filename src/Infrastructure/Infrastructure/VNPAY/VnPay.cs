@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ECO.WebApi.Infrastructure.VNPAY.Enums;
+using ECO.WebApi.Application.Payment;
+using ECO.WebApi.Application.Payment.Models;
+using ECO.WebApi.Domain.Payment.Enums;
 using ECO.WebApi.Infrastructure.VNPAY.Helpers;
-using ECO.WebApi.Infrastructure.VNPAY.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace ECO.WebApi.Infrastructure.VNPAY;

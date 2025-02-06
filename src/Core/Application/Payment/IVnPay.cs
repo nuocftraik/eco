@@ -1,8 +1,7 @@
-﻿
-using ECO.WebApi.Infrastructure.VNPAY.Models;
+﻿using ECO.WebApi.Application.Payment.Models;
 using Microsoft.AspNetCore.Http;
 
-namespace ECO.WebApi.Infrastructure.VNPAY;
+namespace ECO.WebApi.Application.Payment;
 
 public interface IVnpay
 {

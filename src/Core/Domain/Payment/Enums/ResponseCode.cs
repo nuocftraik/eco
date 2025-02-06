@@ -2,7 +2,7 @@
 using System.ComponentModel;
 
 
-namespace ECO.WebApi.Infrastructure.VNPAY.Enums;
+namespace ECO.WebApi.Domain.Payment.Enums;
 /// <summary>
 /// Mã phản hồi qua IPN và Callback URL
 /// </summary>

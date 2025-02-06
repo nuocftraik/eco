@@ -1,7 +1,6 @@
-﻿
-using ECO.WebApi.Infrastructure.VNPAY.Enums;
+﻿using ECO.WebApi.Domain.Payment.Enums;
 
-namespace ECO.WebApi.Infrastructure.VNPAY.Models;
+namespace ECO.WebApi.Application.Payment.Models;
 /// <summary>
 /// Yêu cầu thanh toán gửi đến cổng thanh toán VNPAY.
 /// </summary>

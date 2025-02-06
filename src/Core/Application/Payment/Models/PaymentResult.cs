@@ -1,7 +1,7 @@
 ﻿
 using System.Transactions;
 
-namespace ECO.WebApi.Infrastructure.VNPAY.Models;
+namespace ECO.WebApi.Application.Payment.Models;
 /// <summary>
 /// Phản hồi từ VNPAY sau khi thực hiện giao dịch thanh toán.
 /// </summary>

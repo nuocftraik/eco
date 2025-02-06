@@ -1,6 +1,4 @@
-﻿
-
-namespace ECO.WebApi.Infrastructure.VNPAY.Models;
+﻿namespace ECO.WebApi.Application.Payment.Models;
 /// <summary>
 /// Thông tin về ngân hàng liên quan đến giao dịch.
 /// </summary>

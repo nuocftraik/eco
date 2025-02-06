@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ECO.WebApi.Infrastructure.VNPAY.Enums;
+namespace ECO.WebApi.Domain.Payment.Enums;
 /// <summary>
 /// Các phương thức thanh toán được VNPAY hỗ trợ.  
 /// </summary>

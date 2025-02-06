@@ -1,9 +1,8 @@
-﻿
-
-using ECO.WebApi.Infrastructure.VNPAY;
-using ECO.WebApi.Infrastructure.VNPAY.Enums;
+﻿using ECO.WebApi.Application.Payment;
+using ECO.WebApi.Application.Payment.Models;
+using ECO.WebApi.Domain.Payment.Enums;
 using ECO.WebApi.Infrastructure.VNPAY.Helpers;
-using ECO.WebApi.Infrastructure.VNPAY.Models;
+
 
 namespace ECO.WebApi.Host.Controllers.VNPAY;
 public class VnPayController : BaseApiController
