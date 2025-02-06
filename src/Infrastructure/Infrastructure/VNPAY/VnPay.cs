@@ -122,7 +122,7 @@ public class Vnpay : IVnpay
 
         return new PaymentResult
         {
-            PaymentId = long.Parse(vnp_TxnRef),
+            PaymentId = Guid.Parse(vnp_TxnRef),
             VnpayTransactionId = long.Parse(vnp_TransactionNo),
             IsSuccess = transactionStatusCode == TransactionStatusCode.Code_00 && responseCode == ResponseCode.Code_00 && helper.IsSignatureCorrect(vnp_SecureHash, _hashSecret),
             Description = vnp_OrderInfo,

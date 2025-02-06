@@ -6,6 +6,7 @@ using ECO.WebApi.Domain.Basket;
 using ECO.WebApi.Domain.Catalog;
 using ECO.WebApi.Domain.Identity;
 using ECO.WebApi.Domain.Ordering;
+using ECO.WebApi.Domain.Payment;
 using ECO.WebApi.Infrastructure.Persistence.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -47,4 +48,8 @@ public class ApplicationDbContext : BaseDbContext
     public DbSet<Function> Functions { get; set; }
     public DbSet<Action> Actions { get; set; }
     public DbSet<ActionInFunction> ActionInFunctions { get; set; }
+
+    //Payment
+    public DbSet<Payment> Payments { get; set; }
+    public DbSet<Transaction> Transactions { get; set; }
 }

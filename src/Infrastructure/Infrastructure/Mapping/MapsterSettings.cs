@@ -1,7 +1,9 @@
 ﻿using ECO.WebApi.Application.Catalog.Categories;
 using ECO.WebApi.Application.Catalog.Products;
+using ECO.WebApi.Application.Payment.Models;
 using ECO.WebApi.Domain.Attributes;
 using ECO.WebApi.Domain.Catalog;
+using ECO.WebApi.Domain.Payment;
 using Mapster;
 
 namespace ECO.WebApi.Infrastructure.Mapping;
@@ -48,5 +50,9 @@ public class MapsterSettings
         TypeAdapterConfig<Variant, VariantDto>.NewConfig()
             .Map(dest => dest.AttributeValues, src => src.VariantAttributeValues.Select(x => x.AttributeValue).Adapt<List<AttributeValueDto>>());
 
+
+        //Payment
+
+        TypeAdapterConfig<Payment, PaymentDto>.NewConfig();
     }
 }

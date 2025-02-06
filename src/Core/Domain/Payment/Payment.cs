@@ -1,17 +1,31 @@
 ﻿
 
+using ECO.WebApi.Domain.Payment.Enums;
+
 namespace ECO.WebApi.Domain.Payment;
 public class Payment : AuditableEntity ,IAggregateRoot
 {
-    public string Content { get; set; }
-    public string Currency { get; set; }
-    public string RefId { get; set; }
-    public decimal? RequiredAmount { get; set; }
-    public DateTime? ExpireDate { get; set; }
-    public string? Language { get; set; }
-    public Guid? MerchantId { get; set; }
-    public Guid? PaymentDestinationId { get; set; }
-    public decimal? PaidAmount { get; set; }
-    public string? PaymentStatus { get; set; }
-    public string? LastMessage { get; set; }
+    public Guid OrderId { get; set; }
+    public double Amount { get; set; }
+    public PaymentProvider Provider { get; set; } // Enum: VNPAY, MOMO, ZALOPAY
+    public string Description { get; set; }
+    public DisplayLanguage Language { get; set; }
+    public BankCode BankCode { get; set; }
+    public Currency Currency { get; set; }
+    public string IpAddress { get; set; }
+
+    public Payment(Guid orderId, double amount, PaymentProvider provider, string description, DisplayLanguage language, BankCode bankCode, Currency currency, string ipAddress)
+    {
+        OrderId = orderId;
+        Amount = amount;
+        Provider = provider;
+        Description = description;
+        Language = language;
+        BankCode = bankCode;
+        Currency = currency;
+        IpAddress = ipAddress;
+    }
 }
+
+
+

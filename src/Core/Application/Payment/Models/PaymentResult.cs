@@ -10,7 +10,7 @@ public class PaymentResult
     /// <summary>
     /// Mã tham chiếu giao dịch (Transaction Reference). Đây là mã số duy nhất dùng để xác định giao dịch.
     /// </summary>
-    public long PaymentId { get; set; }
+    public Guid PaymentId { get; set; }
 
     /// <summary>
     /// Trạng thái thành công của giao dịch. 

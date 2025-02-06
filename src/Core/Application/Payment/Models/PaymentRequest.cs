@@ -10,7 +10,7 @@ public class PaymentRequest
     /// Mã tham chiếu giao dịch (Transaction Reference). Đây là mã số duy nhất dùng để xác định giao dịch.  
     /// Lưu ý: Giá trị này bắt buộc và cần đảm bảo không bị trùng lặp giữa các giao dịch.
     /// </summary>
-    public required long PaymentId { get; set; }
+    public required Guid PaymentId { get; set; }
 
     /// <summary>
     /// Thông tin mô tả nội dung thanh toán, không dấu và không bao gồm các ký tự đặc biệt

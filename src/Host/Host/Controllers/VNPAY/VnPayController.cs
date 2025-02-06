@@ -1,7 +1,9 @@
 ﻿using ECO.WebApi.Application.Payment;
 using ECO.WebApi.Application.Payment.Models;
+using ECO.WebApi.Domain.Payment;
 using ECO.WebApi.Domain.Payment.Enums;
 using ECO.WebApi.Infrastructure.VNPAY.Helpers;
+using Newtonsoft.Json;
 
 
 namespace ECO.WebApi.Host.Controllers.VNPAY;
@@ -9,13 +11,13 @@ public class VnPayController : BaseApiController
 {
     private readonly IVnpay _vnpay;
     private readonly IConfiguration _configuration;
-
-    public VnPayController(IVnpay vnpay, IConfiguration configuration)
+    private readonly IPaymentService _paymentService;
+    public VnPayController(IVnpay vnpay, IConfiguration configuration, IPaymentService paymentService)
     {
         _vnpay = vnpay;
         _configuration = configuration;
         _vnpay.Initialize(_configuration["Vnpay:TmnCode"], _configuration["Vnpay:HashSecret"], _configuration["Vnpay:BaseUrl"], _configuration["Vnpay:CallbackUrl"]);
-
+        _paymentService = paymentService;
     }
     /// <summary>
     /// Tạo url thanh toán
@@ -29,18 +31,21 @@ public class VnPayController : BaseApiController
     {
         try
         {
-            var ipAddress = NetworkHelper.GetIpAddress(HttpContext); // Lấy địa chỉ IP của thiết bị thực hiện giao dịch
+            var ipAddress = NetworkHelper.GetIpAddress(HttpContext);
+            var payment = new Payment(Guid.NewGuid(), money, PaymentProvider.VNPAY, description, DisplayLanguage.Vietnamese, BankCode.ANY, Currency.VND,ipAddress);
+
+            _paymentService.CreatePaymentAsync(payment);
 
             var request = new PaymentRequest
             {
-                PaymentId = DateTime.Now.Ticks,
+                PaymentId = payment.Id,
                 Money = money,
                 Description = description,
-                IpAddress = ipAddress,
+                IpAddress = ipAddress,  // Lấy địa chỉ IP của thiết bị thực hiện giao dịch
                 BankCode = BankCode.ANY, // Tùy chọn. Mặc định là tất cả phương thức giao dịch
-                CreatedDate = DateTime.Now, // Tùy chọn. Mặc định là thời điểm hiện tại
                 Currency = Currency.VND, // Tùy chọn. Mặc định là VND (Việt Nam đồng)
-                Language = DisplayLanguage.Vietnamese // Tùy chọn. Mặc định là tiếng Việt
+                Language = DisplayLanguage.Vietnamese, // Tùy chọn. Mặc định là tiếng Việt
+                CreatedDate = payment.CreatedOn,
             };
 
             var paymentUrl = _vnpay.GetPaymentUrl(request);
@@ -60,7 +65,7 @@ public class VnPayController : BaseApiController
     [HttpGet("vnpay-ipn")]
     [AllowAnonymous]
 
-    public IActionResult VnPayIpn()
+    public async Task<IActionResult> VnPayIpn()
     {
         if (Request.QueryString.HasValue)
         {
@@ -70,8 +75,24 @@ public class VnPayController : BaseApiController
                 if (paymentResult.IsSuccess)
                 {
                     // Thực hiện hành động nếu thanh toán thành công tại đây. Ví dụ: Cập nhật trạng thái đơn hàng trong cơ sở dữ liệu.
-                    return Ok();
+                    var paymentDto = await _paymentService.GetPaymentByIdAsync(paymentResult.PaymentId);
+
+                    if (paymentDto == null)
+                        return NotFound("Không tìm thấy giao dịch");
+
+
+                   
+                    //cập nhật thời gian thanh toán
+                    await _paymentService.UpdatePaymentAsync(paymentDto.Id);
+
+                    // Lưu transaction log
+                    var transaction = new Transaction(paymentDto.Id, paymentResult.VnpayTransactionId,paymentResult.PaymentMethod, paymentResult.PaymentResponse.Code, paymentResult.TransactionStatus.Code, paymentResult.BankingInfor.BankCode, paymentResult.BankingInfor.BankTransactionId);
+
+                    await _paymentService.CreateTransactionAsync(transaction);
+
+                    return Ok(new { Message = "Xử lý thành công" });
                 }
+              
 
                 // Thực hiện hành động nếu thanh toán thất bại tại đây. Ví dụ: Hủy đơn hàng.
                 return BadRequest("Thanh toán thất bại");
@@ -92,16 +113,32 @@ public class VnPayController : BaseApiController
     [HttpGet("Callback")]
     [AllowAnonymous]
 
-    public ActionResult<PaymentResult> Callback()
+    public async Task<ActionResult<PaymentResult>> Callback()
     {
         if (Request.QueryString.HasValue)
         {
             try
             {
                 var paymentResult = _vnpay.GetPaymentResult(Request.Query);
-
+                 
                 if (paymentResult.IsSuccess)
                 {
+                    // Thực hiện hành động nếu thanh toán thành công tại đây. Ví dụ: Cập nhật trạng thái đơn hàng trong cơ sở dữ liệu.
+                    var paymentDto = await _paymentService.GetPaymentByIdAsync(paymentResult.PaymentId);
+
+                    if (paymentDto == null)
+                        return NotFound("Không tìm thấy giao dịch");
+
+
+
+                    //cập nhật thời gian thanh toán
+                    await _paymentService.UpdatePaymentAsync(paymentDto.Id);
+
+                    // Lưu transaction log
+                    var transaction = new Transaction(paymentDto.Id, paymentResult.VnpayTransactionId, paymentResult.PaymentMethod, paymentResult.PaymentResponse.Code, paymentResult.TransactionStatus.Code, paymentResult.BankingInfor.BankCode, paymentResult.BankingInfor.BankTransactionId);
+
+                    await _paymentService.CreateTransactionAsync(transaction);
+
                     return Ok(paymentResult);
                 }
 
