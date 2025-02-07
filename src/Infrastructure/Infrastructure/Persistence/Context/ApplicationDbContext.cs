@@ -5,6 +5,7 @@ using ECO.WebApi.Domain.Attributes;
 using ECO.WebApi.Domain.Basket;
 using ECO.WebApi.Domain.Catalog;
 using ECO.WebApi.Domain.Identity;
+using ECO.WebApi.Domain.Notifications;
 using ECO.WebApi.Domain.Ordering;
 using ECO.WebApi.Domain.Payment;
 using ECO.WebApi.Infrastructure.Persistence.Configuration;
@@ -52,4 +53,6 @@ public class ApplicationDbContext : BaseDbContext
     //Payment
     public DbSet<Payment> Payments { get; set; }
     public DbSet<Transaction> Transactions { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
+
 }
