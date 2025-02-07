@@ -1,4 +1,5 @@
 ﻿
+using System;
 using ECO.WebApi.Application.Common.Interfaces;
 using ECO.WebApi.Application.Common.Persistence;
 using ECO.WebApi.Application.Notifications;
@@ -25,7 +26,7 @@ public class NotificationService : INotificationService
     }
     public async Task SendNotificationToAllUsers(BasicNotification notification, CancellationToken cancellationToken)
     {
-        _jobService.Enqueue(() => ExcuteSendNotificationToAllUsers(notification, cancellationToken));
+         _jobService.Enqueue(() => ExcuteSendNotificationToAllUsers(notification, cancellationToken));
 
     }
 
@@ -39,7 +40,7 @@ public class NotificationService : INotificationService
         _jobService.Enqueue(() => ExcuteSendNotificationToUsers(userIds, notification, cancellationToken));
     }
 
-    private async Task ExcuteSendNotificationToAllUsers(BasicNotification notification, CancellationToken cancellationToken)
+    public async Task ExcuteSendNotificationToAllUsers(BasicNotification notification, CancellationToken cancellationToken)
     {
         List<string> userIds = await _userManager.Users.Select(u => u.Id).ToListAsync(cancellationToken);
         List<Notification> addNotis = new List<Notification>();
@@ -52,13 +53,13 @@ public class NotificationService : INotificationService
         await _notificationSender.SendToUsersAsync(notification, userIds, cancellationToken);
     }
 
-    private async Task ExcuteSendNotificationToUser(string userId, BasicNotification notification, CancellationToken cancellationToken)
+    public async Task ExcuteSendNotificationToUser(string userId, BasicNotification notification, CancellationToken cancellationToken)
     {
         Notification addNoti = new Notification(userId,notification.Title,notification.Label,notification.Message,notification.Url);
         await _notificationRepository.AddAsync(addNoti, cancellationToken);
         await _notificationSender.SendToUserAsync(notification, userId, cancellationToken);
     }
-    private async Task ExcuteSendNotificationToUsers(List<string> userIds, BasicNotification notification, CancellationToken cancellationToken)
+    public async Task ExcuteSendNotificationToUsers(List<string> userIds, BasicNotification notification, CancellationToken cancellationToken)
     {
         List<Notification> addNotis = new List<Notification>();
         foreach (string userId in userIds)

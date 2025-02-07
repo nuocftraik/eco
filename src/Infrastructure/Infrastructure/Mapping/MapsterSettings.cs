@@ -1,5 +1,6 @@
 ﻿using ECO.WebApi.Application.Catalog.Categories;
 using ECO.WebApi.Application.Catalog.Products;
+using ECO.WebApi.Application.Notifications;
 using ECO.WebApi.Application.Payment.Models;
 using ECO.WebApi.Domain.Attributes;
 using ECO.WebApi.Domain.Catalog;
@@ -54,5 +55,8 @@ public class MapsterSettings
         //Payment
 
         TypeAdapterConfig<Payment, PaymentDto>.NewConfig();
+
+        //Noti
+        TypeAdapterConfig<Domain.Notifications.Notification, NotificationDto>.NewConfig();
     }
 }

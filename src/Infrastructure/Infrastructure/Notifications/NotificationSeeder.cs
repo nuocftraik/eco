@@ -30,10 +30,10 @@ public class NotificationSeeder : ICustomSeeder
             _logger.LogInformation("Started to Seed Notifications.");
             string notificationData = await File.ReadAllTextAsync(dataPath, cancellationToken);
             var notifications = _serializerService.Deserialize<List<Notification>>(notificationData);
-            var users = await _db.Users.Where(u => u.UserName == "System.Admin").FirstOrDefaultAsync();
+            var user = await _db.Users.Where(u => u.UserName == "system.admin").FirstOrDefaultAsync();
             foreach (var notification in notifications)
             {
-                notification.ReceiverId = users.Id;
+                notification.ReceiverId = user.Id;
                 _ = _db.Notifications.Add(notification);
             }
 

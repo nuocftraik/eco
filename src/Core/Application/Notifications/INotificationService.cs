@@ -3,7 +3,7 @@
 using ECO.WebApi.Shared.Notifications;
 
 namespace ECO.WebApi.Application.Notifications;
-public interface INotificationService
+public interface INotificationService : ITransientService
 {
     Task SendNotificationToAllUsers(BasicNotification notification, CancellationToken cancellationToken);
     Task SendNotificationToUser(BasicNotification notification, string userId, CancellationToken cancellationToken);
