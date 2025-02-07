@@ -25,9 +25,16 @@ public class EventPublisher : IEventPublisher
         return _mediator.Publish(CreateEventNotification(@event));
     }
 
-    private static INotification CreateEventNotification(IEvent @event) =>
-        (INotification)Activator.CreateInstance(
-            typeof(EventNotification<>).MakeGenericType(@event.GetType()), @event)!;
+    private static INotification CreateEventNotification(IEvent @event)
+    {
+        // Lấy kiểu của event
+        var eventType = @event.GetType();
+        // Tạo một kiểu generic cho EventNotification
+        var notificationType = typeof(EventNotification<>).MakeGenericType(eventType);
+        // Tạo một instance của kiểu generic vừa tạo
+        var instance = Activator.CreateInstance(notificationType, @event); // instance là một đối tượng của EventNotification<CustomerCreatedEvent>
+        return (INotification)instance;
+    }
 }
 
 

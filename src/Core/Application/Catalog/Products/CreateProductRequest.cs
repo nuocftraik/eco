@@ -1,6 +1,7 @@
 ﻿
 using ECO.WebApi.Application.Catalog.Products.Dtos;
 using ECO.WebApi.Application.Catalog.Products.Factory;
+using ECO.WebApi.Domain.Common.Events;
 using ECO.WebApi.Domain.Enum;
 
 namespace ECO.WebApi.Application.Catalog.Products;
@@ -90,7 +91,8 @@ public class CreateProductRequestHandler : IRequestHandler<CreateProductRequest,
                 product.AddAttribute(attribute.Name,attribute.AttributeType,attribute.Values);
             }
         }
-
+        // Add Domain Events to be raised after the commit
+        product.DomainEvents.Add(EntityCreatedEvent.WithEntity(product));
         await _productRepository.AddAsync(product, cancellationToken);
 
         // Nếu là Simple Product thì tạo một variant mặc định
