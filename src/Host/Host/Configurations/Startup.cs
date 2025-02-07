@@ -26,6 +26,8 @@ internal static class Startup
                 .AddJsonFile($"{configurationsDirectory}/drive.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
                 .AddJsonFile($"{configurationsDirectory}/vnpay.json", optional: false, reloadOnChange: true)
                 .AddJsonFile($"{configurationsDirectory}/vnpay.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
+                .AddJsonFile($"{configurationsDirectory}/signalr.json", optional: false, reloadOnChange: true)
+                .AddJsonFile($"{configurationsDirectory}/signalr.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables();
         return builder;
     }

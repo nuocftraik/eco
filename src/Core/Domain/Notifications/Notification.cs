@@ -1,5 +1,7 @@
 ﻿
 
+using static ECO.WebApi.Shared.Notifications.BasicNotification;
+
 namespace ECO.WebApi.Domain.Notifications;
 public class Notification : AuditableEntity, IAggregateRoot
 {

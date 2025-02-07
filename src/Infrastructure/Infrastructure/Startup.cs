@@ -9,6 +9,7 @@ using ECO.WebApi.Infrastructure.GoogleDrive;
 using ECO.WebApi.Infrastructure.Mailing;
 using ECO.WebApi.Infrastructure.Mapping;
 using ECO.WebApi.Infrastructure.Middleware;
+using ECO.WebApi.Infrastructure.Notifications;
 using ECO.WebApi.Infrastructure.Persistence;
 using ECO.WebApi.Infrastructure.Persistence.Initialization;
 using Microsoft.AspNetCore.Builder;
@@ -31,6 +32,7 @@ public static class Startup
             .AddExceptionMiddleware()
             .AddBehaviours()
             .AddMailing(config)
+            .AddNotifications(config)
             .AddPersistence()
             .AddRouting(options => options.LowercaseUrls = true)
             

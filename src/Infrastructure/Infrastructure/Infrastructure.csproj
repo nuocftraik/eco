@@ -9,6 +9,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="Notification\**" />
+	  <EmbeddedResource Remove="Notification\**" />
+	  <None Remove="Notification\**" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\..\Core\Application\Application.csproj" />
 		<ProjectReference Include="..\..\Core\Domain\Domain.csproj" />
 	</ItemGroup>
@@ -20,6 +26,8 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="8.0.10" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.10" />
 		<PackageReference Include="Google.Apis.Drive.v3" Version="1.68.0.3574" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.0.4" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="8.0.10" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -29,7 +37,7 @@
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
 		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="8.0.0" />
@@ -81,6 +89,11 @@
 
 		<PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />
 
+	</ItemGroup>
+	<ItemGroup>
+	  <None Update="Notifications\notificationData.json">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 </Project>
