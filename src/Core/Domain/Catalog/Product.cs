@@ -1,6 +1,5 @@
 ﻿
-
-using System.Diagnostics;
+using ECO.WebApi.Domain.Common.Exceptions;
 using ECO.WebApi.Domain.Enum;
 
 namespace ECO.WebApi.Domain.Catalog;
@@ -15,22 +14,11 @@ public class Product : AuditableEntity, IAggregateRoot
     //Media
     public string? MainImage { get; private set; }
     //Billing
-    public double? Price { get; set; }
+    public double Price { get; set; }
     public double? ComparePrice { get; set; }
 
-    //Identifiers
-    public string? SKU { get; set; }
-    public bool IsActive { get; set; }
-    public int ViewCount { get; private set; }
     //Inventory
-    public bool TrackInventory { get; set; }
     public int? Quantity { get; set; }
-    //Shipping
-    public bool RequireShipping { get; set; }
-    public double? Weight { get; set; }
-    public double? Width { get; set; }
-    public double? Height { get; set; }
-    public double? Length { get; set; }
 
     //Downloadable
     public bool IncludeDownload { get; set; }
@@ -38,14 +26,13 @@ public class Product : AuditableEntity, IAggregateRoot
     public string? FileUrl { get; set; }
 
     //Navigation
-    public List<Variant> Variants { get; private set; } = new();
-    public List<Attributes.Attribute> Attributes { get; private set; } = new();
-    public List<ProductCategory> ProductCategories { get; private set; } = new();
-    public List<ProductTag> ProductTags { get; private set; } = new();
+    public virtual List<Variant> Variants { get; private set; } = new();
+    public virtual List<Attributes.Attribute> Attributes { get; private set; } = new();
+    public virtual List<ProductCategory> ProductCategories { get; private set; } = new();
+    public virtual List<ProductTag> ProductTags { get; private set; } = new();
 
 
     //Methods
-    private Product() { } 
 
     public Product(ProductType productType, string name, string slug, string? description, string? mainImage)
     {
@@ -55,52 +42,34 @@ public class Product : AuditableEntity, IAggregateRoot
         Description = description;
         MainImage = mainImage;
         Status = ProductStatus.InStock;
-        ViewCount = 0;
     }
 
-    // Method to update product
-    public void UpdateConfigurableProduct(string name, string slug, ProductStatus status, string? description, string? mainImage)
+    // Method to update produc
+    public void UpdateConfigurableProduct(string name, string slug, string? description, string? mainImage)
     {
         Name = name;
         Slug = slug;
-        Status = status;
         Description = description;
         MainImage = mainImage;
     }
 
-    public void UpdateSimpleProduct(string sku, double price, string? mainImage, bool isActive,
-                   ProductStatus status, bool trackInventory, int? quantity,
-                   bool requireShipping, double? weight, double? width, double? height, double? length,
-                   bool includeDownload, string? fileName, string? fileUrl, double? comparePrice = 0)
+    public void UpdateSimpleProduct(double price, int quantity,bool includeDownload, string? fileName, string? fileUrl, string? mainImage, double? comparePrice)
     {
         // Cập nhật thông tin cơ bản
-        SKU = sku;
-        Price = price;
         MainImage = mainImage;
-        IsActive = isActive;
-        Status = status;
-
+        Quantity = quantity;
         // Cập nhật thông tin billing
         TrackingBilling(price, comparePrice);
 
-        // Cập nhật thông tin kho hàng
-        TrackingInventory(trackInventory, quantity);
-
-        // Cập nhật thông tin shipping
-        TrackingShipping(requireShipping, weight, width, height, length);
-
         // Cập nhật thông tin download nếu có
         TrackingDownload(includeDownload, fileName, fileUrl);
-
-
     }
 
 
 
     public void AddCategory(Guid categoryId)
     {
-        ValidateId(categoryId);
-        if (HasCategory(categoryId))
+        if (ProductCategories.Any(pc => pc.CategoryId == categoryId))
         {
             throw new InvalidOperationException($"Category with ID {categoryId} is already added.");
         }
@@ -126,24 +95,6 @@ public class Product : AuditableEntity, IAggregateRoot
                 ProductCategories.Add(new ProductCategory(Id, categoryId));
             }
         }
-    }
-
-    public Product ClearMainImagePath()
-    {
-        MainImage = string.Empty;
-        return this;
-    }
-    private void ValidateId(Guid id)
-    {
-        if (id == Guid.Empty)
-        {
-            throw new ArgumentException("Id cannot be empty.", nameof(id));
-        }
-    }
-
-    private bool HasCategory(Guid categoryId)
-    {
-        return ProductCategories.Any(pc => pc.CategoryId == categoryId);
     }
 
     // Method to add a variant
@@ -209,17 +160,6 @@ public class Product : AuditableEntity, IAggregateRoot
         ComparePrice = comparePrice;
     }
 
-    //Tracking inventory
-    public void TrackingInventory(bool trackInventory, int? quantity = 0)
-    {
-        TrackInventory = trackInventory;
-        if (quantity <= 0)
-        {
-            throw new ArgumentException("Quantity must be greater or equal 0.");
-        }
-        Quantity = quantity;
-    }
-
     public void TrackingDownload(bool includeDownload, string? fileName, string? fileUrl)
     {
         IncludeDownload = includeDownload;
@@ -235,21 +175,26 @@ public class Product : AuditableEntity, IAggregateRoot
         FileUrl = fileUrl;
     }
 
-
-    public void TrackingShipping(bool requireShipping, double? weight = 0, double? width = 0, double? height = 0, double? length = 0)
+    public void RemoveQuantity(int quantity)
     {
-        RequireShipping = requireShipping;
-        if (requireShipping)
+        if (Quantity == 0)
         {
-            if (weight <= 0 || width <= 0 || height <= 0 || length <= 0)
-            {
-                throw new ArgumentException("Dimensions must be greater than or equal to zero.");
-            }
+            throw new DomainException($"Empty stock, product item {Name} is sold out");
         }
-        Weight = weight;
-        Width = width;
-        Height = height;
-        Length = length;
+
+        if (quantity <= 0)
+        {
+            throw new DomainException($"Item units desired should be greater than zero");
+        }
+
+        int removed = Math.Min(quantity, Quantity.Value);
+
+        Quantity -= removed;
+
     }
 
+    public void AddQuantity(int quantity)
+    {
+        Quantity += quantity;
+    }
 }

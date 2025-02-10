@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Localization;
 using Serilog.Context;
 using Serilog;
+using ECO.WebApi.Domain.Common.Exceptions;
 
 namespace ECO.WebApi.Infrastructure.Middleware;
 internal class ExceptionMiddleware : IMiddleware
@@ -65,6 +66,15 @@ internal class ExceptionMiddleware : IMiddleware
             switch (exception)
             {
                 case CustomException e:
+                    errorResult.StatusCode = (int)e.StatusCode;
+                    if (e.ErrorMessages is not null)
+                    {
+                        errorResult.Messages = e.ErrorMessages;
+                    }
+
+                    break;
+
+                case DomainException e:
                     errorResult.StatusCode = (int)e.StatusCode;
                     if (e.ErrorMessages is not null)
                     {

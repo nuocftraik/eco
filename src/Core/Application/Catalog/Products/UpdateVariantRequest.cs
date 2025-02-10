@@ -7,7 +7,6 @@ public class UpdateVariantRequest : IRequest<Guid>
 {
     public Guid Id { get; set; } // ID của variant cần cập nhật
     public Guid ProductId { get; set; } // Product liên quan đến variant này
-    public ProductStatus Status { get; set; }
 
     // Media
     public string? MainImage { get; set; }
@@ -17,20 +16,10 @@ public class UpdateVariantRequest : IRequest<Guid>
     public double? ComparePrice { get; set; }
 
     // Identifiers
-    public string SKU { get; set; }
-    public bool IsActive { get; set; }
     public bool IsDefault { get; set; }
 
     // Inventory
-    public bool TrackInventory { get; set; }
     public int? Quantity { get; set; }
-
-    // Shipping
-    public bool RequireShipping { get; set; }
-    public double? Weight { get; set; }
-    public double? Width { get; set; }
-    public double? Height { get; set; }
-    public double? Length { get; set; }
 
     // Downloadable
     public bool IncludeDownload { get; set; }
@@ -62,33 +51,6 @@ public class UpdateVariantRequestValidator : AbstractValidator<UpdateVariantRequ
             .GreaterThan(x => x.Price).When(x => x.ComparePrice.HasValue)
             .WithMessage("ComparePrice must be greater than Price.");
 
-        // SKU validation
-        RuleFor(x => x.SKU)
-            .NotEmpty().WithMessage("SKU is required.")
-            .MaximumLength(100).WithMessage("SKU cannot exceed 100 characters.");
-
-        // Quantity validation (if TrackInventory is true)
-        RuleFor(x => x.Quantity)
-            .GreaterThanOrEqualTo(0).When(x => x.TrackInventory)
-            .WithMessage("Quantity must be greater than or equal to 0 when inventory tracking is enabled.");
-
-        // Shipping validation: If RequireShipping is true, check weight and dimensions
-        RuleFor(x => x.Weight)
-            .GreaterThanOrEqualTo(0).When(x => x.RequireShipping)
-            .WithMessage("Weight must be greater than 0 or equal if shipping is required.");
-
-        RuleFor(x => x.Width)
-            .GreaterThanOrEqualTo(0).When(x => x.RequireShipping)
-            .WithMessage("Width must be greater than 0 or equal if shipping is required.");
-
-        RuleFor(x => x.Height)
-            .GreaterThanOrEqualTo(0).When(x => x.RequireShipping)
-            .WithMessage("Height must be greater than or equal 0 if shipping is required.");
-
-        RuleFor(x => x.Length)
-            .GreaterThanOrEqualTo(0).When(x => x.RequireShipping)
-            .WithMessage("Length must be greater than or equal 0 if shipping is required.");
-
         // Downloadable product validation: if IncludeDownload is true, validate FileName and FileUrl
         RuleFor(x => x.FileName)
             .NotEmpty().WithMessage("FileName is required if IncludeDownload is true.")
@@ -118,25 +80,7 @@ public class UpdateVariantRequestHandler : IRequestHandler<UpdateVariantRequest,
             ?? throw new NotFoundException($"Variant with ID {request.Id} was not found.");
 
         // Cập nhật các thuộc tính của variant
-        variant.Update(
-           request.SKU,
-           request.Price,
-           request.MainImage,
-           request.IsActive,
-           request.IsDefault,
-           request.Status,
-           request.TrackInventory,
-           request.Quantity,
-           request.RequireShipping,
-           request.Weight,
-           request.Width,
-           request.Height,
-           request.Length,
-           request.IncludeDownload,
-           request.FileName,
-           request.FileUrl,
-           request.ComparePrice
-       );
+        variant.Update(request.IsDefault,request.Price,request.MainImage,request.ComparePrice,request.IncludeDownload,request.Quantity,request.FileName, request.FileUrl);
 
         // Lấy tất cả các AttributeValueId của Product để kiểm tra
         var validAttributeValueIds = product.Attributes
@@ -154,7 +98,7 @@ public class UpdateVariantRequestHandler : IRequestHandler<UpdateVariantRequest,
         product.Attributes
        .SelectMany(attr => attr.AttributeValues)
        .ToList()
-       .ForEach(av => av.VariantAttributeValues.Clear()); 
+       .ForEach(av => av.VariantAttributeValues.Clear());
 
 
         foreach (var attributeValueId in request.AttributeValueIds)

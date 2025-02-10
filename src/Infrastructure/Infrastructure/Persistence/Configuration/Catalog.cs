@@ -26,7 +26,6 @@ public class ProductConfig : IEntityTypeConfiguration<Product>
         builder.Property(x => x.Description)
          .HasMaxLength(1024);
 
-        builder.Property(x => x.ViewCount).HasDefaultValue(0);
         builder.Property(x => x.Status).HasDefaultValue(ProductStatus.InStock);
 
         builder
@@ -130,10 +129,6 @@ public class VariantConfiguration : IEntityTypeConfiguration<Variant>
     {
         builder
           .ToTable("Variants", SchemaNames.Catalog);
-        builder.Property(x => x.SKU)
-            .HasMaxLength(50)
-            .IsUnicode(false)
-            .IsRequired();
 
         builder.Property(x => x.MainImage)
           .HasMaxLength(1024);

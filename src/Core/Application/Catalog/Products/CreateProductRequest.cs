@@ -16,22 +16,13 @@ public class CreateProductRequest : IRequest<Guid>
     public List<Guid>? CategoryIds { get; set; }
 
     // Thêm các trường cho Variant nếu productType là Simple
-   
-    public string? SKU { get; set; }
-    public bool IsActive { get; set; }
     public bool IsDefault { get; set; }
     //Billing
     public double Price { get; set; }
     public double? ComparePrice { get; set; }
     //Inventory
-    public bool TrackInventory { get; set; }
     public int? Quantity { get; set; }
-    //Shipping
-    public bool RequireShipping { get; set; }
-    public double? Weight { get; set; }
-    public double? Width { get; set; }
-    public double? Height { get; set; }
-    public double? Length { get; set; }
+
     //Downloadable
     public bool IncludeDownload { get; set; }
     public string? FileName { get; set; }
@@ -99,7 +90,7 @@ public class CreateProductRequestHandler : IRequestHandler<CreateProductRequest,
         if (request.ProductType == ProductType.Simple)
         {
             // Sử dụng CreateVariantRequest để tạo variant cho Simple Product
-            var variantRequest = new CreateVariantRequest(product.Id,product.Status, request.MainImage, request.Price, request.ComparePrice,  request.SKU, request.IsActive, request.IsDefault, request.TrackInventory, request.Quantity, request.RequireShipping, request.Weight, request.Width, request.Height, request.Length, request.IncludeDownload, request.FileName, request.FileUrl);
+            var variantRequest = new CreateVariantRequest(product.Id, request.MainImage, request.Price, request.ComparePrice,request.IsDefault,request.Quantity, request.IncludeDownload, request.FileName, request.FileUrl);
             await _mediator.Send(variantRequest, cancellationToken);
         }
 
