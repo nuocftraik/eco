@@ -58,7 +58,9 @@ public class Order : AuditableEntity, IAggregateRoot
     }
     public double GetTotal()
     {
+        var tru = true ? true : false;
         return OrderItems.Sum(o => o.Quantity * o.Price);
+
     }
 }
 

@@ -38,7 +38,6 @@ public class ApplicationDbContext : BaseDbContext
     //Ordering
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderItem> OrderItems { get; set; }
-    public DbSet<OrderTransaction> OrderTransactions { get; set; }
 
     //Basket
     public DbSet<Cart> Carts { get; set; }

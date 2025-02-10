@@ -9,5 +9,6 @@ internal static class SchemaNames
     public static string Ordering = nameof(Ordering); // "ORDERING";
     public static string Attribute = nameof(Attribute); // "ATTRIBUTE";
     public static string Notification = nameof(Notification); // "NOTIFICATION";
+    public static string Payment = nameof(Payment); // "PAYMENT";
     public static string Identity = nameof(Identity); // "IDENTITY";
 }

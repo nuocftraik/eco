@@ -39,13 +39,3 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
     }
 }
 
-
-public class OrderTransactionConfiguration : IEntityTypeConfiguration<OrderTransaction>
-{
-    public void Configure(EntityTypeBuilder<OrderTransaction> builder)
-    {
-        builder
-          .ToTable("OrderTransactions", SchemaNames.Ordering);
-    }
-}
-

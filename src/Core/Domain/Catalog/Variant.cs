@@ -24,6 +24,10 @@ public class Variant : BaseEntity, IAggregateRoot
     public virtual Product Product { get; private set; }
     public virtual List<UserReview> UserReviews { get; private set; } = new();
     public virtual List<VariantAttributeValue> VariantAttributeValues { get; private set; } = new();
+    public Variant()
+    {
+        
+    }
 
     // Constructor for creating new variant
     public Variant(bool isDefault,int quantity, string? image, double price,double? comparePrice, bool includeDownload,string? fileName ,string fileUrl)
