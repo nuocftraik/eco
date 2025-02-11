@@ -2,8 +2,8 @@
 
 public enum PaymentMethod
 {
-    COD = 1,
-    OnlinePayment = 2,
-    Banking = 3,
-    CreditCard = 4
+    OnlinePayment = 0,
+    COD = 1, // Cash on delivery : thanh toán khi nhận hàng
+    Banking = 2,
+    CreditCard = 3
 }

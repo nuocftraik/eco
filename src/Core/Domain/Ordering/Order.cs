@@ -12,8 +12,9 @@ public class Order : AuditableEntity, IAggregateRoot
     public double Total { get; private set; }
     public string CustomerName { get; private set; }
     public string CustomerPhoneNumber { get; private set; }
-    public string? CustomerAddress { get; private set; }
     public string? CustomerEmail { get; private set; }
+
+    public string? CustomerAddress { get; private set; }
 
     public virtual List<OrderItem> OrderItems { get; private set; }
 
