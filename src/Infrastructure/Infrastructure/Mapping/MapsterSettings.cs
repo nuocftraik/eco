@@ -1,8 +1,10 @@
 ﻿using ECO.WebApi.Application.Catalog.Categories;
 using ECO.WebApi.Application.Catalog.Products;
 using ECO.WebApi.Application.Notifications;
+using ECO.WebApi.Application.Ordering.Baskets;
 using ECO.WebApi.Application.Payment.Models;
 using ECO.WebApi.Domain.Attributes;
+using ECO.WebApi.Domain.Basket;
 using ECO.WebApi.Domain.Catalog;
 using ECO.WebApi.Domain.Payment;
 using Mapster;
@@ -58,5 +60,38 @@ public class MapsterSettings
 
         //Noti
         TypeAdapterConfig<Domain.Notifications.Notification, NotificationDto>.NewConfig();
+
+
+        //Cart
+        TypeAdapterConfig<Cart, CartDto>.NewConfig()
+            .Map(dest => dest.CartItems, src => src.CartItems)
+            .Map(dest => dest.TotalPrice, src => src.CartItems.Sum(item => item.Quantity * item.Variant.Price));
+
+        TypeAdapterConfig<CartDto, Cart>.NewConfig()
+            .Map(dest => dest.CartItems, src => src.CartItems);
+
+        TypeAdapterConfig<CreateCartDto, Cart>.NewConfig()
+            .Map(dest => dest.CartItems, src => src.CartItems);
+
+        TypeAdapterConfig<Cart, CreateCartDto>.NewConfig()
+            .Map(dest => dest.CartItems, src => src.CartItems);
+
+        TypeAdapterConfig<CartItem, CartItemDto>.NewConfig()
+            .Map(dest => dest.VariantId, src => src.VariantId)
+            .Map(dest => dest.ProductId, src => src.Variant.ProductId)
+            .Map(dest => dest.ProductName, src => src.Variant.Product.Name)
+            .Map(dest => dest.Price, src => src.Variant.Price)
+            .Map(dest => dest.Quantity, src => src.Quantity)
+            .Map(dest => dest.ProductImage, src => src.Variant.Product.MainImage)
+            .Map(dest => dest.MainImage, src => src.Variant.MainImage)
+            .Map(dest => dest.Status, src => src.Variant.Status)
+            .Map(dest => dest.IsDefault, src => src.Variant.IsDefault)
+            .Map(dest => dest.IncludeDownload, src => src.Variant.IncludeDownload)
+            .Map(dest => dest.FileName, src => src.Variant.FileName)
+            .Map(dest => dest.ComparePrice, src => src.Variant.ComparePrice);
+
+        TypeAdapterConfig<CartItemDto, CartItem>.NewConfig()
+            .Map(dest => dest.VariantId, src => src.VariantId)
+            .Map(dest => dest.Quantity, src => src.Quantity);
     }
 }

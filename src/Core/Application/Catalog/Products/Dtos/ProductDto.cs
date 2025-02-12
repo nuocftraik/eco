@@ -15,7 +15,6 @@ public class ProductDto
     //Media
     public string? MainImage { get; private set; }
     public ProductStatus Status { get; private set; }
-    public int ViewCount { get; private set; }
 
     //Audit
     public Guid CreatedBy { get; set; }

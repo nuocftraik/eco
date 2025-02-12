@@ -6,11 +6,64 @@ namespace ECO.WebApi.Domain.Basket;
 public class Cart : AuditableEntity, IAggregateRoot
 {
 
-    public string UserId { get; set; }
+    public virtual List<CartItem> CartItems { get; set; } = new();
 
-    [ForeignKey(nameof(UserId))]
-    public virtual ApplicationUser User { get; set; }
-    public decimal TotalPrice => CartItems.Sum(item => item.Price * item.Quantity);
+    public void AddVariant(Guid variantId, int count = 1)
+    {
+        if (count < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(count), "Product count should be 1 or more!");
+        }
 
-    public virtual ICollection<CartItem> CartItems { get; set; }
+        var item = CartItems.FirstOrDefault(x => x.VariantId == variantId);
+        if (item == null)
+        {
+            CartItems.Add(new CartItem(variantId, count));
+        }
+        else
+        {
+            item.Quantity += count;
+        }
+    }
+
+    public void RemoveVariant(Guid variantId, int? count = null)
+    {
+        if (count is < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(count), "Product count should be null, 1 or more!");
+        }
+
+        var item = CartItems.FirstOrDefault(x => x.VariantId == variantId);
+        if (item == null)
+        {
+            return;
+        }
+
+        if (count == null || item.Quantity <= count)
+        {
+            CartItems.Remove(item);
+            return;
+        }
+
+        item.Quantity -= count.Value;
+    }
+
+    public int GetVariantCount(Guid variantId)
+    {
+        var item = CartItems.FirstOrDefault(x => x.VariantId == variantId);
+        return item?.Quantity ?? 0;
+    }
+
+    public void Clear()
+    {
+        CartItems.Clear();
+    }
+
+    public void Merge(Cart cart)
+    {
+        foreach (var item in cart.CartItems)
+        {
+            AddVariant(item.VariantId, item.Quantity);
+        }
+    }
 }

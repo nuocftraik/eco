@@ -14,7 +14,6 @@ public class ProductInListDto
     //Media
     public string? MainImage { get; private set; }
     public ProductStatus Status { get; private set; }
-    public int ViewCount { get; private set; }
     public Guid CreatedBy { get; set; }
     public DateTime CreatedOn { get; set; }
     public Guid LastModifiedBy { get; set; }
