@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 
 
-namespace ECO.WebApi.Infrastructure.VNPAY.Helpers;
+namespace ECO.WebApi.Application.Payment.Helpers;
 internal static class Encoder
 {
     internal static string AsHmacSHA512(string key, string inputData)

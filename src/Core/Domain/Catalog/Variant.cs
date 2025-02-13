@@ -101,4 +101,30 @@ public class Variant : BaseEntity, IAggregateRoot
     }
 
 
+    public void DecreaseStock(int quantity)
+    {
+        if (quantity <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be greater than 0.");
+        }
+
+        if (Quantity < quantity)
+        {
+            throw new BadRequestException("Not enough stock.");
+        }
+
+        Quantity -= quantity;
+    }
+
+    // Cập nhật số lượng tồn kho
+    public void IncreaseStock(int quantity)
+    {
+        if (quantity <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be greater than 0.");
+        }
+
+        Quantity += quantity;
+    }
+
 }

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 using System.Net.Sockets;
 using System.Net;
 
-namespace ECO.WebApi.Infrastructure.VNPAY.Helpers;
+namespace ECO.WebApi.Application.Payment.Helpers;
 public class NetworkHelper
 {
     /// <summary>

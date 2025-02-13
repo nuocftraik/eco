@@ -4,6 +4,7 @@ using ECO.WebApi.Application.Common.Interfaces;
 using ECO.WebApi.Application.Common.Persistence;
 using ECO.WebApi.Application.Ordering.Baskets;
 using ECO.WebApi.Domain.Basket;
+using ECO.WebApi.Domain.Ordering;
 using ECO.WebApi.Infrastructure.Persistence.Context;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
@@ -154,6 +155,26 @@ public class CartService : ICartService
             {
                 throw new InvalidOperationException("Cannot create cart for unauthenticated user without an anonymous ID.");
             }
+        }
+    }
+
+    public async Task DeductOrderedItemsAsync(List<OrderItem> orderedItems, Guid? anonymousId)
+    {
+        if (anonymousId.HasValue) // Người dùng ẩn danh
+        {
+            var cartDto = await _cache.GetAsync<CreateCartDto>(GetCacheKey(anonymousId.Value));
+            var cart = cartDto?.Adapt<Cart>();
+            if (cart != null)
+            {
+                cart.DeductOrderedItems(orderedItems);
+                await _cache.SetAsync(GetCacheKey(anonymousId.Value), cart);
+            }
+        }
+        else // Người dùng đã đăng nhập
+        {
+            var cart = await GetMyCartAsync(_currentUser.GetUserId().ToString());
+            cart.DeductOrderedItems(orderedItems);
+            await _cartRepository.UpdateAsync(cart);
         }
     }
 }

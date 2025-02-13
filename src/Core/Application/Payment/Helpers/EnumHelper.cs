@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace ECO.WebApi.Infrastructure.VNPAY.Helpers;
+namespace ECO.WebApi.Application.Payment.Helpers;
 public static class EnumHelper
 {
     /// <summary>
@@ -19,7 +19,7 @@ public static class EnumHelper
         {
             return value.ToString();
         }
-        DescriptionAttribute? attribute = (DescriptionAttribute?)field.GetCustomAttribute(typeof(DescriptionAttribute));
+        var attribute = (DescriptionAttribute?)field.GetCustomAttribute(typeof(DescriptionAttribute));
         return attribute == null ? value.ToString() : attribute.Description;
     }
 }

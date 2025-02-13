@@ -26,6 +26,7 @@ public class Order : AuditableEntity, IAggregateRoot
         CustomerPhoneNumber = customerPhoneNumber;
         CustomerAddress = customerAddress;
         CustomerEmail = customerEmail;
+        Status = OrderStatus.Pending;
     }
     public Order SetOrderCancelled()
     {
@@ -57,6 +58,9 @@ public class Order : AuditableEntity, IAggregateRoot
 
         return this;
     }
+
+
+
     public double GetTotal()
     {
         var tru = true ? true : false;

@@ -5,8 +5,9 @@ using ECO.WebApi.Domain.Enum;
 using ECO.WebApi.Domain.Ordering;
 
 namespace ECO.WebApi.Application.Ordering.Orders;
-public class CreateOrderRequest : IRequest<Guid>
+public class CreateOrderRequest : IRequest<Guid> ,IHasAnonymousId
 {
+    public Guid? AnonymousId { get; set; }
     public PaymentMethod PaymentMethod { get;  set; }
     public double Total { get;  set; }
     public string CustomerName { get; set; }
@@ -14,6 +15,7 @@ public class CreateOrderRequest : IRequest<Guid>
     public string? CustomerEmail { get; set; }
     public string? CustomerAddress { get; set; }
     public virtual List<CreateOrderItemDto> OrderItems { get; set; } = new();
+
 }
 
 public class CreateOrderRequestValidator : AbstractValidator<CreateOrderRequest>
@@ -60,6 +62,8 @@ public class CreateOrderRequestHandler : IRequestHandler<CreateOrderRequest, Gui
             order.AddOrderItem(item.VariantId, item.Price, item.Quantity);
         }
         var orderCreated = await _orderRepository.AddAsync(order);
+
+
 
         // Add Domain Events to be raised after the commit
         orderCreated.DomainEvents.Add(EntityCreatedEvent.WithEntity(orderCreated));

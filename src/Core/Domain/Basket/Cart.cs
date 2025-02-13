@@ -1,6 +1,7 @@
 ﻿
 using System.ComponentModel.DataAnnotations.Schema;
 using ECO.WebApi.Domain.Identity;
+using ECO.WebApi.Domain.Ordering;
 
 namespace ECO.WebApi.Domain.Basket;
 public class Cart : AuditableEntity, IAggregateRoot
@@ -66,4 +67,38 @@ public class Cart : AuditableEntity, IAggregateRoot
             AddVariant(item.VariantId, item.Quantity);
         }
     }
+
+
+    // Trừ số lượng sản phẩm đã đặt, nếu về 0 thì xóa khỏi giỏ hàng
+    public void DeductOrderedItems(List<OrderItem> orderedItems)
+    {
+        foreach (var orderedItem in orderedItems)
+        {
+            var cartItem = CartItems.FirstOrDefault(i => i.VariantId == orderedItem.VariantId);
+            if (cartItem != null)
+            {
+                cartItem.Quantity -= orderedItem.Quantity;
+
+                if (cartItem.Quantity <= 0)
+                {
+                    CartItems.Remove(cartItem);
+                }
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

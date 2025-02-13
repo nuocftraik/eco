@@ -2,7 +2,7 @@
 using System.Globalization;
 
 
-namespace ECO.WebApi.Infrastructure.VNPAY.Helpers;
+namespace ECO.WebApi.Application.Payment.Helpers;
 internal class Comparer : IComparer<string>
 {
     public int Compare(string x, string y)
