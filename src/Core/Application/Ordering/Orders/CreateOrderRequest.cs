@@ -14,7 +14,7 @@ public class CreateOrderRequest : IRequest<Guid> ,IHasAnonymousId
     public string CustomerPhoneNumber { get;  set; }
     public string? CustomerEmail { get; set; }
     public string? CustomerAddress { get; set; }
-    public virtual List<CreateOrderItemDto> OrderItems { get; set; } = new();
+    public List<CreateOrderItemDto> OrderItems { get; set; } = new();
 
 }
 

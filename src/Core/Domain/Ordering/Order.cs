@@ -16,7 +16,7 @@ public class Order : AuditableEntity, IAggregateRoot
 
     public string? CustomerAddress { get; private set; }
 
-    public virtual List<OrderItem> OrderItems { get; private set; }
+    public virtual List<OrderItem> OrderItems { get; private set; } = new();
 
     public Order(PaymentMethod paymentMethod, double total, string customerName, string customerPhoneNumber, string? customerAddress, string? customerEmail)
     {
