@@ -1,6 +1,6 @@
 ﻿{
   "DatabaseSettings": {
     "DBProvider": "mssql",
-    "ConnectionString": "server=(local); database=ECO;user=sa;password=123;Integrated Security=true;TrustServerCertificate=Yes"
+    "ConnectionString": "Server=ADMIN\\SQLEXPRESS;Database=ECO;Integrated Security=True;Encrypt=False;TrustServerCertificate=True",
   }
 }

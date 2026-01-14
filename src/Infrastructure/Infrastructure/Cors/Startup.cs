@@ -8,7 +8,7 @@ internal static class Startup
 {
     private const string CorsPolicy = nameof(CorsPolicy);
 
-    internal static IServiceCollection AddCorsPolicy(this IServiceCollection services, IConfiguration config)
+    internal static IServiceCollection AddCorsPolicy(this IServiceCollection services)
     {
         return services.AddCors(opt =>
             opt.AddPolicy(CorsPolicy, policy =>

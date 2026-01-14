@@ -28,7 +28,7 @@ public static class Startup
             .AddGoogleDrive(config)
             .AddBackgroundJobs(config)
             .AddCaching(config)
-            .AddCorsPolicy(config)
+            .AddCorsPolicy()
             .AddExceptionMiddleware()
             .AddBehaviours()
             .AddMailing(config)
