@@ -6,7 +6,7 @@ Tài liệu này hướng dẫn xây dựng Shared Layer - layer cơ bản nhấ
 
 ---
 
-## Bước 3.1: Setup Shared Project
+## Bước 2.1: Setup Shared Project
 
 **Làm gì:** Tạo project cơ bản nhất, không phụ thuộc gì.
 
@@ -28,7 +28,7 @@ Tài liệu này hướng dẫn xây dựng Shared Layer - layer cơ bản nhấ
 
 ---
 
-## Bước 3.2: Tạo Authorization Constants
+## Bước 2.2: Tạo Authorization Constants
 
 **Làm gì:** Định nghĩa constants cho Actions, Functions, Roles, Claims.
 

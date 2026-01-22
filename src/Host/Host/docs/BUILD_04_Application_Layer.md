@@ -6,7 +6,7 @@ Tài liệu này hướng dẫn xây dựng Application Layer - chứa applicati
 
 ---
 
-## Bước 5.1: Setup Application Project
+## Bước 4.1: Setup Application Project
 
 **Làm gì:** Tạo project chứa application services, DTOs, handlers.
 
@@ -44,7 +44,7 @@ Tài liệu này hướng dẫn xây dựng Application Layer - chứa applicati
 
 ---
 
-## Bước 5.2: Tạo Application Startup
+## Bước 4.2: Tạo Application Startup
 
 **Làm gì:** Đăng ký MediatR và FluentValidation.
 

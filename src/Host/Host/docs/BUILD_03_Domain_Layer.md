@@ -6,7 +6,7 @@ Tài liệu này hướng dẫn xây dựng Domain Layer - chứa domain entitie
 
 ---
 
-## Bước 4.1: Setup Domain Project
+## Bước 3.1: Setup Domain Project
 
 **Làm gì:** Tạo project chứa domain entities.
 
@@ -39,7 +39,7 @@ Tài liệu này hướng dẫn xây dựng Domain Layer - chứa domain entitie
 
 ---
 
-## Bước 4.2: Tạo Identity Entities
+## Bước 3.2: Tạo Identity Entities
 
 **Làm gì:** Tạo custom Identity entities.
 

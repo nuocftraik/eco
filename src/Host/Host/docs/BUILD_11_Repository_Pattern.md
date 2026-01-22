@@ -6,250 +6,46 @@ Tài liệu này hướng dẫn về Repository Pattern sử dụng Ardalis.Spec
 
 ---
 
-## Bước 10.1: Tạo Repository Interfaces
+## Bước 10.1: Tạo model Search và Filter (dependency trước)
 
-**Làm gì:** Tạo interfaces cho Repository pattern.
+**Làm gì:** Tạo hai model cơ sở dùng cho các filter cao hơn.
 
-**Tại sao:**
-- Abstraction layer giữa Application và Infrastructure
-- Dễ test (có thể mock)
-- Sử dụng Ardalis.Specification để query linh hoạt
-
-**File:** `src/Core/Application/Common/Persistence/IRepository.cs`
+**File 1:** `src/Core/Application/Common/Models/Search.cs`
 
 ```csharp
-using Ardalis.Specification;
-using ECO.WebApi.Domain.Common.Contracts;
+namespace ECO.WebApi.Application.Common.Models;
 
-namespace ECO.WebApi.Application.Common.Persistence;
-
-/// <summary>
-/// The regular read/write repository for an aggregate root.
-/// </summary>
-public interface IRepository<T> : IRepositoryBase<T>
-    where T : class, IAggregateRoot
+public class Search
 {
-}
-
-/// <summary>
-/// The read-only repository for an aggregate root.
-/// </summary>
-public interface IReadRepository<T> : IReadRepositoryBase<T>
-    where T : class, IAggregateRoot
-{
-}
-
-/// <summary>
-/// A special (read/write) repository for an aggregate root,
-/// that also adds EntityCreated, EntityUpdated or EntityDeleted
-/// events to the DomainEvents of the entities before adding,
-/// updating or deleting them.
-/// </summary>
-public interface IRepositoryWithEvents<T> : IRepositoryBase<T>
-    where T : class, IAggregateRoot
-{
+    public string? Keyword { get; set; }
+    public string[]? Fields { get; set; }
 }
 ```
 
-**Giải thích:**
-- `IRepository<T>`: Read/write repository, kế thừa từ `IRepositoryBase<T>` (Ardalis.Specification)
-- `IReadRepository<T>`: Read-only repository
-- `IRepositoryWithEvents<T>`: Repository tự động thêm Domain Events
-
-**Tại sao chỉ accept `IAggregateRoot`:**
-- Tuân thủ DDD: Chỉ Aggregate Roots được truy cập từ bên ngoài
-- Child entities chỉ được truy cập qua Aggregate Root
-
-**Tác dụng:**
-- Abstraction: Application layer không phụ thuộc vào EF Core
-- Specification pattern: Query linh hoạt, dễ test
-- Domain Events: Tự động phát events khi entity thay đổi
-
----
-
-## Bước 10.2: Implement ApplicationDbRepository
-
-**Làm gì:** Implement repository sử dụng EF Core và Ardalis.Specification.
-
-**File:** `src/Infrastructure/Infrastructure/Persistence/Repository/ApplicationDbRepository.cs`
+**File 2:** `src/Core/Application/Common/Models/Filter.cs`
 
 ```csharp
-using Ardalis.Specification.EntityFrameworkCore;
-using ECO.WebApi.Application.Common.Persistence;
-using ECO.WebApi.Domain.Common.Contracts;
-using ECO.WebApi.Infrastructure.Persistence.Context;
+namespace ECO.WebApi.Application.Common.Models;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Repository;
-
-public class ApplicationDbRepository<T> : RepositoryBase<T>, IReadRepository<T>, IRepository<T>
-    where T : class, IAggregateRoot
+public class Filter
 {
-    public ApplicationDbRepository(ApplicationDbContext dbContext)
-        : base(dbContext)
-    {
-    }
+    public string? Logic { get; set; }
+    public string? Field { get; set; }
+    public string? Operator { get; set; }
+    public object? Value { get; set; }
+    public List<Filter>? Filters { get; set; }
 }
 ```
 
-**Giải thích:**
-- `RepositoryBase<T>`: Base class từ Ardalis.Specification, cung cấp tất cả methods cần thiết
-- `ApplicationDbContext`: EF Core DbContext
-- Implement cả `IReadRepository<T>` và `IRepository<T>`
-
 **Tác dụng:**
-- Sử dụng Ardalis.Specification để query
-- Tự động có tất cả methods: `GetByIdAsync`, `ListAsync`, `AddAsync`, etc.
+- `Search`: Advanced search với keyword và danh sách fields (support nested).
+- `Filter`: Advanced filter với logic (AND/OR/XOR) và operators (EQ, GT, etc.), cho phép lồng filters.
 
 ---
 
-## Bước 10.3: Tạo EventAddingRepositoryDecorator
+## Bước 10.2: Tạo BaseFilter và PaginationFilter (ghép Search/Filter)
 
-**Làm gì:** Decorator tự động thêm Domain Events khi Add/Update/Delete.
-
-**Tại sao dùng Decorator Pattern:**
-- Tách biệt concerns: Repository logic và Event logic
-- Có thể bật/tắt events dễ dàng
-- Không cần modify repository chính
-
-**File:** `src/Infrastructure/Infrastructure/Persistence/Repository/EventAddingRepositoryDecorator.cs`
-
-```csharp
-using Ardalis.Specification;
-using ECO.WebApi.Application.Common.Persistence;
-using ECO.WebApi.Domain.Common.Contracts;
-using ECO.WebApi.Domain.Common.Events;
-
-namespace ECO.WebApi.Infrastructure.Persistence.Repository;
-
-/// <summary>
-/// The repository that implements IRepositoryWithEvents.
-/// Implemented as a decorator. It only augments the Add,
-/// Update and Delete calls where it adds the respective
-/// EntityCreated, EntityUpdated or EntityDeleted event
-/// before delegating to the decorated repository.
-/// </summary>
-public class EventAddingRepositoryDecorator<T> : IRepositoryWithEvents<T>
-    where T : class, IAggregateRoot
-{
-    private readonly IRepository<T> _decorated;
-
-    public EventAddingRepositoryDecorator(IRepository<T> decorated) => 
-        _decorated = decorated;
-
-    public Task<T> AddAsync(T entity, CancellationToken cancellationToken = default)
-    {
-        entity.DomainEvents.Add(EntityCreatedEvent.WithEntity(entity));
-        return _decorated.AddAsync(entity, cancellationToken);
-    }
-
-    public Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
-    {
-        entity.DomainEvents.Add(EntityUpdatedEvent.WithEntity(entity));
-        return _decorated.UpdateAsync(entity, cancellationToken);
-    }
-
-    public Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
-    {
-        entity.DomainEvents.Add(EntityDeletedEvent.WithEntity(entity));
-        return _decorated.DeleteAsync(entity, cancellationToken);
-    }
-
-    public Task DeleteRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
-    {
-        foreach (var entity in entities)
-        {
-            entity.DomainEvents.Add(EntityDeletedEvent.WithEntity(entity));
-        }
-        return _decorated.DeleteRangeAsync(entities, cancellationToken);
-    }
-
-    // Tất cả methods khác chỉ forward đến decorated repository
-    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
-        _decorated.SaveChangesAsync(cancellationToken);
-    
-    public Task<T?> GetByIdAsync<TId>(TId id, CancellationToken cancellationToken = default)
-        where TId : notnull =>
-        _decorated.GetByIdAsync(id, cancellationToken);
-    
-    // ... các methods khác forward tương tự
-}
-```
-
-**Cách hoạt động:**
-1. Decorator nhận `IRepository<T>` làm dependency
-2. Khi `AddAsync`, `UpdateAsync`, `DeleteAsync` được gọi:
-   - Thêm Domain Event tương ứng vào `entity.DomainEvents`
-   - Forward call đến decorated repository
-3. Các methods khác (Get, List, etc.) chỉ forward, không thêm events
-
-**Tại sao chỉ thêm events cho Add/Update/Delete:**
-- Chỉ các operations thay đổi entity mới cần events
-- Read operations không cần events
-
-**Tác dụng:**
-- Tự động phát events khi entity thay đổi
-- Không cần manually thêm events trong code
-- Dễ test: có thể mock `IRepository<T>` riêng
-
----
-
-## Bước 10.4: Đăng ký Repositories
-
-**Làm gì:** Đăng ký repositories trong DI container.
-
-**File:** `src/Infrastructure/Infrastructure/Persistence/Startup.cs`
-
-```csharp
-private static IServiceCollection AddRepositories(this IServiceCollection services)
-{
-    // Add Repositories
-    services.AddScoped(typeof(IRepository<>), typeof(ApplicationDbRepository<>));
-    
-    // Tìm tất cả Aggregate Roots
-    foreach (var aggregateRootType in
-        typeof(IAggregateRoot).Assembly.GetExportedTypes()
-            .Where(t => typeof(IAggregateRoot).IsAssignableFrom(t) && t.IsClass)
-            .ToList())
-    {
-        // Add ReadRepositories (alias cho IRepository)
-        services.AddScoped(
-            typeof(IReadRepository<>).MakeGenericType(aggregateRootType), 
-            sp => sp.GetRequiredService(typeof(IRepository<>).MakeGenericType(aggregateRootType)));
-
-        // Decorate với EventAddingRepositoryDecorator và expose as IRepositoryWithEvents
-        services.AddScoped(
-            typeof(IRepositoryWithEvents<>).MakeGenericType(aggregateRootType), 
-            sp => Activator.CreateInstance(
-                typeof(EventAddingRepositoryDecorator<>).MakeGenericType(aggregateRootType),
-                sp.GetRequiredService(typeof(IRepository<>).MakeGenericType(aggregateRootType)))
-            ?? throw new InvalidOperationException($"Couldn't create EventAddingRepositoryDecorator for {aggregateRootType.Name}"));
-    }
-
-    return services;
-}
-```
-
-**Giải thích:**
-1. Đăng ký `IRepository<T>` → `ApplicationDbRepository<T>`
-2. Tìm tất cả Aggregate Roots bằng Reflection
-3. Đăng ký `IReadRepository<T>` → alias cho `IRepository<T>`
-4. Đăng ký `IRepositoryWithEvents<T>` → `EventAddingRepositoryDecorator<T>` (decorate `IRepository<T>`)
-
-**Tại sao dùng Reflection:**
-- Tự động discover tất cả Aggregate Roots
-- Không cần đăng ký từng repository một
-- Dễ mở rộng: thêm Aggregate Root mới → tự động được đăng ký
-
-**Tác dụng:**
-- Tự động đăng ký repositories cho tất cả Aggregate Roots
-- Có 3 loại repository: `IRepository`, `IReadRepository`, `IRepositoryWithEvents`
-- Dễ sử dụng: inject `IRepositoryWithEvents<T>` nếu cần events
-
----
-
-## Bước 10.5: Tạo Pagination và Filter Models
-
-**Làm gì:** Tạo models cho pagination, search, filter.
+**Làm gì:** Gom Search/Filter vào filter tổng quát và thêm thông tin phân trang.
 
 **File 1:** `src/Core/Application/Common/Models/BaseFilter.cs`
 
@@ -283,42 +79,13 @@ public static class PaginationFilterExtensions
 }
 ```
 
-**File 3:** `src/Core/Application/Common/Models/Search.cs`
-
-```csharp
-namespace ECO.WebApi.Application.Common.Models;
-
-public class Search
-{
-    public string? Keyword { get; set; }
-    public string[]? Fields { get; set; }
-}
-```
-
-**File 4:** `src/Core/Application/Common/Models/Filter.cs`
-
-```csharp
-namespace ECO.WebApi.Application.Common.Models;
-
-public class Filter
-{
-    public string? Logic { get; set; }
-    public string? Field { get; set; }
-    public string? Operator { get; set; }
-    public object? Value { get; set; }
-    public List<Filter>? Filters { get; set; }
-}
-```
-
 **Tác dụng:**
-- `BaseFilter`: Base class cho tất cả filters
-- `PaginationFilter`: Pagination + search + filter
-- `Search`: Advanced search với keyword và fields
-- `Filter`: Advanced filter với logic (AND/OR), operators (EQ, GT, etc.)
+- `BaseFilter`: Base cho mọi request filter (keyword + search nâng cao + filter nâng cao).
+- `PaginationFilter`: Thêm pagination và orderBy, kế thừa `BaseFilter`.
 
 ---
 
-## Bước 10.6: Tạo Specification Builder Extensions
+## Bước 10.3: Tạo Specification Builder Extensions
 
 **Làm gì:** Tạo extension methods để dễ dàng build specifications.
 
@@ -619,7 +386,7 @@ public class ProductBySearchSpec : Specification<Product>
 
 ---
 
-## Bước 10.7: Tạo Base Specifications
+## Bước 10.4: Tạo Base Specifications
 
 **Làm gì:** Tạo base specifications để reuse.
 
@@ -691,7 +458,248 @@ public class ProductBySearchSpec : EntitiesByPaginationFilterSpec<Product>
 
 ---
 
-## Payload mẫu (Search + Filter + Pagination + OrderBy)
+## Bước 10.5: Tạo Repository Interfaces
+
+**Làm gì:** Tạo interfaces cho Repository pattern.
+
+**Tại sao:**
+- Abstraction layer giữa Application và Infrastructure
+- Dễ test (có thể mock)
+- Sử dụng Ardalis.Specification để query linh hoạt
+
+**File:** `src/Core/Application/Common/Persistence/IRepository.cs`
+
+```csharp
+using Ardalis.Specification;
+using ECO.WebApi.Domain.Common.Contracts;
+
+namespace ECO.WebApi.Application.Common.Persistence;
+
+/// <summary>
+/// The regular read/write repository for an aggregate root.
+/// </summary>
+public interface IRepository<T> : IRepositoryBase<T>
+    where T : class, IAggregateRoot
+{
+}
+
+/// <summary>
+/// The read-only repository for an aggregate root.
+/// </summary>
+public interface IReadRepository<T> : IReadRepositoryBase<T>
+    where T : class, IAggregateRoot
+{
+}
+
+/// <summary>
+/// A special (read/write) repository for an aggregate root,
+/// that also adds EntityCreated, EntityUpdated or EntityDeleted
+/// events to the DomainEvents of the entities before adding,
+/// updating or deleting them.
+/// </summary>
+public interface IRepositoryWithEvents<T> : IRepositoryBase<T>
+    where T : class, IAggregateRoot
+{
+}
+```
+
+**Giải thích:**
+- `IRepository<T>`: Read/write repository, kế thừa từ `IRepositoryBase<T>` (Ardalis.Specification)
+- `IReadRepository<T>`: Read-only repository
+- `IRepositoryWithEvents<T>`: Repository tự động thêm Domain Events
+
+**Tại sao chỉ accept `IAggregateRoot`:**
+- Tuân thủ DDD: Chỉ Aggregate Roots được truy cập từ bên ngoài
+- Child entities chỉ được truy cập qua Aggregate Root
+
+**Tác dụng:**
+- Abstraction: Application layer không phụ thuộc vào EF Core
+- Specification pattern: Query linh hoạt, dễ test
+- Domain Events: Tự động phát events khi entity thay đổi
+
+---
+
+## Bước 10.6: Implement ApplicationDbRepository
+
+**Làm gì:** Implement repository sử dụng EF Core và Ardalis.Specification.
+
+**File:** `src/Infrastructure/Infrastructure/Persistence/Repository/ApplicationDbRepository.cs`
+
+```csharp
+using Ardalis.Specification.EntityFrameworkCore;
+using ECO.WebApi.Application.Common.Persistence;
+using ECO.WebApi.Domain.Common.Contracts;
+using ECO.WebApi.Infrastructure.Persistence.Context;
+
+namespace ECO.WebApi.Infrastructure.Persistence.Repository;
+
+public class ApplicationDbRepository<T> : RepositoryBase<T>, IReadRepository<T>, IRepository<T>
+    where T : class, IAggregateRoot
+{
+    public ApplicationDbRepository(ApplicationDbContext dbContext)
+        : base(dbContext)
+    {
+    }
+}
+```
+
+**Giải thích:**
+- `RepositoryBase<T>`: Base class từ Ardalis.Specification, cung cấp tất cả methods cần thiết
+- `ApplicationDbContext`: EF Core DbContext
+- Implement cả `IReadRepository<T>` và `IRepository<T>`
+
+**Tác dụng:**
+- Sử dụng Ardalis.Specification để query
+- Tự động có tất cả methods: `GetByIdAsync`, `ListAsync`, `AddAsync`, etc.
+
+---
+
+## Bước 10.7: Tạo EventAddingRepositoryDecorator
+
+**Làm gì:** Decorator tự động thêm Domain Events khi Add/Update/Delete.
+
+**Tại sao dùng Decorator Pattern:**
+- Tách biệt concerns: Repository logic và Event logic
+- Có thể bật/tắt events dễ dàng
+- Không cần modify repository chính
+
+**File:** `src/Infrastructure/Infrastructure/Persistence/Repository/EventAddingRepositoryDecorator.cs`
+
+```csharp
+using Ardalis.Specification;
+using ECO.WebApi.Application.Common.Persistence;
+using ECO.WebApi.Domain.Common.Contracts;
+using ECO.WebApi.Domain.Common.Events;
+
+namespace ECO.WebApi.Infrastructure.Persistence.Repository;
+
+/// <summary>
+/// The repository that implements IRepositoryWithEvents.
+/// Implemented as a decorator. It only augments the Add,
+/// Update and Delete calls where it adds the respective
+/// EntityCreated, EntityUpdated or EntityDeleted event
+/// before delegating to the decorated repository.
+/// </summary>
+public class EventAddingRepositoryDecorator<T> : IRepositoryWithEvents<T>
+    where T : class, IAggregateRoot
+{
+    private readonly IRepository<T> _decorated;
+
+    public EventAddingRepositoryDecorator(IRepository<T> decorated) => 
+        _decorated = decorated;
+
+    public Task<T> AddAsync(T entity, CancellationToken cancellationToken = default)
+    {
+        entity.DomainEvents.Add(EntityCreatedEvent.WithEntity(entity));
+        return _decorated.AddAsync(entity, cancellationToken);
+    }
+
+    public Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
+    {
+        entity.DomainEvents.Add(EntityUpdatedEvent.WithEntity(entity));
+        return _decorated.UpdateAsync(entity, cancellationToken);
+    }
+
+    public Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
+    {
+        entity.DomainEvents.Add(EntityDeletedEvent.WithEntity(entity));
+        return _decorated.DeleteAsync(entity, cancellationToken);
+    }
+
+    public Task DeleteRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
+    {
+        foreach (var entity in entities)
+        {
+            entity.DomainEvents.Add(EntityDeletedEvent.WithEntity(entity));
+        }
+        return _decorated.DeleteRangeAsync(entities, cancellationToken);
+    }
+
+    // Tất cả methods khác chỉ forward đến decorated repository
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
+        _decorated.SaveChangesAsync(cancellationToken);
+    
+    public Task<T?> GetByIdAsync<TId>(TId id, CancellationToken cancellationToken = default)
+        where TId : notnull =>
+        _decorated.GetByIdAsync(id, cancellationToken);
+    
+    // ... các methods khác forward tương tự
+}
+```
+
+**Cách hoạt động:**
+1. Decorator nhận `IRepository<T>` làm dependency
+2. Khi `AddAsync`, `UpdateAsync`, `DeleteAsync` được gọi:
+   - Thêm Domain Event tương ứng vào `entity.DomainEvents`
+   - Forward call đến decorated repository
+3. Các methods khác (Get, List, etc.) chỉ forward, không thêm events
+
+**Tại sao chỉ thêm events cho Add/Update/Delete:**
+- Chỉ các operations thay đổi entity mới cần events
+- Read operations không cần events
+
+**Tác dụng:**
+- Tự động phát events khi entity thay đổi
+- Không cần manually thêm events trong code
+- Dễ test: có thể mock `IRepository<T>` riêng
+
+---
+
+## Bước 10.8: Đăng ký Repositories
+
+**Làm gì:** Đăng ký repositories trong DI container.
+
+**File:** `src/Infrastructure/Infrastructure/Persistence/Startup.cs`
+
+```csharp
+private static IServiceCollection AddRepositories(this IServiceCollection services)
+{
+    // Add Repositories
+    services.AddScoped(typeof(IRepository<>), typeof(ApplicationDbRepository<>));
+    
+    // Tìm tất cả Aggregate Roots
+    foreach (var aggregateRootType in
+        typeof(IAggregateRoot).Assembly.GetExportedTypes()
+            .Where(t => typeof(IAggregateRoot).IsAssignableFrom(t) && t.IsClass)
+            .ToList())
+    {
+        // Add ReadRepositories (alias cho IRepository)
+        services.AddScoped(
+            typeof(IReadRepository<>).MakeGenericType(aggregateRootType), 
+            sp => sp.GetRequiredService(typeof(IRepository<>).MakeGenericType(aggregateRootType)));
+
+        // Decorate với EventAddingRepositoryDecorator và expose as IRepositoryWithEvents
+        services.AddScoped(
+            typeof(IRepositoryWithEvents<>).MakeGenericType(aggregateRootType), 
+            sp => Activator.CreateInstance(
+                typeof(EventAddingRepositoryDecorator<>).MakeGenericType(aggregateRootType),
+                sp.GetRequiredService(typeof(IRepository<>).MakeGenericType(aggregateRootType)))
+            ?? throw new InvalidOperationException($"Couldn't create EventAddingRepositoryDecorator for {aggregateRootType.Name}"));
+    }
+
+    return services;
+}
+```
+
+**Giải thích:**
+1. Đăng ký `IRepository<T>` → `ApplicationDbRepository<T>`
+2. Tìm tất cả Aggregate Roots bằng Reflection
+3. Đăng ký `IReadRepository<T>` → alias cho `IRepository<T>`
+4. Đăng ký `IRepositoryWithEvents<T>` → `EventAddingRepositoryDecorator<T>` (decorate `IRepository<T>`)
+
+**Tại sao dùng Reflection:**
+- Tự động discover tất cả Aggregate Roots
+- Không cần đăng ký từng repository một
+- Dễ mở rộng: thêm Aggregate Root mới → tự động được đăng ký
+
+**Tác dụng:**
+- Tự động đăng ký repositories cho tất cả Aggregate Roots
+- Có 3 loại repository: `IRepository`, `IReadRepository`, `IRepositoryWithEvents`
+- Dễ sử dụng: inject `IRepositoryWithEvents<T>` nếu cần events
+
+---
+
+## Bước 10.9: Payload mẫu (Search + Filter + Pagination + OrderBy)
 
 **Request body** (ví dụ tìm sản phẩm):
 ```json
@@ -738,13 +746,14 @@ public class ProductBySearchSpec : EntitiesByPaginationFilterSpec<Product>
 
 ### Thứ tự thực hiện:
 
-1. **Repository Interfaces** → IRepository, IReadRepository, IRepositoryWithEvents
-2. **ApplicationDbRepository** → Implement repository với EF Core
-3. **EventAddingRepositoryDecorator** → Decorator tự động thêm Domain Events
-4. **Register Repositories** → Đăng ký trong DI container
-5. **Pagination/Filter Models** → Models cho search, filter, pagination
-6. **Specification Extensions** → Extension methods để build specifications
-7. **Base Specifications** → Base specs để reuse
+1. **Search & Filter models** → Tạo `Search`, `Filter`
+2. **Base/Pagination filters** → Tạo `BaseFilter`, `PaginationFilter`
+3. **Specification extensions** → Extension methods để build specs
+4. **Base specifications** → Base specs để reuse
+5. **Repository interfaces** → IRepository, IReadRepository, IRepositoryWithEvents
+6. **ApplicationDbRepository** → Implement repository với EF Core
+7. **EventAddingRepositoryDecorator** → Decorator tự động thêm Domain Events
+8. **Register Repositories** → Đăng ký trong DI container
 
 ### Điểm quan trọng:
 

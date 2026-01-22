@@ -4,7 +4,8 @@ ECO.WebApi là một ASP.NET Core Web API project được xây dựng theo Clea
 
 ## 📚 Tài liệu
 
-Xem [SETUP_GUIDE.md](SETUP_GUIDE.md) để có hướng dẫn setup chi tiết và đầy đủ.
+- Xem [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) để có hướng dẫn setup chi tiết và đầy đủ.
+- Xem [docs/BUILD_INDEX.md](docs/BUILD_INDEX.md) để có hướng dẫn xây dựng base project theo từng bước/module.
 
 ## 🚀 Quick Start
 
@@ -23,4 +24,4 @@ dotnet ef database update --project ../../Migrators/Migrators.MSSQL/ --context A
 dotnet ef migrations remove --project ../../Migrators/Migrators.MSSQL/ --context ApplicationDbContext
 ```
 
-Xem [SETUP_GUIDE.md](SETUP_GUIDE.md) section 5.4 để biết thêm các migration commands khác.
+Xem [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) section 5.4 để biết thêm các migration commands khác.
