@@ -1,14 +1,84 @@
-# Common Services - CurrentUser, SerializerService, ExceptionMiddleware, ValidationBehavior
+# Common Services - CurrentUser, Serializer, Event Publisher
 
-> üìñ [Quay l·∫°i M·ª•c l·ª•c](BUILD_INDEX.md)
+> ?? [Quay l?i M?c l?c](BUILD_INDEX.md)  
+> ?? **Prerequisites:** B??c 11 (Repository Pattern) ?„ ho‡n th‡nh
 
-T√†i li·ªáu n√†y h∆∞·ªõng d·∫´n v·ªÅ c√°c Common Services c∆° b·∫£n: CurrentUser, SerializerService, ExceptionMiddleware, v√† ValidationBehavior.
+T‡i li?u n‡y h??ng d?n x‚y d?ng c·c Core Services n?n t?ng: CurrentUser, Serializer, v‡ Event Publisher.
 
 ---
 
-## B∆∞·ªõc 11.1: T·∫°o ICurrentUser v√† ICurrentUserInitializer
+## 1. Overview
 
-**L√†m g√¨:** T·∫°o interfaces ƒë·ªÉ l·∫•y th√¥ng tin user hi·ªán t·∫°i.
+**L‡m gÏ:** X‚y d?ng c·c core services ???c s? d?ng xuyÍn su?t application.
+
+**T?i sao c?n:**
+- **CurrentUser Service:** L?y thÙng tin user hi?n t?i t? JWT token trong m?i handler/service
+- **Serializer Service:** Serialize/deserialize objects cho caching, logging, messaging
+- **Event Publisher:** Publish domain events ?? trigger c·c event handlers (decoupling)
+
+**Trong b??c n‡y ch˙ng ta s?:**
+- ? T?o `ICurrentUser` v‡ `ICurrentUserInitializer` interfaces
+- ? Implement `CurrentUser` service v?i ClaimsPrincipal
+- ? T?o `CurrentUserMiddleware` ?? auto-set current user
+- ? T?o `ISerializerService` interface
+- ? Implement `NewtonSoftService` (JSON serialization)
+- ? T?o `IEventPublisher` interface
+- ? Implement `EventPublisher` v?i MediatR integration
+- ? Register services v‡ middleware
+
+**Real-world example:**
+```csharp
+// Trong handler - L?y current user
+public class CreateProductHandler : IRequestHandler<CreateProductRequest, Guid>
+{
+ private readonly ICurrentUser _currentUser;
+    private readonly IEventPublisher _eventPublisher;
+
+    public async Task<Guid> Handle(CreateProductRequest request, CancellationToken ct)
+ {
+     // Auto cÛ thÙng tin user hi?n t?i
+  var userId = _currentUser.GetUserId();
+    var userEmail = _currentUser.GetUserEmail();
+    
+      var product = Product.Create(request.Name, request.Price);
+     
+     // Publish domain event
+        await _eventPublisher.PublishAsync(new ProductCreatedEvent(product));
+        
+        return product.Id;
+    }
+}
+```
+
+---
+
+## 2. Add Required Packages
+
+### B??c 2.1: Add Newtonsoft.Json Package
+
+**File:** `src/Infrastructure/Infrastructure/Infrastructure.csproj`
+
+```xml
+<ItemGroup>
+    <!-- JSON Serialization -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+</ItemGroup>
+```
+
+**Gi?i thÌch:**
+- `Newtonsoft.Json`: JSON serializer/deserializer (mature v‡ feature-rich h?n System.Text.Json)
+
+**?? L?u ˝:** MediatR ?„ cÛ t? Application layer, khÙng c?n add l?i.
+
+---
+
+## 3. CurrentUser Service
+
+### B??c 3.1: ICurrentUser Interface
+
+**L‡m gÏ:** T?o interface ?? l?y thÙng tin user hi?n t?i t? JWT token.
+
+**T?i sao:** Handlers/Services c?n bi?t user n‡o ?ang th?c hi?n action (audit, authorization).
 
 **File:** `src/Core/Application/Common/Interfaces/ICurrentUser.cs`
 
@@ -17,16 +87,63 @@ using System.Security.Claims;
 
 namespace ECO.WebApi.Application.Common.Interfaces;
 
+/// <summary>
+/// Interface ?? l?y thÙng tin user hi?n t?i t? JWT token
+/// </summary>
 public interface ICurrentUser
 {
+    /// <summary>
+    /// User name t? Identity.Name
+    /// </summary>
     string? Name { get; }
+
+    /// <summary>
+  /// L?y User ID (Guid) t? NameIdentifier claim
+    /// </summary>
     Guid GetUserId();
+
+/// <summary>
+    /// L?y User Email t? Email claim
+    /// </summary>
     string? GetUserEmail();
+
+    /// <summary>
+    /// Check user ?„ authenticate ch?a
+    /// </summary>
     bool IsAuthenticated();
+
+    /// <summary>
+    /// Check user cÛ role c? th? khÙng
+    /// </summary>
     bool IsInRole(string role);
-    IEnumerable<Claim>? GetUserClaims();
+
+ /// <summary>
+  /// L?y t?t c? claims c?a user
+/// </summary>
+ IEnumerable<Claim>? GetUserClaims();
 }
 ```
+
+**Gi?i thÌch:**
+- `Name`: Display name t? JWT claims
+- `GetUserId()`: User ID (Guid) t? NameIdentifier claim
+- `GetUserEmail()`: Email t? Email claim
+- `IsAuthenticated()`: Check xem user ?„ login ch?a
+- `IsInRole(role)`: Check user cÛ role c? th? (Admin, Basic, etc.)
+- `GetUserClaims()`: L?y all claims ?? custom logic
+
+**T?i sao t·ch interface:**
+- Read-only trong handlers/services
+- D? mock cho unit testing
+- Separation of concerns
+
+---
+
+### B??c 3.2: ICurrentUserInitializer Interface
+
+**L‡m gÏ:** Interface ?? set current user (d˘ng trong middleware).
+
+**T?i sao:** Middleware c?n set user t? HttpContext, cÚn handlers ch? c?n ??c.
 
 **File:** `src/Core/Application/Common/Interfaces/ICurrentUserInitializer.cs`
 
@@ -35,22 +152,130 @@ using System.Security.Claims;
 
 namespace ECO.WebApi.Application.Common.Interfaces;
 
+/// <summary>
+/// Interface ?? initialize current user (d˘ng trong middleware)
+/// </summary>
 public interface ICurrentUserInitializer
 {
+    /// <summary>
+    /// Set current user t? ClaimsPrincipal (t? JWT token)
+    /// </summary>
     void SetCurrentUser(ClaimsPrincipal user);
+
+    /// <summary>
+    /// Set current user ID manually (cho background jobs/system operations)
+    /// </summary>
     void SetCurrentUserId(string userId);
 }
 ```
 
-**T√°c d·ª•ng:**
-- `ICurrentUser`: L·∫•y th√¥ng tin user hi·ªán t·∫°i (Id, Email, Roles, Claims)
-- `ICurrentUserInitializer`: Set current user (d√πng trong middleware)
+**Gi?i thÌch:**
+- `SetCurrentUser()`: Set t? HttpContext.User (cÛ JWT token)
+- `SetCurrentUserId()`: Set manually cho background jobs (khÙng cÛ HTTP context)
+
+**T?i sao t·ch 2 interfaces:**
+- `ICurrentUser`: Read-only cho handlers/services
+- `ICurrentUserInitializer`: Write-only cho middleware
+- Better encapsulation
 
 ---
 
-## B∆∞·ªõc 11.2: Implement CurrentUser
+### B??c 3.3: ClaimsPrincipal Extension Methods
 
-**L√†m g√¨:** Implement CurrentUser v·ªõi ClaimsPrincipal.
+**L‡m gÏ:** Extension methods ?? l?y claims t? ClaimsPrincipal d? d‡ng h?n.
+
+**T?i sao:** Code g?n h?n, reusable, type-safe.
+
+**File:** `src/Core/Shared/Authorization/ClaimsPrincipalExtensions.cs`
+
+```csharp
+using ECO.WebApi.Shared.Authorization;
+
+namespace System.Security.Claims;
+
+/// <summary>
+/// Extension methods cho ClaimsPrincipal
+/// </summary>
+public static class ClaimsPrincipalExtensions
+{
+    /// <summary>
+    /// L?y Email t? ClaimTypes.Email
+    /// </summary>
+    public static string? GetEmail(this ClaimsPrincipal principal)
+      => principal.FindFirstValue(ClaimTypes.Email);
+
+    /// <summary>
+    /// L?y Full Name t? ECOClaims.Fullname
+    /// </summary>
+    public static string? GetFullName(this ClaimsPrincipal principal)
+      => principal?.FindFirst(ECOClaims.Fullname)?.Value;
+
+    /// <summary>
+    /// L?y First Name t? ClaimTypes.Name
+    /// </summary>
+    public static string? GetFirstName(this ClaimsPrincipal principal)
+        => principal?.FindFirst(ClaimTypes.Name)?.Value;
+
+    /// <summary>
+    /// L?y Surname t? ClaimTypes.Surname
+    /// </summary>
+    public static string? GetSurname(this ClaimsPrincipal principal)
+=> principal?.FindFirst(ClaimTypes.Surname)?.Value;
+
+    /// <summary>
+    /// L?y Phone Number t? ClaimTypes.MobilePhone
+    /// </summary>
+    public static string? GetPhoneNumber(this ClaimsPrincipal principal)
+        => principal.FindFirstValue(ClaimTypes.MobilePhone);
+
+    /// <summary>
+    /// L?y User ID t? ClaimTypes.NameIdentifier
+    /// </summary>
+    public static string? GetUserId(this ClaimsPrincipal principal)
+       => principal.FindFirstValue(ClaimTypes.NameIdentifier);
+
+    /// <summary>
+    /// L?y Image URL t? ECOClaims.ImageUrl
+    /// </summary>
+    public static string? GetImageUrl(this ClaimsPrincipal principal)
+       => principal.FindFirstValue(ECOClaims.ImageUrl);
+
+    /// <summary>
+    /// L?y Token Expiration t? ECOClaims.Expiration
+    /// </summary>
+    public static DateTimeOffset GetExpiration(this ClaimsPrincipal principal) =>
+    DateTimeOffset.FromUnixTimeSeconds(Convert.ToInt64(
+            principal.FindFirstValue(ECOClaims.Expiration)));
+
+    /// <summary>
+  /// Helper method ?? tÏm claim value
+    /// </summary>
+    private static string? FindFirstValue(this ClaimsPrincipal principal, string claimType) =>
+        principal is null
+  ? throw new ArgumentNullException(nameof(principal))
+            : principal.FindFirst(claimType)?.Value;
+}
+```
+
+**Gi?i thÌch:**
+- Extension methods ?? code g?n h?n: `user.GetUserId()` thay vÏ `user.FindFirst(ClaimTypes.NameIdentifier)?.Value`
+- Support custom claims: `Fullname`, `ImageUrl`, `Expiration`
+- Null-safe v?i `?` operator
+- Private `FindFirstValue()` helper ?? avoid repetition
+
+**L?i Ìch:**
+- ? Code g?n, d? ??c
+- ? Type-safe
+- ? Reusable
+- ? D? maintain
+
+---
+
+### B??c 3.4: CurrentUser Implementation
+
+**L‡m gÏ:** Implement CurrentUser service k?t h?p ICurrentUser v‡ ICurrentUserInitializer.
+
+**T?i sao:** M?t class implement c? 2 interfaces, scoped per request.
 
 **File:** `src/Infrastructure/Infrastructure/Auth/CurrentUser.cs`
 
@@ -60,65 +285,113 @@ using ECO.WebApi.Application.Common.Interfaces;
 
 namespace ECO.WebApi.Infrastructure.Auth;
 
+/// <summary>
+/// Implementation c?a ICurrentUser v‡ ICurrentUserInitializer
+/// Scoped per request - m?i HTTP request cÛ instance riÍng
+/// </summary>
 public class CurrentUser : ICurrentUser, ICurrentUserInitializer
 {
     private ClaimsPrincipal? _user;
     private Guid _userId = Guid.Empty;
 
+    /// <summary>
+    /// User name t? Identity.Name
+    /// </summary>
     public string? Name => _user?.Identity?.Name;
 
+    /// <summary>
+    /// L?y User ID t? NameIdentifier claim
+    /// </summary>
     public Guid GetUserId() =>
         IsAuthenticated()
-            ? Guid.Parse(_user?.GetUserId() ?? Guid.Empty.ToString())
-            : _userId;
+? Guid.Parse(_user?.GetUserId() ?? Guid.Empty.ToString())
+: _userId;
 
+    /// <summary>
+    /// L?y User Email t? Email claim
+    /// </summary>
     public string? GetUserEmail() =>
-        IsAuthenticated()
-            ? _user!.GetEmail()
-            : string.Empty;
+      IsAuthenticated()
+ ? _user!.GetEmail()
+  : string.Empty;
 
-    public bool IsAuthenticated() =>
+    /// <summary>
+    /// Check user ?„ authenticate ch?a
+    /// </summary>
+  public bool IsAuthenticated() =>
         _user?.Identity?.IsAuthenticated is true;
 
+    /// <summary>
+    /// Check user cÛ role khÙng
+    /// </summary>
     public bool IsInRole(string role) =>
-        _user?.IsInRole(role) is true;
+     _user?.IsInRole(role) is true;
 
+    /// <summary>
+    /// L?y t?t c? claims
+    /// </summary>
     public IEnumerable<Claim>? GetUserClaims() =>
-        _user?.Claims;
+ _user?.Claims;
 
+    /// <summary>
+    /// Set current user t? ClaimsPrincipal
+    /// Ch? ???c g?i m?t l?n per request (t? middleware)
+    /// </summary>
     public void SetCurrentUser(ClaimsPrincipal user)
     {
         if (_user != null)
         {
-            throw new Exception("Method reserved for in-scope initialization");
+ throw new Exception("Method reserved for in-scope initialization");
         }
-        _user = user;
+
+ _user = user;
     }
 
+    /// <summary>
+  /// Set current user ID manually (cho background jobs)
+    /// </summary>
     public void SetCurrentUserId(string userId)
-    {
+ {
         if (_userId != Guid.Empty)
-        {
+  {
             throw new Exception("Method reserved for in-scope initialization");
         }
+
         if (!string.IsNullOrEmpty(userId))
         {
-            _userId = Guid.Parse(userId);
+        _userId = Guid.Parse(userId);
         }
     }
 }
 ```
 
-**T√°c d·ª•ng:**
-- L∆∞u `ClaimsPrincipal` t·ª´ JWT token
-- Cung c·∫•p methods ƒë·ªÉ l·∫•y th√¥ng tin user
-- Thread-safe: m·ªói request c√≥ instance ri√™ng (scoped)
+**Gi?i thÌch:**
+
+**Private fields:**
+- `_user`: ClaimsPrincipal t? JWT token (HTTP requests)
+- `_userId`: User ID manual (background jobs khÙng cÛ HTTP context)
+
+**Thread-safety:**
+- Service l‡ `Scoped` ? m?i request cÛ instance riÍng
+- Check `_user != null` ?? prevent double initialization
+- Throw exception n?u g?i `SetCurrentUser()` nhi?u l?n
+
+**Fallback logic:**
+- N?u authenticated ? l?y t? claims
+- N?u khÙng ? return empty/default values (background jobs)
+
+**T?i sao c?n _userId riÍng:**
+- Background jobs (Hangfire) khÙng cÛ HTTP context
+- V?n c?n track user th?c hi?n job
+- Set manual qua `SetCurrentUserId()`
 
 ---
 
-## B∆∞·ªõc 11.3: T·∫°o CurrentUserMiddleware
+### B??c 3.5: CurrentUserMiddleware
 
-**L√†m g√¨:** Middleware ƒë·ªÉ set current user t·ª´ HttpContext.
+**L‡m gÏ:** Middleware ?? t? ??ng set current user t? HttpContext.User.
+
+**T?i sao:** M?i request ??u c?n user context, middleware t? ??ng set thay vÏ manual.
 
 **File:** `src/Infrastructure/Infrastructure/Auth/CurrentUserMiddleware.cs`
 
@@ -128,6 +401,10 @@ using Microsoft.AspNetCore.Http;
 
 namespace ECO.WebApi.Infrastructure.Auth;
 
+/// <summary>
+/// Middleware ?? set current user t? HttpContext.User
+/// Ph?i ??t SAU UseAuthentication() trong pipeline
+/// </summary>
 public class CurrentUserMiddleware : IMiddleware
 {
     private readonly ICurrentUserInitializer _currentUserInitializer;
@@ -137,53 +414,140 @@ public class CurrentUserMiddleware : IMiddleware
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
+        // Set current user t? HttpContext.User (?„ authenticate b?i JWT middleware)
         _currentUserInitializer.SetCurrentUser(context.User);
-        await next(context);
+   
+        // Continue pipeline
+    await next(context);
     }
 }
 ```
 
-**T√°c d·ª•ng:**
-- Set current user t·ª´ `HttpContext.User` (t·ª´ JWT authentication)
-- Ph·∫£i ƒë·∫∑t **tr∆∞·ªõc** authentication middleware
-- M·ªói request t·ª± ƒë·ªông set current user
+**Gi?i thÌch:**
+- `IMiddleware` interface ? ASP.NET Core middleware pattern
+- `SetCurrentUser(context.User)` ? Set ClaimsPrincipal t? authenticated user
+- `await next(context)` ? Continue pipeline
 
-**Th·ª© t·ª± middleware:**
-```csharp
-app.UseCurrentUser();  // Ph·∫£i tr∆∞·ªõc UseAuthentication
-app.UseAuthentication();
-app.UseAuthorization();
+**Th? t? middleware (QUAN TR?NG):**
 ```
+1. UseRouting()
+2. UseAuthentication()           ? JWT middleware populate context.User
+3. UseCurrentUserMiddleware()    ? Set ICurrentUser t? context.User
+4. UseAuthorization()
+5. MapControllers()
+```
+
+**?? L?u ˝:** Middleware n‡y ph?i ??t SAU `UseAuthentication()` ?? cÛ `context.User`.
 
 ---
 
-## B∆∞·ªõc 11.4: T·∫°o ISerializerService
+### B??c 3.6: Register CurrentUser Service
 
-**L√†m g√¨:** Interface ƒë·ªÉ serialize/deserialize objects.
+**L‡m gÏ:** Register CurrentUser v‡ middleware v‡o DI container.
+
+**T?i sao:** ASP.NET Core c?n bi?t c·ch t?o v‡ inject services.
+
+**File:** `src/Infrastructure/Infrastructure/Auth/Startup.cs`
+
+```csharp
+using ECO.WebApi.Application.Common.Interfaces;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace ECO.WebApi.Infrastructure.Auth;
+
+internal static class Startup
+{
+    /// <summary>
+    /// Register CurrentUser services
+    /// </summary>
+    internal static IServiceCollection AddCurrentUser(this IServiceCollection services)
+    {
+        // Register middleware as Scoped (per request)
+      services.AddScoped<CurrentUserMiddleware>();
+        
+     // Register CurrentUser as Scoped - m?i request m?t instance
+     // C? 2 interfaces ??u resolve v? c˘ng instance
+services.AddScoped<ICurrentUser, CurrentUser>();
+        services.AddScoped<ICurrentUserInitializer, CurrentUser>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Use CurrentUser middleware
+    /// </summary>
+    internal static IApplicationBuilder UseCurrentUserMiddleware(this IApplicationBuilder app) =>
+      app.UseMiddleware<CurrentUserMiddleware>();
+}
+```
+
+**Gi?i thÌch:**
+- `Scoped` lifetime ? m?i HTTP request cÛ instance riÍng, dispose sau khi request done
+- `ICurrentUser` v‡ `ICurrentUserInitializer` ? c˘ng resolve v? m?t instance `CurrentUser`
+- Extension methods ?? code g?n
+
+**T?i sao Scoped:**
+- ? M?i request cÛ user riÍng (thread-safe)
+- ? Dispose t? ??ng sau request
+- ? Performance t?t h?n Transient
+
+---
+
+## 4. Serializer Service
+
+### B??c 4.1: ISerializerService Interface
+
+**L‡m gÏ:** Interface ?? serialize/deserialize objects th‡nh JSON.
+
+**T?i sao:** Caching, logging, messaging ??u c?n serialize objects. Interface ?? d? thay ??i implementation.
 
 **File:** `src/Core/Application/Common/Interfaces/ISerializerService.cs`
 
 ```csharp
 namespace ECO.WebApi.Application.Common.Interfaces;
 
+/// <summary>
+/// Interface ?? serialize/deserialize objects
+/// D˘ng cho caching, logging, messaging, etc.
+/// </summary>
 public interface ISerializerService : ITransientService
 {
+    /// <summary>
+    /// Serialize object th‡nh JSON string
+    /// </summary>
     string Serialize<T>(T obj);
+
+    /// <summary>
+    /// Serialize object th‡nh JSON string v?i type c? th?
+/// </summary>
     string Serialize<T>(T obj, Type type);
+
+    /// <summary>
+    /// Deserialize JSON string th‡nh object
+    /// </summary>
     T Deserialize<T>(string text);
 }
 ```
 
-**T√°c d·ª•ng:**
-- Serialize objects th√†nh JSON string
-- Deserialize JSON string th√†nh objects
-- D√πng cho caching, logging, etc.
+**Gi?i thÌch:**
+- `Transient` lifetime ? t?o instance m?i m?i l?n inject (lightweight)
+- Generic methods ? support any type
+- 2 overloads cho `Serialize()` ?? flexible
+
+**Use cases:**
+- **Caching:** Serialize objects tr??c khi cache v‡o Redis
+- **Logging:** Serialize request/response ?? log
+- **Messaging:** Serialize events/commands ?? send qua queue
+- **Database:** Serialize complex objects v‡o JSON column
 
 ---
 
-## B∆∞·ªõc 11.5: Implement NewtonSoftService
+### B??c 4.2: NewtonSoftService Implementation
 
-**L√†m g√¨:** Implement serializer s·ª≠ d·ª•ng Newtonsoft.Json.
+**L‡m gÏ:** Implement serializer s? d?ng Newtonsoft.Json.
+
+**T?i sao:** Newtonsoft.Json mature h?n, feature-rich h?n System.Text.Json. Support nhi?u scenarios ph?c t?p.
 
 **File:** `src/Infrastructure/Infrastructure/Common/Services/NewtonSoftService.cs`
 
@@ -195,310 +559,817 @@ using Newtonsoft.Json.Serialization;
 
 namespace ECO.WebApi.Infrastructure.Common.Services;
 
+/// <summary>
+/// JSON serializer implementation s? d?ng Newtonsoft.Json
+/// </summary>
 public class NewtonSoftService : ISerializerService
 {
+    /// <summary>
+    /// Deserialize JSON string th‡nh object
+  /// </summary>
     public T Deserialize<T>(string text)
     {
-        return JsonConvert.DeserializeObject<T>(text);
+        return JsonConvert.DeserializeObject<T>(text)!;
     }
 
+    /// <summary>
+    /// Serialize object th‡nh JSON string v?i custom settings
+/// </summary>
     public string Serialize<T>(T obj)
     {
         return JsonConvert.SerializeObject(obj, new JsonSerializerSettings
         {
-            ContractResolver = new CamelCasePropertyNamesContractResolver(),
+          // CamelCase property names (firstName thay vÏ FirstName)
+         ContractResolver = new CamelCasePropertyNamesContractResolver(),
+            
+ // Ignore null values (khÙng serialize properties null)
             NullValueHandling = NullValueHandling.Ignore,
-            Converters = new List<JsonConverter>
+            
+      // Enum as string (thay vÏ number)
+    Converters = new List<JsonConverter>
             {
-                new StringEnumConverter() { CamelCaseText = true }
-            }
+       new StringEnumConverter { CamelCaseText = true }
+ }
         });
     }
 
+ /// <summary>
+    /// Serialize object th‡nh JSON string v?i type c? th?
+    /// </summary>
     public string Serialize<T>(T obj, Type type)
     {
-        return JsonConvert.SerializeObject(obj, type, new());
+        return JsonConvert.SerializeObject(obj, type, new JsonSerializerSettings());
     }
 }
 ```
 
-**T√°c d·ª•ng:**
-- CamelCase property names
-- Ignore null values
-- Enum as string (camelCase)
+**Gi?i thÌch JsonSerializerSettings:**
+
+**CamelCasePropertyNamesContractResolver:**
+- Property names ? camelCase: `firstName` thay vÏ `FirstName`
+- Chu?n JSON API
+
+**NullValueHandling.Ignore:**
+- KhÙng serialize properties null
+- Gi?m response size
+- Cleaner JSON
+
+**StringEnumConverter:**
+- Enum as string: `"active"` thay vÏ `1`
+- D? ??c, d? debug
+- API-friendly
+
+**Example:**
+```csharp
+public class Product
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; }
+    public ProductStatus Status { get; set; }  // Enum
+    public string? Description { get; set; }   // Nullable
+}
+
+// Input
+var product = new Product 
+{ 
+    Id = Guid.NewGuid(), 
+    Name = "iPhone", 
+    Status = ProductStatus.Active,
+    Description = null 
+};
+
+// Serialize
+var json = _serializer.Serialize(product);
+
+// Output
+{"id":"...","name":"iPhone","status":"active"}
+// (description b? b? vÏ null, status l‡ "active" thay vÏ 1)
+```
+
+**L?i Ìch:**
+- ? API-friendly format
+- ? Smaller response size
+- ? Human-readable
+- ? Easy debugging
 
 ---
 
-## B∆∞·ªõc 11.6: T·∫°o CustomException v√† ErrorResult
+### B??c 4.3: Register Serializer Service
 
-**L√†m g√¨:** T·∫°o custom exceptions v√† error result model.
+**L‡m gÏ:** Register serializer service v‡o DI container.
 
-**File 1:** `src/Core/Application/Common/Exceptions/CustomException.cs`
-
-```csharp
-using System.Net;
-
-namespace ECO.WebApi.Application.Common.Exceptions;
-
-public class CustomException : Exception
-{
-    public List<string>? ErrorMessages { get; }
-    public HttpStatusCode StatusCode { get; }
-
-    public CustomException(
-        string message, 
-        List<string>? errors = default, 
-        HttpStatusCode statusCode = HttpStatusCode.InternalServerError)
-        : base(message)
-    {
-        ErrorMessages = errors;
-        StatusCode = statusCode;
-    }
-}
-```
-
-**File 2:** `src/Core/Application/Common/Exceptions/ErrorResult.cs`
+**File:** `src/Infrastructure/Infrastructure/Common/Startup.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Exceptions;
-
-public class ErrorResult
-{
-    public string? Source { get; set; }
-    public string Exception { get; set; } = string.Empty;
-    public string ErrorId { get; set; } = string.Empty;
-    public string SupportMessage { get; set; } = string.Empty;
-    public List<string> Messages { get; set; } = new();
-    public int StatusCode { get; set; }
-}
-```
-
-**T√°c d·ª•ng:**
-- `CustomException`: Custom exception v·ªõi StatusCode v√† ErrorMessages
-- `ErrorResult`: Model ƒë·ªÉ tr·∫£ v·ªÅ l·ªói cho client
-
----
-
-## B∆∞·ªõc 11.7: T·∫°o ExceptionMiddleware
-
-**L√†m g√¨:** Middleware ƒë·ªÉ handle exceptions v√† tr·∫£ v·ªÅ error response.
-
-**File:** `src/Infrastructure/Infrastructure/Middleware/ExceptionMiddleware.cs`
-
-```csharp
-using ECO.WebApi.Application.Common.Exceptions;
 using ECO.WebApi.Application.Common.Interfaces;
-using Microsoft.AspNetCore.Http;
-using Serilog;
-using Serilog.Context;
+using ECO.WebApi.Infrastructure.Common.Services;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Infrastructure.Middleware;
+namespace ECO.WebApi.Infrastructure.Common;
 
-internal class ExceptionMiddleware : IMiddleware
+internal static class Startup
 {
-    private readonly ICurrentUser _currentUser;
-    private readonly ISerializerService _jsonSerializer;
-
-    public ExceptionMiddleware(
-        ICurrentUser currentUser,
-        ISerializerService jsonSerializer)
+    /// <summary>
+    /// Register common services
+    /// </summary>
+    internal static IServiceCollection AddCommonServices(this IServiceCollection services)
     {
-        _currentUser = currentUser;
-        _jsonSerializer = jsonSerializer;
-    }
+        // Register Serializer as Transient
+        services.AddTransient<ISerializerService, NewtonSoftService>();
 
-    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
-    {
-        try
-        {
-            await next(context);
-        }
-        catch (Exception exception)
-        {
-            // Log error v·ªõi context
-            string email = _currentUser.GetUserEmail() is string userEmail ? userEmail : "Anonymous";
-            var userId = _currentUser.GetUserId();
-            if (userId != Guid.Empty)
-                LogContext.PushProperty("UserId", userId);
-            LogContext.PushProperty("UserEmail", email);
-
-            string errorId = Guid.NewGuid().ToString();
-            LogContext.PushProperty("ErrorId", errorId);
-            LogContext.PushProperty("StackTrace", exception.StackTrace);
-
-            var errorResult = new ErrorResult
-            {
-                Source = exception.TargetSite?.DeclaringType?.FullName,
-                Exception = exception.Message.Trim(),
-                ErrorId = errorId,
-                SupportMessage = $"Provide the ErrorId {errorId} to the support team for further analysis."
-            };
-
-            // Handle inner exception
-            if (exception is not CustomException && exception.InnerException != null)
-            {
-                while (exception.InnerException != null)
-                {
-                    exception = exception.InnerException;
-                }
-            }
-
-            // Handle FluentValidation exceptions
-            if (exception is FluentValidation.ValidationException fluentException)
-            {
-                errorResult.Exception = "One or More Validations failed.";
-                foreach (var error in fluentException.Errors)
-                {
-                    errorResult.Messages.Add(error.ErrorMessage);
-                }
-            }
-
-            // Set status code based on exception type
-            switch (exception)
-            {
-                case CustomException e:
-                    errorResult.StatusCode = (int)e.StatusCode;
-                    if (e.ErrorMessages is not null)
-                    {
-                        errorResult.Messages = e.ErrorMessages;
-                    }
-                    break;
-
-                case KeyNotFoundException:
-                    errorResult.StatusCode = (int)HttpStatusCode.NotFound;
-                    break;
-
-                case FluentValidation.ValidationException:
-                    errorResult.StatusCode = (int)HttpStatusCode.BadRequest;
-                    break;
-
-                default:
-                    errorResult.StatusCode = (int)HttpStatusCode.InternalServerError;
-                    break;
-            }
-
-            Log.Error($"{errorResult.Exception} Request failed with Status Code {errorResult.StatusCode} and Error Id {errorId}.");
-
-            // Write error response
-            var response = context.Response;
-            if (!response.HasStarted)
-            {
-                response.ContentType = "application/json";
-                response.StatusCode = errorResult.StatusCode;
-                await response.WriteAsync(_jsonSerializer.Serialize(errorResult));
-            }
-            else
-            {
-                Log.Warning("Can't write error response. Response has already started.");
-            }
-        }
-    }
+        return services;
+  }
 }
 ```
 
-**T√°c d·ª•ng:**
-- Catch t·∫•t c·∫£ exceptions
-- Log v·ªõi context (UserId, Email, ErrorId)
-- Tr·∫£ v·ªÅ error response v·ªõi format chu·∫©n
-- Handle c√°c lo·∫°i exceptions kh√°c nhau (CustomException, ValidationException, etc.)
-
-**Th·ª© t·ª± middleware:**
-```csharp
-app.UseExceptionMiddleware();  // Ph·∫£i ƒë·∫ßu ti√™n
-app.UseCurrentUser();
-app.UseAuthentication();
-```
+**Gi?i thÌch:**
+- `Transient` lifetime ? lightweight, stateless service
+- Extension method pattern ?? modular registration
 
 ---
 
-## B∆∞·ªõc 11.8: T·∫°o ValidationBehavior
+## 5. Event Publisher Service
 
-**L√†m g√¨:** MediatR pipeline behavior ƒë·ªÉ t·ª± ƒë·ªông validate requests.
+### B??c 5.1: IEvent Marker Interface
 
-**File:** `src/Infrastructure/Infrastructure/Behaviors/ValidationBehavior.cs`
+**L‡m gÏ:** Marker interface cho t?t c? domain events.
+
+**T?i sao:** ?·nh d?u class l‡ domain event, support generic event handling.
+
+**File:** `src/Core/Shared/Events/IEvent.cs`
 
 ```csharp
-using FluentValidation;
+namespace ECO.WebApi.Shared.Events;
+
+/// <summary>
+/// Marker interface cho t?t c? domain events
+/// Domain events represent something that happened in the domain
+/// </summary>
+public interface IEvent
+{
+}
+```
+
+**Gi?i thÌch:**
+- Marker interface ? khÙng cÛ methods
+- T?t c? domain events ph?i implement
+- ? Shared layer ? cÛ th? d˘ng ? m?i layer
+
+**T?i sao trong Shared layer:**
+- Domain events l‡ contract
+- Application v‡ Infrastructure ??u c?n
+- No dependencies
+
+---
+
+### B??c 5.2: EventNotification Wrapper
+
+**L‡m gÏ:** Wrapper class ?? wrap IEvent th‡nh INotification (MediatR).
+
+**T?i sao:** Domain events (`IEvent`) khÙng ph? thu?c MediatR. Wrapper ?? publish qua MediatR.
+
+**File:** `src/Core/Application/Common/Events/EventNotification.cs`
+
+```csharp
+using ECO.WebApi.Shared.Events;
 using MediatR;
 
-namespace ECO.WebApi.Infrastructure.Behaviors;
+namespace ECO.WebApi.Application.Common.Events;
 
-public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+/// <summary>
+/// Wrapper class ?? wrap IEvent th‡nh INotification (MediatR)
+/// Gi? cho Domain layer khÙng ph? thu?c MediatR
+/// </summary>
+public class EventNotification<TEvent> : INotification
+    where TEvent : IEvent
 {
-    private readonly IEnumerable<IValidator<TRequest>> _validators;
+    public EventNotification(TEvent @event) => Event = @event;
 
-    public ValidationBehavior(IEnumerable<IValidator<TRequest>> validators)
+  /// <summary>
+    /// Domain event ???c wrap
+    /// </summary>
+    public TEvent Event { get; }
+}
+```
+
+**Gi?i thÌch:**
+- `INotification` ? MediatR notification interface
+- Wrap `IEvent` th‡nh `INotification` ?? publish qua MediatR
+- Generic class ? support any event type
+
+**T?i sao c?n wrapper:**
+- Domain events (`IEvent`) **khÙng ph? thu?c** MediatR ? Clean Architecture
+- MediatR c?n `INotification` ?? publish ? Infrastructure concern
+- Wrapper t·ch bi?t Domain v‡ Infrastructure ? Separation of concerns
+
+**Design pattern:** Adapter Pattern
+
+---
+
+### B??c 5.3: IEventPublisher Interface
+
+**L‡m gÏ:** Interface ?? publish domain events.
+
+**T?i sao:** Application layer c?n publish events, nh?ng khÙng bi?t implementation (MediatR).
+
+**File:** `src/Core/Application/Common/Events/IEventPublisher.cs`
+
+```csharp
+using ECO.WebApi.Application.Common.Interfaces;
+using ECO.WebApi.Shared.Events;
+
+namespace ECO.WebApi.Application.Common.Events;
+
+/// <summary>
+/// Interface ?? publish domain events
+/// Implementation s? d˘ng MediatR ?? dispatch events ??n handlers
+/// </summary>
+public interface IEventPublisher : ITransientService
+{
+    /// <summary>
+    /// Publish domain event
+    /// </summary>
+    Task PublishAsync(IEvent @event);
+}
+```
+
+**Gi?i thÌch:**
+- `Transient` lifetime
+- Accept `IEvent` (domain abstraction)
+- Async method ? await handlers
+
+**L?i Ìch:**
+- ? Application layer khÙng ph? thu?c MediatR
+- ? D? mock cho testing
+- ? D? thay ??i implementation
+
+---
+
+### B??c 5.4: EventPublisher Implementation
+
+**L‡m gÏ:** Implement EventPublisher s? d?ng MediatR ?? dispatch events.
+
+**T?i sao:** MediatR handle event routing v‡ invocation. Ch˙ng ta ch? c?n wrap events.
+
+**File:** `src/Infrastructure/Infrastructure/Common/Events/EventPublisher.cs`
+
+```csharp
+using ECO.WebApi.Application.Common.Events;
+using ECO.WebApi.Shared.Events;
+using MediatR;
+using Microsoft.Extensions.Logging;
+
+namespace ECO.WebApi.Infrastructure.Common.Events;
+
+/// <summary>
+/// Implementation c?a IEventPublisher s? d?ng MediatR
+/// </summary>
+public class EventPublisher : IEventPublisher
+{
+    private readonly ILogger<EventPublisher> _logger;
+    private readonly IPublisher _mediator;
+
+ public EventPublisher(ILogger<EventPublisher> logger, IPublisher mediator) =>
+     (_logger, _mediator) = (logger, mediator);
+
+    /// <summary>
+    /// Publish domain event qua MediatR
+    /// </summary>
+    public Task PublishAsync(IEvent @event)
     {
-        _validators = validators;
+        // Log event type ?? tracking
+        _logger.LogInformation("Publishing Event: {EventType}", @event.GetType().Name);
+    
+     // Wrap event th‡nh EventNotification v‡ publish qua MediatR
+        return _mediator.Publish(CreateEventNotification(@event));
     }
 
-    public async Task<TResponse> Handle(
-        TRequest request, 
-        RequestHandlerDelegate<TResponse> next, 
-        CancellationToken cancellationToken)
+    /// <summary>
+/// Create EventNotification&lt;TEvent&gt; t? IEvent b?ng reflection
+    /// VÏ runtime type, khÙng th? d˘ng generic compile-time
+    /// </summary>
+  private static INotification CreateEventNotification(IEvent @event)
     {
-        if (_validators.Any())
-        {
-            var context = new ValidationContext<TRequest>(request);
-            var validationResults = await Task.WhenAll(
-                _validators.Select(v => v.ValidateAsync(context, cancellationToken)));
-            var failures = validationResults
-                .SelectMany(r => r.Errors)
-                .Where(f => f != null)
-                .ToList();
+    // Step 1: L?y runtime type c?a event (vÌ d?: ProductCreatedEvent)
+  var eventType = @event.GetType();
+      
+        // Step 2: T?o generic type EventNotification<ProductCreatedEvent>
+        var notificationType = typeof(EventNotification<>).MakeGenericType(eventType);
+        
+        // Step 3: Create instance: new EventNotification<ProductCreatedEvent>(event)
+        var instance = Activator.CreateInstance(notificationType, @event);
 
-            if (failures.Count != 0)
-                throw new ValidationException(failures);
-        }
-
-        return await next();
+        // Step 4: Cast v? INotification
+   return (INotification)instance!;
     }
 }
 ```
 
-**T√°c d·ª•ng:**
-- T·ª± ƒë·ªông validate requests tr∆∞·ªõc khi handler ch·∫°y
-- N·∫øu validation fail ‚Üí throw `ValidationException`
-- Kh√¥ng c·∫ßn validate manually trong handlers
+**Gi?i thÌch Reflection Magic:**
 
-**ƒêƒÉng k√Ω trong Application Startup:**
 ```csharp
-services.AddMediatR(cfg =>
+// Input: ProductCreatedEvent (implements IEvent)
+var @event = new ProductCreatedEvent(product);
+
+// Step 1: Get runtime type
+var eventType = @event.GetType(); 
+// Result: typeof(ProductCreatedEvent)
+
+// Step 2: Make generic type
+var notificationType = typeof(EventNotification<>).MakeGenericType(eventType);
+// Result: typeof(EventNotification<ProductCreatedEvent>)
+
+// Step 3: Create instance with constructor parameter
+var instance = Activator.CreateInstance(notificationType, @event);
+// Result: new EventNotification<ProductCreatedEvent>(event)
+
+// Step 4: Cast to INotification
+return (INotification)instance;
+// MediatR accepts INotification
+```
+
+**T?i sao c?n reflection:**
+- `IEvent` l‡ interface ? khÙng bi?t concrete type compile-time
+- Runtime type ? ph?i d˘ng reflection ?? t?o `EventNotification<T>`
+- Generic type argument c?n runtime type information
+
+**Performance consideration:**
+- Reflection cÛ overhead nh?ng acceptable
+- Events khÙng publish th??ng xuyÍn nh? queries
+- Tradeoff ?? gi? clean architecture
+
+---
+
+### B??c 5.5: EventNotificationHandler Base Class
+
+**L‡m gÏ:** Base class ?? d? d‡ng t?o event handlers.
+
+**T?i sao:** Auto unwrap EventNotification, handlers ch? c?n handle domain event.
+
+**File:** `src/Core/Application/Common/Events/IEventNotificationHandler.cs`
+
+```csharp
+using ECO.WebApi.Shared.Events;
+using MediatR;
+
+namespace ECO.WebApi.Application.Common.Events;
+
+/// <summary>
+/// Interface cho event notification handlers (shorthand)
+/// </summary>
+public interface IEventNotificationHandler<TEvent> : INotificationHandler<EventNotification<TEvent>>
+    where TEvent : IEvent
 {
-    cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-});
+}
+
+/// <summary>
+/// Abstract base class cho event notification handlers
+/// Auto unwrap EventNotification ?? handlers ch? c?n handle domain event
+/// </summary>
+public abstract class EventNotificationHandler<TEvent> : INotificationHandler<EventNotification<TEvent>>
+    where TEvent : IEvent
+{
+    /// <summary>
+    /// Handle EventNotification (wrapper) - auto called b?i MediatR
+    /// </summary>
+    public Task Handle(EventNotification<TEvent> notification, CancellationToken cancellationToken) =>
+        Handle(notification.Event, cancellationToken);
+
+/// <summary>
+    /// Handle domain event (ph?i implement trong derived class)
+    /// </summary>
+    public abstract Task Handle(TEvent @event, CancellationToken cancellationToken);
+}
+```
+
+**Gi?i thÌch:**
+
+**Interface shorthand:**
+- `IEventNotificationHandler<ProductCreatedEvent>` thay vÏ `INotificationHandler<EventNotification<ProductCreatedEvent>>`
+- G?n h?n, d? ??c h?n
+
+**Abstract class:**
+- Auto unwrap `EventNotification` ? handler ch? c?n handle `TEvent`
+- Abstract method ? force derived classes implement
+- Template Method pattern
+
+**Usage example:**
+```csharp
+// ? KhÙng d˘ng base class - ph?i unwrap manually
+public class ProductCreatedHandler : INotificationHandler<EventNotification<ProductCreatedEvent>>
+{
+    public Task Handle(EventNotification<ProductCreatedEvent> notification, ...)
+    {
+        var @event = notification.Event; // Unwrap manually
+        // Handle event logic
+    }
+}
+
+// ? D˘ng base class - auto unwrap
+public class ProductCreatedHandler : EventNotificationHandler<ProductCreatedEvent>
+{
+    public override Task Handle(ProductCreatedEvent @event, ...)
+    {
+        // Handle event directly - ?„ unwrap r?i
+  _logger.LogInformation("Product created: {Name}", @event.Product.Name);
+        return Task.CompletedTask;
+    }
+}
+```
+
+**L?i Ìch:**
+- ? Code g?n h?n
+- ? Õt boilerplate
+- ? Focus v‡o business logic
+
+---
+
+### B??c 5.6: Register Event Publisher
+
+**L‡m gÏ:** Register EventPublisher v‡o DI container.
+
+**File:** `src/Infrastructure/Infrastructure/Common/Startup.cs`
+
+```csharp
+using ECO.WebApi.Application.Common.Events;
+using ECO.WebApi.Infrastructure.Common.Events;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace ECO.WebApi.Infrastructure.Common;
+
+internal static class Startup
+{
+    internal static IServiceCollection AddCommonServices(this IServiceCollection services)
+    {
+        // Serializer
+        services.AddTransient<ISerializerService, NewtonSoftService>();
+        
+      // Event Publisher
+        services.AddTransient<IEventPublisher, EventPublisher>();
+
+   return services;
+    }
+}
+```
+
+**Gi?i thÌch:**
+- `Transient` lifetime ? stateless service
+- MediatR auto-scan v‡ register event handlers
+
+---
+
+## 6. Update Infrastructure Startup
+
+### B??c 6.1: Consolidate All Services
+
+**L‡m gÏ:** Update Infrastructure Startup ?? register t?t c? services.
+
+**T?i sao:** Centralized registration, d? maintain.
+
+**File:** `src/Infrastructure/Infrastructure/Startup.cs`
+
+```csharp
+using ECO.WebApi.Infrastructure.Auth;
+using ECO.WebApi.Infrastructure.Common;
+using ECO.WebApi.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace ECO.WebApi.Infrastructure;
+
+public static class Startup
+{
+    /// <summary>
+    /// Add all infrastructure services
+    /// </summary>
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration config)
+    {
+        return services
+            // Persistence (DbContext, Repositories)
+        .AddPersistence()
+         
+          // CurrentUser service
+            .AddCurrentUser()
+            
+            // Common services (Serializer, EventPublisher)
+            .AddCommonServices()
+            
+    // Routing
+          .AddRouting(options => options.LowercaseUrls = true);
+    }
+
+    /// <summary>
+    /// Use infrastructure middleware
+    /// </summary>
+    public static IApplicationBuilder UseInfrastructure(
+   this IApplicationBuilder builder,
+        IConfiguration config)
+    {
+        return builder
+      .UseRouting()
+       
+            // CurrentUser middleware - SAU UseRouting, TR??C UseAuthentication
+         .UseCurrentUserMiddleware()
+ 
+  .UseHttpsRedirection();
+    }
+}
+```
+
+**?? L?u ˝ th? t? middleware:**
+```
+1. UseRouting()
+2. UseCurrentUserMiddleware()  ? Set current user
+3. UseAuthentication()          ? Will add in BUILD_15
+4. UseAuthorization()           ? Will add in BUILD_17
+5. MapControllers()
+```
+
+**Gi?i thÌch:**
+- Fluent interface pattern (.AddX().AddY())
+- Modular registration
+- Clear middleware order
+
+---
+
+## 7. Testing
+
+### B??c 7.1: Test CurrentUser Service
+
+**Create test handler:**
+
+**File:** `src/Core/Application/Identity/Users/GetMyProfileRequest.cs`
+
+```csharp
+using ECO.WebApi.Application.Common.Interfaces;
+using MediatR;
+
+namespace ECO.WebApi.Application.Identity.Users;
+
+public class GetMyProfileRequest : IRequest<UserDetailDto> { }
+
+public class GetMyProfileHandler : IRequestHandler<GetMyProfileRequest, UserDetailDto>
+{
+  private readonly ICurrentUser _currentUser;
+    private readonly IUserService _userService;
+
+  public GetMyProfileHandler(ICurrentUser currentUser, IUserService userService)
+    {
+        _currentUser = currentUser;
+        _userService = userService;
+    }
+
+    public async Task<UserDetailDto> Handle(GetMyProfileRequest request, CancellationToken ct)
+    {
+        // L?y current user info t? JWT token
+ var userId = _currentUser.GetUserId();
+   var email = _currentUser.GetUserEmail();
+        var isAuthenticated = _currentUser.IsAuthenticated();
+
+        // Get user from database
+        var user = await _userService.GetAsync(userId.ToString(), ct);
+     
+      return user;
+    }
+}
+```
+
+**Test v?i curl:**
+```bash
+# Step 1: Login ?? l?y token
+curl -X POST https://localhost:7001/api/tokens \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@root.com",
+    "password": "123Pa$$word!"
+  }'
+
+# Step 2: Get token from response, then call API
+curl -X GET https://localhost:7001/api/users/me \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+**Expected response:**
+```json
+{
+  "id": "xxx-xxx-xxx",
+  "firstName": "Admin",
+  "lastName": "Root",
+  "email": "admin@root.com"
+}
 ```
 
 ---
 
-## T√≥m t·∫Øt
+### B??c 7.2: Test Serializer Service
 
-### Th·ª© t·ª± th·ª±c hi·ªán:
+**Create test:**
+```csharp
+public class SerializerTest
+{
+    private readonly ISerializerService _serializer;
 
-1. **ICurrentUser Interfaces** ‚Üí ICurrentUser, ICurrentUserInitializer
-2. **CurrentUser Implementation** ‚Üí Implement v·ªõi ClaimsPrincipal
-3. **CurrentUserMiddleware** ‚Üí Set current user t·ª´ HttpContext
-4. **ISerializerService** ‚Üí Interface ƒë·ªÉ serialize/deserialize
-5. **NewtonSoftService** ‚Üí Implement v·ªõi Newtonsoft.Json
-6. **CustomException & ErrorResult** ‚Üí Custom exceptions v√† error model
-7. **ExceptionMiddleware** ‚Üí Handle exceptions v√† tr·∫£ v·ªÅ error response
-8. **ValidationBehavior** ‚Üí MediatR pipeline behavior ƒë·ªÉ validate requests
+    public void Test()
+    {
+        var product = new Product
+        {
+        Id = Guid.NewGuid(),
+            Name = "Test Product",
+      Price = 100,
+          Status = ProductStatus.Active,
+            Description = null
+        };
 
-### ƒêi·ªÉm quan tr·ªçng:
+        // Serialize
+     var json = _serializer.Serialize(product);
+   Console.WriteLine(json);
+        // Output: {"id":"...","name":"Test Product","price":100,"status":"active"}
 
-- **CurrentUserMiddleware** ‚Üí Ph·∫£i ƒë·∫∑t tr∆∞·ªõc UseAuthentication
-- **ExceptionMiddleware** ‚Üí Ph·∫£i ƒë·∫∑t ƒë·∫ßu ti√™n trong pipeline
-- **ValidationBehavior** ‚Üí T·ª± ƒë·ªông validate t·∫•t c·∫£ requests
-- **Scoped services** ‚Üí CurrentUser l√† scoped (m·ªói request m·ªôt instance)
-
-### L·ª£i √≠ch:
-
-- **Centralized error handling** ‚Üí T·∫•t c·∫£ exceptions ƒë∆∞·ª£c handle ·ªü m·ªôt n∆°i
-- **Automatic validation** ‚Üí Kh√¥ng c·∫ßn validate manually
-- **User context** ‚Üí D·ªÖ d√†ng l·∫•y th√¥ng tin user hi·ªán t·∫°i
-- **Consistent error format** ‚Üí Error response format chu·∫©n
+        // Deserialize
+        var deserialized = _serializer.Deserialize<Product>(json);
+        Assert.Equal(product.Id, deserialized.Id);
+    Assert.Equal(product.Name, deserialized.Name);
+    }
+}
+```
 
 ---
 
-**Ti·∫øp theo:** [Infrastructure Services](BUILD_12_Infrastructure_Services.md)
+### B??c 7.3: Test Event Publisher
+
+**Create domain event:**
+```csharp
+// File: src/Core/Domain/Catalog/Events/ProductCreatedEvent.cs
+using ECO.WebApi.Shared.Events;
+
+namespace ECO.WebApi.Domain.Catalog.Events;
+
+public class ProductCreatedEvent : IEvent
+{
+    public Product Product { get; }
+
+    public ProductCreatedEvent(Product product)
+ {
+   Product = product;
+    }
+}
+```
+
+**Create event handler:**
+```csharp
+// File: src/Core/Application/Catalog/Products/EventHandlers/ProductCreatedEventHandler.cs
+using ECO.WebApi.Application.Common.Events;
+using ECO.WebApi.Domain.Catalog.Events;
+using Microsoft.Extensions.Logging;
+
+namespace ECO.WebApi.Application.Catalog.Products.EventHandlers;
+
+public class ProductCreatedEventHandler : EventNotificationHandler<ProductCreatedEvent>
+{
+    private readonly ILogger<ProductCreatedEventHandler> _logger;
+
+    public ProductCreatedEventHandler(ILogger<ProductCreatedEventHandler> logger)
+    {
+    _logger = logger;
+    }
+
+    public override Task Handle(ProductCreatedEvent @event, CancellationToken ct)
+    {
+        _logger.LogInformation("Product created: {ProductId} - {ProductName}",
+ @event.Product.Id,
+            @event.Product.Name);
+
+     // TODO: Send email notification
+        // TODO: Update cache
+        // TODO: Send webhook
+        
+        return Task.CompletedTask;
+    }
+}
+```
+
+**Publish event trong handler:**
+```csharp
+public class CreateProductHandler : IRequestHandler<CreateProductRequest, Guid>
+{
+    private readonly IRepository<Product> _repository;
+    private readonly IEventPublisher _eventPublisher;
+
+    public async Task<Guid> Handle(CreateProductRequest request, CancellationToken ct)
+    {
+        var product = Product.Create(request.Name, request.Price);
+        
+      await _repository.AddAsync(product, ct);
+        await _repository.SaveChangesAsync(ct);
+ 
+        // Publish event SAU KHI save
+        await _eventPublisher.PublishAsync(new ProductCreatedEvent(product));
+  
+        return product.Id;
+    }
+}
+```
+
+**Expected log:**
+```
+info: Publishing Event: ProductCreatedEvent
+info: Product created: a1b2c3d4-e5f6-... - iPhone 15
+```
+
+---
+
+## 8. Summary
+
+### ? ?„ ho‡n th‡nh trong b??c n‡y:
+
+**CurrentUser Service:**
+- ? `ICurrentUser` interface (GetUserId, GetEmail, IsAuthenticated, etc.)
+- ? `ICurrentUserInitializer` interface (SetCurrentUser, SetCurrentUserId)
+- ? `ClaimsPrincipalExtensions` (helper methods)
+- ? `CurrentUser` implementation (v?i ClaimsPrincipal)
+- ? `CurrentUserMiddleware` (auto-set current user)
+- ? Service registration (Scoped)
+
+**Serializer Service:**
+- ? `ISerializerService` interface (Serialize, Deserialize)
+- ? `NewtonSoftService` implementation (Newtonsoft.Json)
+- ? Settings: CamelCase, Ignore nulls, Enum as string
+- ? Service registration (Transient)
+
+**Event Publisher:**
+- ? `IEvent` marker interface (Shared layer)
+- ? `EventNotification<TEvent>` wrapper (Application layer)
+- ? `IEventPublisher` interface (PublishAsync)
+- ? `EventPublisher` implementation (v?i MediatR + reflection)
+- ? `EventNotificationHandler<TEvent>` base class
+- ? Service registration (Transient)
+
+### ?? Key Concepts:
+
+**CurrentUser:**
+- Scoped service ? m?i request m?t instance
+- Thread-safe v?i ClaimsPrincipal
+- Middleware auto-set t? JWT token
+- Fallback cho background jobs
+
+**Serializer:**
+- Transient service ? stateless
+- JSON serialization v?i custom settings
+- API-friendly format (camelCase, no nulls, enum strings)
+
+**Event Publisher:**
+- Publish domain events qua MediatR
+- Decouple domain logic v‡ side effects
+- Multiple handlers cho m?t event
+- Reflection ?? support runtime types
+
+### ?? File Structure:
+
+```
+src/Core/Application/Common/
+??? Interfaces/
+?   ??? ICurrentUser.cs
+?   ??? ICurrentUserInitializer.cs
+?   ??? ISerializerService.cs
+??? Events/
+    ??? IEventPublisher.cs
+    ??? EventNotification.cs
+    ??? IEventNotificationHandler.cs
+
+src/Core/Shared/
+??? Events/
+?   ??? IEvent.cs
+??? Authorization/
+    ??? ClaimsPrincipalExtensions.cs
+
+src/Infrastructure/Infrastructure/
+??? Auth/
+?   ??? CurrentUser.cs
+?   ??? CurrentUserMiddleware.cs
+?   ??? Startup.cs
+??? Common/
+    ??? Services/
+    ? ??? NewtonSoftService.cs
+  ??? Events/
+    ?   ??? EventPublisher.cs
+    ??? Startup.cs
+```
+
+---
+
+## 9. Next Steps
+
+**Ti?p theo:** [BUILD_13 - Exception Handling & Middleware](BUILD_13_Exceptions_Middleware.md)
+
+Trong b??c ti?p theo, ch˙ng ta s?:
+1. ? T?o Custom Exceptions (NotFoundException, UnauthorizedException, ForbiddenException, ConflictException, InternalServerException)
+2. ? T?o ErrorResult model (error response format)
+3. ? Implement ExceptionMiddleware (global exception handler)
+4. ? Register middleware pipeline
+
+---
+
+**Quay l?i:** [M?c l?c](BUILD_INDEX.md)
