@@ -1,24 +1,24 @@
-# ECO.WebApi Documentation Hub
+﻿# ECO.WebApi Documentation Hub
 
-> ?? **Central Hub** cho t?t c? documentation c?a ECO.WebApi solution.
+> 📚 **Central Hub** cho tất cả documentation của ECO.WebApi solution.
 
 ---
 
-## ?? T�i li?u ch�nh (Main Docs)
+## 📖 Tài liệu chính (Main Docs)
 
-### ?? Quick Start
+### 🚀 Quick Start
 
 | Document | Purpose | For Who |
 |----------|---------|---------|
-| **[SETUP_GUIDE.md](SETUP_GUIDE.md)** | Setup v� ch?y project c� s?n | Developers joining project |
-| **[BUILD_INDEX.md](BUILD_INDEX.md)** | X�y d?ng solution t? ??u | Architects, Tech Leads |
-| **[MODULE_DOCUMENTATION_TEMPLATE.md](MODULE_DOCUMENTATION_TEMPLATE.md)** | Template vi?t docs cho modules | Documentation writers |
+| **[SETUP_GUIDE.md](SETUP_GUIDE.md)** | Setup và chạy project có sẵn | Developers joining project |
+| **[BUILD_INDEX.md](BUILD_INDEX.md)** | Xây dựng solution từ đầu | Architects, Tech Leads |
+| **[MODULE_DOCUMENTATION_TEMPLATE.md](MODULE_DOCUMENTATION_TEMPLATE.md)** | Template viết docs cho modules | Documentation writers |
 
 ---
 
-## ??? Build Documentation (X�y d?ng t? ??u)
+## 🏗️ Build Documentation (Xây dựng từ đầu)
 
-### **Phase 1: Foundation Setup** (N?n t?ng)
+### **Phase 1: Foundation Setup** (Nền tảng)
 
 | Step | Document | Topics | Time Estimate |
 |------|----------|--------|---------------|
@@ -67,28 +67,28 @@
 
 ---
 
-## ?? Learning Path (L? tr�nh h?c)
+## 📚 Learning Path (Lộ trình học)
 
-### **Beginner Path** (Ng??i m?i b?t ??u)
+### **Beginner Path** (Người mới bắt đầu)
 ```
-1. ??c SETUP_GUIDE.md ? Setup project v� ch?y
+1. Đọc SETUP_GUIDE.md để Setup project và chạy
 2. Explore code trong solution
-3. ??c BUILD_INDEX.md ? Hi?u overview
-4. ??c BUILD_01 ? BUILD_06 ? Hi?u foundation
+3. Đọc BUILD_INDEX.md để hiểu overview
+4. Đọc BUILD_01 → BUILD_06 để hiểu foundation
 ```
 **Time: 2-3 days**
 
-### **Intermediate Path** (Developer c� kinh nghi?m)
+### **Intermediate Path** (Developer có kinh nghiệm)
 ```
-1. ??c BUILD_INDEX.md ? Overview to�n b?
-2. ??c Phase 1-4 documents ? Hi?u chi ti?t
-3. T? implement m?t feature m?i
+1. Đọc BUILD_INDEX.md → Overview toàn bộ
+2. Đọc Phase 1-4 documents → Hiểu chi tiết
+3. Tự implement một feature mới
 ```
 **Time: 1 week**
 
 ### **Advanced Path** (Architect/Tech Lead)
 ```
-1. ??c to�n b? BUILD docs ? Deep understanding
+1. Đọc toàn bộ BUILD docs → Deep understanding
 2. Review architecture decisions
 3. Contribute improvements
 ```
@@ -96,7 +96,7 @@
 
 ---
 
-## ?? Documentation by Topic
+## 📖 Documentation by Topic
 
 ### **Architecture**
 - [BUILD_INDEX.md](BUILD_INDEX.md) - Clean Architecture Overview
@@ -121,7 +121,7 @@
 
 ---
 
-## ?? Quick Reference
+## 🔧 Quick Reference
 
 ### **Common Commands**
 
@@ -175,25 +175,25 @@ dotnet test
 
 ---
 
-## ??? Development Workflow
+## 👨‍💻 Development Workflow
 
 ### **Adding New Feature**
 
 ```
 1. Create Domain Entity (Domain Layer)
-   ??? BUILD_03_Domain_Layer.md
+   → BUILD_03_Domain_Layer.md
 
 2. Create DTOs & Interfaces (Application Layer)
-   ??? BUILD_04_Application_Layer.md
+   → BUILD_04_Application_Layer.md
 
 3. Implement Service (Infrastructure Layer)
-   ??? BUILD_05_Infrastructure_Layer.md
+   → BUILD_05_Infrastructure_Layer.md
 
 4. Create Controller (Host Layer)
-   ??? BUILD_06_Host_Layer.md
+   → BUILD_06_Host_Layer.md
 
 5. Create Migration
-   ??? BUILD_07_Database_Initialization.md
+   → BUILD_07_Database_Initialization.md
 
 6. Test API via Swagger
 ```
@@ -201,50 +201,50 @@ dotnet test
 ### **Debugging Issues**
 
 **Build Errors**
-? Check [SETUP_GUIDE.md#Troubleshooting](SETUP_GUIDE.md#9-troubleshooting)
+→ Check [SETUP_GUIDE.md#Troubleshooting](SETUP_GUIDE.md#9-troubleshooting)
 
 **Database Errors**
-? Check [BUILD_07_Database_Initialization.md](BUILD_07_Database_Initialization.md)
+→ Check [BUILD_07_Database_Initialization.md](BUILD_07_Database_Initialization.md)
 
 **Authentication Errors**
-? Check [BUILD_13_Application_Services.md](BUILD_13_Application_Services.md)
+→ Check [BUILD_13_Application_Services.md](BUILD_13_Application_Services.md)
 
 ---
 
-## ?? Documentation Stats
+## 📊 Documentation Stats
 
 | Category | Documents | Status |
 |----------|-----------|--------|
-| Setup Guides | 1 | ? Complete |
-| Build Guides | 13 | ? Complete |
-| Templates | 1 | ? Complete |
-| **Total** | **15** | **? Complete** |
+| Setup Guides | 1 | ✅ Complete |
+| Build Guides | 13 | ✅ Complete |
+| Templates | 1 | ✅ Complete |
+| **Total** | **15** | **✅ Complete** |
 
 ---
 
-## ?? Best Practices
+## ✨ Best Practices
 
 ### **When Reading Docs**
-1. ? Start with index/overview
-2. ? Follow prerequisites order
-3. ? Try examples hands-on
-4. ? Take notes of key concepts
+1. ✅ Start with index/overview
+2. ✅ Follow prerequisites order
+3. ✅ Try examples hands-on
+4. ✅ Take notes of key concepts
 
 ### **When Writing Docs**
-1. ? Use [MODULE_DOCUMENTATION_TEMPLATE.md](MODULE_DOCUMENTATION_TEMPLATE.md)
-2. ? Include code examples
-3. ? Add troubleshooting sections
-4. ? Cross-reference related docs
+1. ✅ Use [MODULE_DOCUMENTATION_TEMPLATE.md](MODULE_DOCUMENTATION_TEMPLATE.md)
+2. ✅ Include code examples
+3. ✅ Add troubleshooting sections
+4. ✅ Cross-reference related docs
 
 ### **When Contributing**
-1. ? Update relevant docs v?i code changes
-2. ? Add comments trong code
-3. ? Test all examples tr??c khi commit
-4. ? Review formatting v� links
+1. ✅ Update relevant docs với code changes
+2. ✅ Add comments trong code
+3. ✅ Test all examples trước khi commit
+4. ✅ Review formatting và links
 
 ---
 
-## ?? External Resources
+## 🌐 External Resources
 
 ### **Official Documentation**
 - [.NET 8 Documentation](https://learn.microsoft.com/en-us/dotnet/)
@@ -266,21 +266,21 @@ dotnet test
 
 ---
 
-## ?? Support
+## 💬 Support
 
 ### **Need Help?**
-- ?? Check [SETUP_GUIDE.md#Troubleshooting](SETUP_GUIDE.md#9-troubleshooting)
-- ?? [Open GitHub Issue](https://github.com/vuongnv1206/eco/issues)
-- ?? Contact: support@eco.com
+- 👉 Check [SETUP_GUIDE.md#Troubleshooting](SETUP_GUIDE.md#9-troubleshooting)
+- 👉 [Open GitHub Issue](https://github.com/vuongnv1206/eco/issues)
+- 👉 Contact: support@eco.com
 
 ### **Want to Contribute?**
-- ?? Follow [MODULE_DOCUMENTATION_TEMPLATE.md](MODULE_DOCUMENTATION_TEMPLATE.md)
-- ?? Submit Pull Request v?i updated docs
-- ? Ensure all examples tested
+- 👉 Follow [MODULE_DOCUMENTATION_TEMPLATE.md](MODULE_DOCUMENTATION_TEMPLATE.md)
+- 👉 Submit Pull Request với updated docs
+- ✅ Ensure all examples tested
 
 ---
 
-## ?? Documentation Updates
+## 📝 Documentation Updates
 
 | Date | Update | Author |
 |------|--------|--------|
@@ -290,13 +290,13 @@ dotnet test
 
 ---
 
-## ? Quick Checklist
+## ✅ Quick Checklist
 
 ### **For New Developers**
 - [ ] Read SETUP_GUIDE.md
 - [ ] Setup local environment
 - [ ] Run application successfully
-- [ ] Login v?i admin account
+- [ ] Login với admin account
 - [ ] Test API via Swagger
 - [ ] Explore codebase
 - [ ] Read BUILD_INDEX.md overview
@@ -315,14 +315,14 @@ dotnet test
 - [ ] Write unit tests
 - [ ] Update documentation
 - [ ] Test locally
-- [ ] Submit PR v?i clear description
+- [ ] Submit PR với clear description
 
 ---
 
-**?? Start here:**
-- ????? Developer? ? [SETUP_GUIDE.md](SETUP_GUIDE.md)
-- ??? Architect? ? [BUILD_INDEX.md](BUILD_INDEX.md)
-- ?? Writer? ? [MODULE_DOCUMENTATION_TEMPLATE.md](MODULE_DOCUMENTATION_TEMPLATE.md)
+**👉 Start here:**
+- 👨‍💻 Developer? → [SETUP_GUIDE.md](SETUP_GUIDE.md)
+- 🏗️ Architect? → [BUILD_INDEX.md](BUILD_INDEX.md)
+- ✍️ Writer? → [MODULE_DOCUMENTATION_TEMPLATE.md](MODULE_DOCUMENTATION_TEMPLATE.md)
 
 ---
 

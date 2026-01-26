@@ -1,90 +1,90 @@
-# Template cho Module Documentation
+﻿# Template cho Module Documentation
 
-> ?? **M?c ?�ch:** Template n�y gi�p vi?t documentation nh?t qu�n cho m?i module/feature trong ECO.WebApi solution.
+> 📚 **Mục đích:** Template này giúp viết documentation nhất quán cho mỗi module/feature trong ECO.WebApi solution.
 
 ---
 
-## ?? Nguy�n t?c Vi?t Docs
+## 📖 Nguyên tắc Viết Docs
 
-### **1. Self-Contained (T? ??)**
-- ? **PH?I** c� ??y ?? code trong docs
-- ? **KH�NG** reference ??n code c� s?n trong workspace
-- ? M?c ?�ch: T?o l?i solution t? ??u ch? t? docs
-- ? Copy/paste code t? docs ph?i ch?y ???c ngay
+### **1. Self-Contained (Tự đủ)**
+- ✅ **PHẢI** có đầy đủ code trong docs
+- ✅ **KHÔNG** reference đến code có sẵn trong workspace
+- ✅ Mục đích: Tạo lại solution từ đầu chỉ từ docs
+- ✅ Copy/paste code từ docs phải chạy được ngay
 
-### **2. Ti?ng Vi?t & D? Hi?u**
-- ? Gi?i th�ch b?ng ti?ng Vi?t
-- ? Thu?t ng? ti?ng Anh c� gi?i th�ch
-- ? Code comments b?ng ti?ng Vi?t (ho?c ti?ng Anh r� r�ng)
-- ? V� d? th?c t?, g?n g?i
+### **2. Tiếng Việt & Dễ Hiểu**
+- ✅ Giải thích bằng tiếng Việt
+- ✅ Thuật ngữ tiếng Anh có giải thích
+- ✅ Code comments bằng tiếng Việt (hoặc tiếng Anh rõ ràng)
+- ✅ Ví dụ thực tế, gần gũi
 
-### **3. Chia Nh? Docs Ph?c T?p**
-- ? Main doc: Focus usage & overview
-- ? Sub docs: Chi ti?t implementation (BUILD_XX_DetailName.md)
-- ? V� d?: BUILD_11 + BUILD_11_Specification
+### **3. Chia Nhỏ Docs Phức Tạp**
+- ✅ Main doc: Focus usage & overview
+- ✅ Sub docs: Chi tiết implementation (BUILD_XX_DetailName.md)
+- ✅ Ví dụ: BUILD_11 + BUILD_11_Specification
 
 ### **4. Code Quality**
-- ? Code ph?i compile ???c
-- ? C� comments gi?i th�ch logic
-- ? Namespace ?�ng chu?n project
-- ? Follow naming conventions
+- ✅ Code phải compile được
+- ✅ Có comments giải thích logic
+- ✅ Namespace đúng chuẩn project
+- ✅ Follow naming conventions
 
 ---
 
-## ?? C?u tr�c chu?n cho m?i Module Doc
+## 📖 Cấu trúc chuẩn cho mỗi Module Doc
 
 ### **Header Section**
 ```markdown
 # [Module Name] - [Short Description]
 
-> ?? [Quay l?i M?c l?c](BUILD_INDEX.md)  
-> ?? **Prerequisites:** [B??c tr??c ?� ph?i ho�n th�nh]
+> 📚 [Quay lại Mục lục](BUILD_INDEX.md)  
+> 📋 **Prerequisites:** [Bước trước đó phải hoàn thành]
 
-T�i li?u n�y h??ng d?n x�y d?ng [Module Name] - [Purpose].
+Tài liệu này hướng dẫn xây dựng [Module Name] - [Purpose].
 
 ---
 ```
 
-**V� d?:**
+**Ví dụ:**
 ```markdown
-# Repository Pattern v� Specification
+# Repository Pattern và Specification
 
-> ?? [Quay l?i M?c l?c](BUILD_INDEX.md)  
-> ?? **Prerequisites:** B??c 10 (Service Registration) ?� ho�n th�nh
+> 📚 [Quay lại Mục lục](BUILD_INDEX.md)  
+> 📋 **Prerequisites:** Bước 10 (Service Registration) đã hoàn thành
 
-T�i li?u n�y h??ng d?n v? Repository Pattern v?i Ardalis.Specification v� Domain Events.
+Tài liệu này hướng dẫn về Repository Pattern với Ardalis.Specification và Domain Events.
 
 ---
 ```
 
 ---
 
-### **Section 1: Overview (T?ng quan)**
+### **Section 1: Overview (Tổng quan)**
 
 **Required elements:**
-- "L�m g�" (What)
-- "T?i sao c?n" (Why)
-- "Trong b??c n�y ch�ng ta s?" (Checklist)
-- Real-world example (n?u ph?c t?p)
+- "Làm gì" (What)
+- "Tại sao cần" (Why)
+- "Trong bước này chúng ta sẽ" (Checklist)
+- Real-world example (nếu phức tạp)
 
 ```markdown
 ## 1. Overview
 
-**L�m g�:** [M� t? ng?n g?n module n�y l�m g�]
+**Làm gì:** [Mô tả ngắn gọn module này làm gì]
 
-**T?i sao c?n:**
-- **[L� do 1]:** [Gi?i th�ch]
-- **[L� do 2]:** [Gi?i th�ch]
-- **[L� do 3]:** [Gi?i th�ch]
+**Tại sao cần:**
+- **[Lý do 1]:** [Giải thích]
+- **[Lý do 2]:** [Giải thích]
+- **[Lý do 3]:** [Giải thích]
 
-**Trong b??c n�y ch�ng ta s?:**
-- ? [Task 1]
-- ? [Task 2]
-- ? [Task 3]
+**Trong bước này chúng ta sẽ:**
+- ✅ [Task 1]
+- ✅ [Task 2]
+- ✅ [Task 3]
 
-**Real-world example:** (n?u module ph?c t?p)
+**Real-world example:** (nếu module phức tạp)
 ```csharp
-// V� d? usage code ?? ng??i ??c hi?u ???c m?c ?�ch
+// Ví dụ usage code để người đọc hiểu được mục đích
 public class ExampleUsage
 {
     // ...
@@ -94,24 +94,24 @@ public class ExampleUsage
 ---
 ```
 
-**V� d? th?c t?:**
+**Ví dụ thực tế:**
 ```markdown
 ## 1. Overview
 
-**L�m g�:** Setup Repository Pattern v?i Specification ?? query linh ho?t v� Domain Events t? ??ng.
+**Làm gì:** Setup Repository Pattern với Specification để query linh hoạt và Domain Events tự động.
 
-**T?i sao c?n:**
-- **Abstraction:** T�ch Application kh?i Infrastructure (EF Core)
+**Tại sao cần:**
+- **Abstraction:** Tách Application khỏi Infrastructure (EF Core)
 - **Flexible Query:** Specification pattern cho complex queries
-- **Domain Events:** T? ??ng ph�t events khi entity thay ??i
-- **Testable:** D? mock repositories cho unit tests
+- **Domain Events:** Tự động phát events khi entity thay đổi
+- **Testable:** Dễ mock repositories cho unit tests
 
-**Trong b??c n�y ch�ng ta s?:**
-- ? T?o Search/Filter models
-- ? T?o Repository interfaces
-- ? Implement repositories v?i EF Core
-- ? Setup EventAddingRepositoryDecorator
-- ? T?o Base Specifications ?? reuse
+**Trong bước này chúng ta sẽ:**
+- ✅ Tạo Search/Filter models
+- ✅ Tạo Repository interfaces
+- ✅ Implement repositories với EF Core
+- ✅ Setup EventAddingRepositoryDecorator
+- ✅ Tạo Base Specifications để reuse
 
 **Real-world example:**
 ```csharp
@@ -120,14 +120,14 @@ public class ProductsController
 {
     public async Task<ActionResult> Search([FromBody] SearchProductsRequest request)
     {
-        // Specification t? ??ng build query t? request
+        // Specification tự động build query từ request
         var spec = new ProductsBySearchSpec(request);
    
         var products = await _repository.ListAsync(spec);
-      var count = await _repository.CountAsync(spec);
+        var count = await _repository.CountAsync(spec);
         
         return Ok(new PaginatedResult(products, count));
- }
+    }
 }
 \```
 
@@ -139,40 +139,40 @@ public class ProductsController
 ### **Section 2: Add Required Packages**
 
 **Required elements:**
-- Packages v?i version c? th?
-- Gi?i th�ch "Why" cho m?i package
-- File path ch�nh x�c
+- Packages với version cụ thể
+- Giải thích "Why" cho mỗi package
+- File path chính xác
 
 ```markdown
 ## 2. Add Required Packages
 
-### B??c 2.1: [Package Group Name]
+### Bước 2.1: [Package Group Name]
 
 **File:** `src/[Project]/[Project].csproj`
 
 ```xml
 <ItemGroup>
-    <!-- [M?c ?�ch c?a package group] -->
+    <!-- [Mục đích của package group] -->
     <PackageReference Include="PackageName" Version="x.x.x" />
     <PackageReference Include="AnotherPackage" Version="y.y.y" />
 </ItemGroup>
 \```
 
-**Gi?i th�ch packages:**
-- `PackageName`: [T?i sao c?n package n�y, n� l�m g�]
-- `AnotherPackage`: [Gi?i th�ch]
+**Giải thích packages:**
+- `PackageName`: [Tại sao cần package này, nó làm gì]
+- `AnotherPackage`: [Giải thích]
 
-**?? L?u �:**
-- [L?u � ??c bi?t n?u c�]
+**⚠️ Lưu ý:**
+- [Lưu ý đặc biệt nếu có]
 
 ---
 ```
 
-**V� d? th?c t?:**
+**Ví dụ thực tế:**
 ```markdown
 ## 2. Add Required Packages
 
-### B??c 2.1: Add NewId Package
+### Bước 2.1: Add NewId Package
 
 **File:** `src/Core/Domain/Domain.csproj`
 
@@ -184,7 +184,7 @@ public class ProductsController
 \```
 
 **Why NewId:**
-- `NewId.Next().ToGuid()` t?o sequential GUIDs
+- `NewId.Next().ToGuid()` tạo sequential GUIDs
 - Better database performance (less fragmentation)
 - Better indexing performance
 
@@ -196,74 +196,74 @@ public class ProductsController
 ### **Section 3-N: Implementation Steps**
 
 **Required elements:**
-- ?�nh s? B??c X.Y r� r�ng
-- File path CH�NH X�C
-- FULL CODE (kh�ng t�m t?t)
-- Comments gi?i th�ch trong code
-- Section "Gi?i th�ch" sau code
-- "T?i sao" ho?c "L?i �ch"
+- Đánh số Bước X.Y rõ ràng
+- File path CHÍNH XÁC
+- FULL CODE (không tóm tắt)
+- Comments giải thích trong code
+- Section "Giải thích" sau code
+- "Tại sao" hoặc "Lợi ích"
 
 ```markdown
 ## 3. [Major Component Name]
 
-### B??c 3.1: [Specific Task]
+### Bước 3.1: [Specific Task]
 
-**L�m g�:** [M� t? ng?n g?n]
+**Làm gì:** [Mô tả ngắn gọn]
 
-**T?i sao:** [L� do c?n l�m b??c n�y]
+**Tại sao:** [Lý do cần làm bước này]
 
 **File:** `src/[Project]/[Path]/[FileName].cs`
 
 ```csharp
-// FULL CODE - Kh�ng t�m t?t
+// FULL CODE - Không tóm tắt
 namespace ECO.WebApi.[Namespace];
 
 /// <summary>
-/// [XML comment m� t? class]
+/// [XML comment mô tả class]
 /// </summary>
 public class ClassName
 {
     /// <summary>
- /// [XML comment m� t? property/method]
+    /// [XML comment mô tả property/method]
     /// </summary>
     public string Property { get; set; } = default!;
  
-    // Comment gi?i th�ch logic
+    // Comment giải thích logic
     public void Method()
     {
-        // Implementation v?i comments
+        // Implementation với comments
     }
 }
 \```
 
-**Gi?i th�ch:**
-- **Property:** [Gi?i th�ch property]
-- **Method():** [Gi?i th�ch method]
-- **Line X-Y:** [Gi?i th�ch ?o?n code ??c bi?t]
+**Giải thích:**
+- **Property:** [Giải thích property]
+- **Method():** [Giải thích method]
+- **Line X-Y:** [Giải thích đoạn code đặc biệt]
 
-**T?i sao [Design Decision]:**
-- [L� do 1]
-- [L� do 2]
+**Tại sao [Design Decision]:**
+- [Lý do 1]
+- [Lý do 2]
 
-**L?i �ch:**
-- ? [Benefit 1]
-- ? [Benefit 2]
+**Lợi ích:**
+- ✅ [Benefit 1]
+- ✅ [Benefit 2]
 
-**?? L?u �:**
-- [?i?u quan tr?ng c?n nh?]
+**⚠️ Lưu ý:**
+- [Điều quan trọng cần nhớ]
 
 ---
 ```
 
-**V� d? th?c t?:**
+**Ví dụ thực tế:**
 ```markdown
-## 3. T?o Domain Event Contracts
+## 3. Tạo Domain Event Contracts
 
-### B??c 3.1: IEvent Interface
+### Bước 3.1: IEvent Interface
 
-**L�m g�:** T?o marker interface cho t?t c? domain events.
+**Làm gì:** Tạo marker interface cho tất cả domain events.
 
-**T?i sao:** ?�nh d?u class l� domain event, h? tr? generic handlers.
+**Tại sao:** Đánh dấu class là domain event, hỗ trợ generic handlers.
 
 **File:** `src/Core/Domain/Common/Contracts/IEvent.cs`
 
@@ -278,14 +278,14 @@ public interface IEvent
 }
 \```
 
-**Gi?i th�ch:**
-- Marker interface - kh�ng c� methods
-- ?�nh d?u class l� m?t domain event
-- T?t c? domain events ph?i implement interface n�y
+**Giải thích:**
+- Marker interface - không có methods
+- Đánh dấu class là một domain event
+- Tất cả domain events phải implement interface này
 
 **Why in Domain layer:**
-- Events l� domain concept (business logic)
-- Kh�ng ph?i infrastructure concern
+- Events là domain concept (business logic)
+- Không phải infrastructure concern
 - Follow DDD principles
 
 ---
@@ -295,30 +295,30 @@ public interface IEvent
 
 ### **Handling Complex Implementation**
 
-**N?u code QU� PH?C T?P (>200 d�ng):**
+**Nếu code QUÁ PHỨC TẠP (>200 dòng):**
 
 **Main doc - Focus usage:**
 ```markdown
 ## 3. [Complex Component]
 
-### ?? **T?ng quan**
+### 📌 **Tổng quan**
 
-[Component Name] l� [m� t? ng?n g?n].
+[Component Name] là [mô tả ngắn gọn].
 
 **Core methods:**
-- `Method1()` - [M� t?]
-- `Method2()` - [M� t?]
+- `Method1()` - [Mô tả]
+- `Method2()` - [Mô tả]
 
-**?? Implementation Chi ti?t:**
+**⚠️ Implementation Chi tiết:**
 
-Code c?a [Component Name] kh� ph?c t?p ([l� do]).  
-**FULL CODE implementation** ???c vi?t trong document ri�ng: **[BUILD_XX_DetailName.md](BUILD_XX_DetailName.md)**
+Code của [Component Name] khá phức tạp ([lý do]).  
+**FULL CODE implementation** được viết trong document riêng: **[BUILD_XX_DetailName.md](BUILD_XX_DetailName.md)**
 
-**Trong section n�y ch�ng ta ch? h?c C�CH S? D?NG, kh�ng ?i s�u v�o implementation.**
+**Trong section này chúng ta chỉ học CÁCH SỬ DỤNG, không đi sâu vào implementation.**
 
 ---
 
-### B??c 3.1: C�ch s? d?ng [Component]
+### Bước 3.1: Cách sử dụng [Component]
 
 **Usage Example 1 - [Scenario]:**
 ```csharp
@@ -330,29 +330,29 @@ Code c?a [Component Name] kh� ph?c t?p ([l� do]).
 // More complex example
 \```
 
-**?? ?? hi?u chi ti?t implementation:**
+**⚠️ Để hiểu chi tiết implementation:**
 - [Technical detail 1]
 - [Technical detail 2]
 
-? Xem [BUILD_XX_DetailName.md](BUILD_XX_DetailName.md)
+👉 Xem [BUILD_XX_DetailName.md](BUILD_XX_DetailName.md)
 
 ---
 ```
 
 **Sub doc (BUILD_XX_DetailName.md) - Full implementation:**
 ```markdown
-# [Component Name] - Chi ti?t Implementation
+# [Component Name] - Chi tiết Implementation
 
-> ?? [Quay l?i BUILD_XX](BUILD_XX_Main.md)
+> 📚 [Quay lại BUILD_XX](BUILD_XX_Main.md)
 
-Document n�y ch?a FULL CODE implementation c?a [Component Name].  
-?�y l� ph?n ph?c t?p v?i [technical aspects].
+Document này chứa FULL CODE implementation của [Component Name].  
+Đây là phần phức tạp với [technical aspects].
 
 ---
 
 ## 1. Overview
 
-**File n�y implement:**
+**File này implement:**
 - [Feature 1]
 - [Feature 2]
 
@@ -364,21 +364,21 @@ Document n�y ch?a FULL CODE implementation c?a [Component Name].
 
 ## 2. Full Implementation
 
-### B??c 2.1: [Part 1]
+### Bước 2.1: [Part 1]
 
 **File:** `src/[Project]/[Path]/[FileName].cs`
 
 ```csharp
-// FULL CODE (c� th? 500+ d�ng)
+// FULL CODE (có thể 500+ dòng)
 namespace ECO.WebApi.[Namespace];
 
 public static class ComplexClass
 {
-    // Full implementation v?i comments chi ti?t
+    // Full implementation với comments chi tiết
 }
 \```
 
-**Gi?i th�ch chi ti?t:**
+**Giải thích chi tiết:**
 - [Section 1]: [Detailed explanation]
 - [Section 2]: [Detailed explanation]
 
@@ -412,7 +412,7 @@ public static class ComplexClass
 
 ---
 
-**Quay l?i:** [BUILD_XX - Main](BUILD_XX_Main.md)
+**Quay lại:** [BUILD_XX - Main](BUILD_XX_Main.md)
 ```
 
 ---
@@ -429,33 +429,33 @@ public static class ComplexClass
 ```markdown
 ## [N]. Usage Examples
 
-### B??c [N].1: Complete Example - [Feature Name]
+### Bước [N].1: Complete Example - [Feature Name]
 
 **Request DTOs:**
 ```csharp
-// Request models v?i full code
+// Request models với full code
 public class RequestDto
 {
-// Properties v?i comments
+    // Properties với comments
 }
 \```
 
 **Response DTOs:**
 ```csharp
-// Response models v?i full code
+// Response models với full code
 \```
 
-**Specifications:** (n?u c�)
+**Specifications:** (nếu có)
 ```csharp
-// Specification v?i full code
+// Specification với full code
 \```
 
 **Handler:**
 ```csharp
-// Handler implementation v?i full code
+// Handler implementation với full code
 public class FeatureHandler : IRequestHandler<Request, Response>
 {
-// Full implementation v?i comments
+    // Full implementation với comments
 }
 \```
 
@@ -494,35 +494,35 @@ curl -X POST https://localhost:7001/api/endpoint \
 ### **Section: Summary**
 
 **Required elements:**
-- Checklist nh?ng g� ?� ho�n th�nh
-- Architecture diagram (n?u ph?c t?p)
+- Checklist những gì đã hoàn thành
+- Architecture diagram (nếu phức tạp)
 - Key concepts
 - File structure
 
 ```markdown
 ## [N]. Summary
 
-### ? ?� ho�n th�nh trong b??c n�y:
+### ✅ Đã hoàn thành trong bước này:
 
 **[Category 1]:**
-- ? [Item 1]
-- ? [Item 2]
+- ✅ [Item 1]
+- ✅ [Item 2]
 
 **[Category 2]:**
-- ? [Item 1]
-- ? [Item 2]
+- ✅ [Item 1]
+- ✅ [Item 2]
 
-### ?? Architecture Diagram: (n?u ph?c t?p)
+### 📊 Architecture Diagram: (nếu phức tạp)
 
 \```
 Component A
-    ?
+    │
 Component B
-    ?
+    │
 Component C
 \```
 
-### ?? Key Concepts:
+### 📌 Key Concepts:
 
 **[Concept 1]:**
 - [Explanation point 1]
@@ -531,15 +531,15 @@ Component C
 **[Concept 2]:**
 - [Explanation]
 
-### ?? File Structure:
+### 📁 File Structure:
 
 \```
 src/Core/[Project]/
-??? Folder1/
-?   ??? File1.cs
-?   ??? File2.cs
-??? Folder2/
-    ??? File3.cs
+├── Folder1/
+│   ├── File1.cs
+│   └── File2.cs
+└── Folder2/
+    └── File3.cs
 \```
 
 ---
@@ -550,35 +550,35 @@ src/Core/[Project]/
 ### **Footer Section**
 
 **Required elements:**
-- Next steps v?i checklist
-- Link quay l?i index
+- Next steps với checklist
+- Link quay lại index
 
 ```markdown
 ## [N+1]. Next Steps
 
-**Ti?p theo:** [BUILD_[X+1] - Next Module](BUILD_[X+1]_Next_Module.md)
+**Tiếp theo:** [BUILD_[X+1] - Next Module](BUILD_[X+1]_Next_Module.md)
 
-Trong b??c ti?p theo, ch�ng ta s?:
-1. ? [Task 1]
-2. ? [Task 2]
-3. ? [Task 3]
+Trong bước tiếp theo, chúng ta sẽ:
+1. ✅ [Task 1]
+2. ✅ [Task 2]
+3. ✅ [Task 3]
 
 ---
 
-**Quay l?i:** [M?c l?c](BUILD_INDEX.md)
+**Quay lại:** [Mục lục](BUILD_INDEX.md)
 ```
 
 ---
 
-## ?? Anti-Patterns (Kh�ng n�n l�m)
+## ❌ Anti-Patterns (Không nên làm)
 
-### ? **Kh�ng tham chi?u ??n code c� s?n**
+### ❌ **Không tham chiếu đến code có sẵn**
 
 **Wrong:**
 ```markdown
 **File:** `src/Core/Application/Common/Specification/SpecificationBuilderExtensions.cs`
 
-?? Note: File n�y ?� t?n t?i trong workspace. Kh�ng c?n t?o m?i, ch? c?n hi?u c�ch d�ng.
+⚠️ Note: File này đã tồn tại trong workspace. Không cần tạo mới, chỉ cần hiểu cách dùng.
 ```
 
 **Correct:**
@@ -600,7 +600,7 @@ public static class SpecificationBuilderExtensions
 
 ---
 
-### ? **Kh�ng code t�m t?t**
+### ❌ **Không code tóm tắt**
 
 **Wrong:**
 ```markdown
@@ -630,7 +630,7 @@ public class Product : AuditableEntity, IAggregateRoot
     
     private Product() { }
     
-  public static Product Create(string name, string description, decimal price, int stock)
+    public static Product Create(string name, string description, decimal price, int stock)
     {
         // Full implementation
     }
@@ -640,7 +640,7 @@ public class Product : AuditableEntity, IAggregateRoot
 
 ---
 
-### ? **Kh�ng gi?i th�ch thu?t ng? ti?ng Anh**
+### ❌ **Không giải thích thuật ngữ tiếng Anh**
 
 **Wrong:**
 ```markdown
@@ -649,21 +649,21 @@ Repository Pattern uses Specification Pattern for flexible queries.
 
 **Correct:**
 ```markdown
-**Repository Pattern** (M?u Kho l?u tr?) s? d?ng **Specification Pattern** (M?u ??c t?) ?? query linh ho?t.
+**Repository Pattern** (Mẫu Kho lưu trữ) sử dụng **Specification Pattern** (Mẫu đặc tả) để query linh hoạt.
 
-**Specification Pattern l� g�?**
-- Build complex queries t? simple objects
+**Specification Pattern là gì?**
+- Build complex queries từ simple objects
 - Reusable query logic
 - Type-safe
 ```
 
 ---
 
-### ? **Kh�ng c� examples th?c t?**
+### ❌ **Không có examples thực tế**
 
 **Wrong:**
 ```markdown
-S? d?ng repository ?? query data.
+Sử dụng repository để query data.
 ```
 
 **Correct:**
@@ -694,52 +694,52 @@ return new PaginatedResult(products, count);
 
 ---
 
-## ? Checklist khi vi?t Module Doc
+## ✅ Checklist khi viết Module Doc
 
 ### **Content Checklist**
-- [ ] Header v?i link quay l?i index v� prerequisites
-- [ ] Section 1: Overview v?i "L�m g�", "T?i sao", Checklist
-- [ ] Section 2: Add Required Packages (n?u c�)
-- [ ] Implementation steps c� th? t? logic
-- [ ] **FULL CODE** trong m?i b??c (kh�ng t�m t?t)
-- [ ] Code c� namespace ?�ng (`ECO.WebApi.[Layer].[Module]`)
-- [ ] Code c� comments gi?i th�ch
-- [ ] Gi?i th�ch sau m?i code block
-- [ ] Examples & Usage v?i complete code
-- [ ] Summary v?i checklist, diagrams, file structure
-- [ ] Next Steps v?i link ??n doc ti?p theo
+- [ ] Header với link quay lại index và prerequisites
+- [ ] Section 1: Overview với "Làm gì", "Tại sao", Checklist
+- [ ] Section 2: Add Required Packages (nếu có)
+- [ ] Implementation steps có thứ tự logic
+- [ ] **FULL CODE** trong mỗi bước (không tóm tắt)
+- [ ] Code có namespace đúng (`ECO.WebApi.[Layer].[Module]`)
+- [ ] Code có comments giải thích
+- [ ] Giải thích sau mỗi code block
+- [ ] Examples & Usage với complete code
+- [ ] Summary với checklist, diagrams, file structure
+- [ ] Next Steps với link đến doc tiếp theo
 
 ### **Quality Checklist**
-- [ ] Code compile ???c (test tr??c khi commit)
-- [ ] Namespace ?�ng chu?n project
-- [ ] File paths ch�nh x�c
-- [ ] Commands test th�nh c�ng
+- [ ] Code compile được (test trước khi commit)
+- [ ] Namespace đúng chuẩn project
+- [ ] File paths chính xác
+- [ ] Commands test thành công
 - [ ] JSON examples valid
-- [ ] Kh�ng c� typos
-- [ ] Formatting nh?t qu�n
+- [ ] Không có typos
+- [ ] Formatting nhất quán
 
 ### **Vietnamese Language Checklist**
-- [ ] Gi?i th�ch b?ng ti?ng Vi?t
-- [ ] Thu?t ng? ti?ng Anh c� gi?i th�ch
-- [ ] Comments code d? hi?u (Vi?t ho?c Anh r� r�ng)
-- [ ] V� d? th?c t?, g?n g?i
+- [ ] Giải thích bằng tiếng Việt
+- [ ] Thuật ngữ tiếng Anh có giải thích
+- [ ] Comments code dễ hiểu (Việt hoặc Anh rõ ràng)
+- [ ] Ví dụ thực tế, gần gũi
 
 ### **Complex Module Checklist**
-- [ ] Main doc focus v�o usage
-- [ ] Sub doc (BUILD_XX_DetailName.md) c� full implementation
-- [ ] Cross-reference gi?a main v� sub docs
-- [ ] Sub doc c� ??: Overview, Full Code, Flow, Examples, Testing
+- [ ] Main doc focus vào usage
+- [ ] Sub doc (BUILD_XX_DetailName.md) có full implementation
+- [ ] Cross-reference giữa main và sub docs
+- [ ] Sub doc có: Overview, Full Code, Flow, Examples, Testing
 
 ### **Style Checklist**
-- [ ] Emojis ph� h?p (?? ?? ? ? ?? ?? ?? ??)
-- [ ] Code blocks c� syntax highlighting (\```csharp)
-- [ ] Sections c� separators (`---`)
-- [ ] Lists c� indentation ?�ng
-- [ ] Headers c� hierarchy r� (##, ###, ####)
+- [ ] Emojis phù hợp (📚 📖 ✅ ❌ ⚠️ 💡 📁 📌 📊 🔄 📝 🎨)
+- [ ] Code blocks có syntax highlighting (\```csharp)
+- [ ] Sections có separators (`---`)
+- [ ] Lists có indentation đúng
+- [ ] Headers có hierarchy rõ (##, ###, ####)
 
 ---
 
-## ?? Naming Convention
+## 📁 Naming Convention
 
 ### **File Names**
 ```
@@ -769,14 +769,14 @@ Examples:
 
 ---
 
-## ?? Formatting Guidelines
+## 📖 Formatting Guidelines
 
 ### **Code Blocks**
 
 **C# Code:**
 ```markdown
 ```csharp
-// FULL CODE v?i namespace ??y ??
+// FULL CODE với namespace đầy đủ
 namespace ECO.WebApi.Domain.Catalog;
 
 public class Product
@@ -792,7 +792,7 @@ public class Product
 {
   "key": "value",
   "nested": {
- "key": "value"
+    "key": "value"
   }
 }
 \```
@@ -819,7 +819,7 @@ Get-Process | Where-Object Name -like "dotnet*"
 ```markdown
 | Column 1 | Column 2 | Column 3 |
 |----------|----------|----------|
-| Value 1  | Value 2  | Value 3|
+| Value 1  | Value 2  | Value 3  |
 | Value 4  | Value 5  | Value 6  |
 ```
 
@@ -828,11 +828,11 @@ Get-Process | Where-Object Name -like "dotnet*"
 ### **Callouts**
 
 ```markdown
-> ?? **Warning:** Critical information  
-> ?? **Note:** Helpful information  
-> ?? **Tip:** Pro tip  
-> ?? **Prerequisites:** Required steps  
-> ?? **Don't:** Anti-pattern
+> ⚠️ **Warning:** Critical information  
+> 📌 **Note:** Helpful information  
+> 💡 **Tip:** Pro tip  
+> 📋 **Prerequisites:** Required steps  
+> ❌ **Don't:** Anti-pattern
 ```
 
 ---
@@ -840,19 +840,18 @@ Get-Process | Where-Object Name -like "dotnet*"
 ### **Emojis Usage**
 
 **Standard emojis:**
-- ?? Documentation/Back to index
-- ?? Prerequisites/Checklist
-- ? Completed/Correct/Do this
-- ? Wrong/Don't do this
-- ?? Warning/Important
-- ?? Tip/Idea
-- ?? File structure
-- ?? Key points/Concepts
-- ?? Diagram/Chart
-- ?? Anti-pattern/Forbidden
-- ?? Flow/Process
-- ?? Notes/Documentation
-- ?? Formatting/Style
+- 📚 Documentation/Back to index
+- 📋 Prerequisites/Checklist
+- ✅ Completed/Correct/Do this
+- ❌ Wrong/Don't do this
+- ⚠️ Warning/Important
+- 💡 Tip/Idea
+- 📁 File structure
+- 📌 Key points/Concepts
+- 📊 Diagram/Chart
+- 🔄 Flow/Process
+- 📝 Notes/Documentation
+- 🎨 Formatting/Style
 
 ---
 
@@ -872,34 +871,34 @@ Get-Process | Where-Object Name -like "dotnet*"
 
 ---
 
-## ?? Complete Example Template
+## 📖 Complete Example Template
 
 **File:** `BUILD_XX_Feature_Name.md`
 
 ```markdown
 # Feature Name - Short Description
 
-> ?? [Quay l?i M?c l?c](BUILD_INDEX.md)  
-> ?? **Prerequisites:** B??c [X-1] ([Previous Module]) ?� ho�n th�nh
+> 📚 [Quay lại Mục lục](BUILD_INDEX.md)  
+> 📋 **Prerequisites:** Bước [X-1] ([Previous Module]) đã hoàn thành
 
-T�i li?u n�y h??ng d?n x�y d?ng [Feature Name] - [Purpose].
+Tài liệu này hướng dẫn xây dựng [Feature Name] - [Purpose].
 
 ---
 
 ## 1. Overview
 
-**L�m g�:** [Description]
+**Làm gì:** [Description]
 
-**T?i sao c?n:**
+**Tại sao cần:**
 - **[Reason 1]:** [Explanation]
 - **[Reason 2]:** [Explanation]
 - **[Reason 3]:** [Explanation]
 
-**Trong b??c n�y ch�ng ta s?:**
-- ? [Task 1]
-- ? [Task 2]
-- ? [Task 3]
-- ? [Task 4]
+**Trong bước này chúng ta sẽ:**
+- ✅ [Task 1]
+- ✅ [Task 2]
+- ✅ [Task 3]
+- ✅ [Task 4]
 
 **Real-world example:**
 ```csharp
@@ -910,7 +909,7 @@ T�i li?u n�y h??ng d?n x�y d?ng [Feature Name] - [Purpose].
 
 ## 2. Add Required Packages
 
-### B??c 2.1: [Package Group]
+### Bước 2.1: [Package Group]
 
 **File:** `src/[Project]/[Project].csproj`
 
@@ -920,18 +919,18 @@ T�i li?u n�y h??ng d?n x�y d?ng [Feature Name] - [Purpose].
 </ItemGroup>
 \```
 
-**Gi?i th�ch:**
+**Giải thích:**
 - `PackageName`: [Why need this]
 
 ---
 
 ## 3. [Major Component]
 
-### B??c 3.1: [Task Name]
+### Bước 3.1: [Task Name]
 
-**L�m g�:** [Description]
+**Làm gì:** [Description]
 
-**T?i sao:** [Reason]
+**Tại sao:** [Reason]
 
 **File:** `src/[Project]/[Path]/[FileName].cs`
 
@@ -945,18 +944,18 @@ public class ClassName
 }
 \```
 
-**Gi?i th�ch:**
+**Giải thích:**
 - [Explanation]
 
-**T?i sao [Design Decision]:**
+**Tại sao [Design Decision]:**
 - [Reason]
 
-**L?i �ch:**
-- ? [Benefit]
+**Lợi ích:**
+- ✅ [Benefit]
 
 ---
 
-### B??c 3.2: [Next Task]
+### Bước 3.2: [Next Task]
 
 [Repeat pattern]
 
@@ -964,7 +963,7 @@ public class ClassName
 
 ## 4. Usage Examples
 
-### B??c 4.1: Complete Example - [Feature]
+### Bước 4.1: Complete Example - [Feature]
 
 **Request:**
 ```csharp
@@ -990,61 +989,64 @@ curl -X POST https://localhost:7001/api/endpoint
 
 ## 5. Summary
 
-### ? ?� ho�n th�nh:
+### ✅ Đã hoàn thành:
 
 **[Category]:**
-- ? [Item]
+- ✅ [Item]
 
-### ?? Architecture:
+### 📊 Architecture:
 
 \```
 [Diagram]
 \```
 
-### ?? Key Concepts:
+### 📌 Key Concepts:
 
 **[Concept]:**
 - [Point]
 
-### ?? File Structure:
+### 📁 File Structure:
 
 \```
 src/
-??? [Structure]
+├── [Structure]
 \```
 
 ---
 
 ## 6. Next Steps
 
-**Ti?p theo:** [BUILD_[X+1] - Next Module](BUILD_[X+1]_Next_Module.md)
+**Tiếp theo:** [BUILD_[X+1] - Next Module](BUILD_[X+1]_Next_Module.md)
 
-Trong b??c ti?p theo:
-1. ? [Task 1]
-2. ? [Task 2]
+Trong bước tiếp theo:
+1. ✅ [Task 1]
+2. ✅ [Task 2]
 
 ---
 
-**Quay l?i:** [M?c l?c](BUILD_INDEX.md)
+**Quay lại:** [Mục lục](BUILD_INDEX.md)
 ```
 
 ---
 
-## ?? Final Notes
+## 📝 Final Notes
 
-### **Khi vi?t docs, h�y nh?:**
+### **Khi viết docs, hãy nhớ:**
 
-1. **Self-Contained:** Code ??y ??, kh�ng reference workspace
-2. **Ti?ng Vi?t:** Gi?i th�ch d? hi?u, thu?t ng? c� gi?i th�ch
-3. **Chia Nh?:** Main doc (usage) + Sub doc (implementation) n?u ph?c t?p
-4. **Examples:** V� d? th?c t?, complete code
-5. **Quality:** Code compile, paths ?�ng, formatting nh?t qu�n
+1. **Self-Contained:** Code đầy đủ, không reference workspace
+2. **Tiếng Việt:** Giải thích dễ hiểu, thuật ngữ có giải thích
+3. **Chia Nhỏ:** Main doc (usage) + Sub doc (implementation) nếu phức tạp
+4. **Examples:** Ví dụ thực tế, complete code
+5. **Quality:** Code compile, paths đúng, formatting nhất quán
 
-### **M?c ti�u cu?i c�ng:**
+### **Mục tiêu cuối cùng:**
 
-> B?t k? developer n�o ??c docs n�y ??u c� th? T?O L?I to�n b? solution  
-> t? con s? 0, ch? c?n follow t?ng b??c trong docs.
+> Bất kỳ developer nào đọc docs này đều có thể TẠO LẠI toàn bộ solution  
+> từ con số 0, chỉ cần follow từng bước trong docs.
 
 ---
 
-**S? d?ng template n�y ?? vi?t documentation nh?t qu�n v� ch?t l??ng cao cho ECO.WebApi!** ??
+**Sử dụng template này để viết documentation nhất quán và chất lượng cao cho ECO.WebApi!** 📚
+
+☑️ Save files with a specific encoding
+Unicode (UTF-8 with signature) - Code page 65001
