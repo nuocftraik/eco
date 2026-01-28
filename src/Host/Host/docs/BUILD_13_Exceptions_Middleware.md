@@ -1,43 +1,55 @@
-# Exception Handling & Middleware
+﻿# Exception Handling & Middleware
 
-> ?? [Quay l?i M?c l?c](BUILD_INDEX.md)  
-> ?? **Prerequisites:** B??c 12 (Common Services) ?� ho�n th�nh
+> 📚 [Quay lại Mục lục](BUILD_INDEX.md)  
+> 📋 **Prerequisites:** Bước 12 (Common Services) đã hoàn thành
 
-T�i li?u n�y h??ng d?n x�y d?ng Exception Handling System v?i custom exceptions v� global exception middleware.
+Tài liệu này hướng dẫn xây dựng Exception Handling System với custom exceptions và global exception middleware.
 
 ---
 
 ## 1. Overview
 
-**L�m g�:** X�y d?ng h? th?ng x? l� exceptions to�n c?c v?i custom exceptions v� error responses.
+**Làm gì:** Xây dựng hệ thống xử lý exceptions toàn cục với custom exceptions và error responses nhất quán.
 
-**T?i sao c?n:**
-- **Centralized Error Handling:** X? l� t?t c? exceptions ? m?t n?i
-- **Consistent Error Format:** Error response format chu?n cho to�n API
-- **Better User Experience:** Error messages r� r�ng, d? hi?u
-- **Logging:** T? ??ng log errors v?i context (UserId, ErrorId, StackTrace)
-- **HTTP Status Codes:** Tr? ?�ng status code cho t?ng lo?i error
+**Tại sao cần:**
+- **Centralized Error Handling:** Xử lý tất cả exceptions ở một nơi duy nhất
+- **Consistent Error Format:** Error response format chuẩn và nhất quán cho toàn bộ API
+- **Better User Experience:** Error messages rõ ràng, dễ hiểu cho người dùng
+- **Logging:** Tự động log errors với đầy đủ context (UserId, ErrorId, StackTrace)
+- **HTTP Status Codes:** Trả đúng status code cho từng loại error
+- **Production-Ready:** Không expose sensitive information trong error messages
 
-**Trong b??c n�y ch�ng ta s?:**
-- ? T?o `ErrorResult` model (error response format)
-- ? T?o `CustomException` base class
-- ? T?o c�c derived exceptions (NotFoundException, UnauthorizedException, etc.)
-- ? Implement `ExceptionMiddleware` (global exception handler)
-- ? Register middleware pipeline
+**Trong bước này chúng ta sẽ:**
+- ✅ Tạo `ErrorResult` model (error response format)
+- ✅ Tạo `CustomException` base class
+- ✅ Tạo các derived exceptions (NotFoundException, UnauthorizedException, etc.)
+- ✅ Implement `ExceptionMiddleware` (global exception handler)
+- ✅ Register middleware pipeline
+- ✅ Handle FluentValidation exceptions
+- ✅ Support inner exception unwrapping
 
 **Real-world example:**
 ```csharp
-// Trong handler
-public async Task<ProductDto> Handle(GetProductRequest request, CancellationToken ct)
+// Trong handler - Throw exception
+public class GetProductHandler : IRequestHandler<GetProductRequest, ProductDto>
 {
-    var product = await _repository.FirstOrDefaultAsync(new ProductByIdSpec(request.Id), ct)
-      ?? throw new NotFoundException($"Product with ID {request.Id} was not found.");
-    
-    return product.Adapt<ProductDto>();
+    public async Task<ProductDto> Handle(GetProductRequest request, CancellationToken ct)
+    {
+        var product = await _repository.FirstOrDefaultAsync(new ProductByIdSpec(request.Id), ct)
+   ?? throw new NotFoundException($"Product with ID {request.Id} was not found.");
+     
+        return product.Adapt<ProductDto>();
+    }
 }
 
-// Exception t? ??ng ???c catch b?i ExceptionMiddleware
-// Response: { "statusCode": 404, "exception": "Product with ID ... was not found.", "errorId": "..." }
+// Exception tự động được catch bởi ExceptionMiddleware
+// Response:
+// {
+// "statusCode": 404,
+//   "exception": "Product with ID 123 was not found.",
+//   "errorId": "a1b2c3d4-...",
+//   "supportMessage": "Provide the ErrorId a1b2c3d4-... to the support team for further analysis."
+// }
 ```
 
 ---
@@ -46,19 +58,24 @@ public async Task<ProductDto> Handle(GetProductRequest request, CancellationToke
 
 **File:** `src/Infrastructure/Infrastructure/Infrastructure.csproj`
 
-Packages ?� c� t? b??c tr??c:
-- `Serilog` - Logging
+Packages đã có từ bước trước (không cần add thêm):
+- `Serilog` - Structured logging
 - `Newtonsoft.Json` - JSON serialization
+- `FluentValidation` - Validation support
 
-**No new packages needed for this step.**
+**⚠️ Lưu ý:** 
+- Tất cả packages cần thiết đã được add trong BUILD_12
+- Không cần thêm package mới cho bước này
 
 ---
 
-## 3. T?o ErrorResult Model
+## 3. Tạo ErrorResult Model
 
-### B??c 3.1: ErrorResult Class
+### Bước 3.1: ErrorResult Class
 
-**L�m g�:** T?o model ?? format error responses.
+**Làm gì:** Tạo model để format error responses một cách nhất quán.
+
+**Tại sao:** Cần một format chuẩn để client biết cách parse error response.
 
 **File:** `src/Infrastructure/Infrastructure/Middleware/ErrorResult.cs`
 
@@ -66,48 +83,49 @@ Packages ?� c� t? b??c tr??c:
 namespace ECO.WebApi.Infrastructure.Middleware;
 
 /// <summary>
-/// Model ?? tr? v? error response cho client
+/// Model để trả về error response cho client
+/// Format nhất quán cho tất cả errors
 /// </summary>
 public class ErrorResult
 {
     /// <summary>
-    /// Danh s�ch error messages
+    /// Danh sách error messages (cho validation errors)
     /// </summary>
-public List<string> Messages { get; set; } = new();
+    public List<string> Messages { get; set; } = new();
 
     /// <summary>
-    /// Source c?a exception (class v� method)
+    /// Source của exception (class và method name)
     /// </summary>
     public string? Source { get; set; }
 
     /// <summary>
-    /// Exception message
+    /// Exception message chính
     /// </summary>
     public string? Exception { get; set; }
 
     /// <summary>
-    /// Unique error ID ?? tracking
+    /// Unique error ID để tracking và debugging
     /// </summary>
     public string? ErrorId { get; set; }
 
     /// <summary>
-    /// Support message ?? user li�n h? support team
+  /// Support message hướng dẫn user liên hệ support team
     /// </summary>
     public string? SupportMessage { get; set; }
 
-    /// <summary>
-  /// HTTP status code
+ /// <summary>
+    /// HTTP status code
     /// </summary>
     public int StatusCode { get; set; }
 }
 ```
 
-**Gi?i th�ch:**
-- `Messages`: List c�c error messages (d�ng cho validation errors)
-- `Source`: Class v� method g�y ra exception
-- `Exception`: Exception message ch�nh
-- `ErrorId`: Unique ID ?? tracking v� debugging
-- `SupportMessage`: H??ng d?n user li�n h? support
+**Giải thích:**
+- `Messages`: List của error messages - dùng cho validation errors có nhiều lỗi
+- `Source`: Class và method gây ra exception - hữu ích cho debugging
+- `Exception`: Exception message chính - message hiển thị cho user
+- `ErrorId`: Unique ID (Guid) - user cung cấp cho support team để tracking
+- `SupportMessage`: Hướng dẫn user cách liên hệ support
 - `StatusCode`: HTTP status code (400, 404, 500, etc.)
 
 **Example response:**
@@ -122,13 +140,21 @@ public List<string> Messages { get; set; } = new();
 }
 ```
 
+**Tại sao design này:**
+- Consistent structure cho mọi errors
+- Contains enough info để debug
+- User-friendly với supportMessage
+- Machine-readable với statusCode và errorId
+
 ---
 
-## 4. T?o Custom Exceptions
+## 4. Tạo Custom Exceptions
 
-### B??c 4.1: CustomException Base Class
+### Bước 4.1: CustomException Base Class
 
-**L�m g�:** T?o base exception class v?i HttpStatusCode v� ErrorMessages.
+**Làm gì:** Tạo base exception class với HttpStatusCode và ErrorMessages properties.
+
+**Tại sao:** Base class để tất cả custom exceptions kế thừa, đảm bảo có đủ properties cần thiết.
 
 **File:** `src/Core/Application/Common/Exceptions/CustomException.cs`
 
@@ -138,26 +164,30 @@ using System.Net;
 namespace ECO.WebApi.Application.Common.Exceptions;
 
 /// <summary>
-/// Base exception class cho t?t c? custom exceptions
+/// Base exception class cho tất cả custom exceptions trong application
+/// Kế thừa từ Exception để có đầy đủ properties (Message, StackTrace, etc.)
 /// </summary>
 public class CustomException : Exception
 {
-  /// <summary>
-    /// Danh s�ch error messages
-    /// </summary>
+    /// <summary>
+    /// Danh sách error messages (cho validation hoặc multiple errors)
+ /// </summary>
     public List<string>? ErrorMessages { get; }
 
     /// <summary>
-    /// HTTP status code
+    /// HTTP status code tương ứng với exception này
     /// </summary>
     public HttpStatusCode StatusCode { get; }
 
     /// <summary>
-    /// Constructor v?i message, errors, v� status code
+    /// Constructor với message, errors, và status code
     /// </summary>
-    public CustomException(
-        string message, 
-  List<string>? errors = default, 
+    /// <param name="message">Exception message chính</param>
+    /// <param name="errors">Danh sách error messages (optional)</param>
+    /// <param name="statusCode">HTTP status code (default: 500)</param>
+  public CustomException(
+     string message,
+        List<string>? errors = default,
         HttpStatusCode statusCode = HttpStatusCode.InternalServerError)
         : base(message)
     {
@@ -167,17 +197,30 @@ public class CustomException : Exception
 }
 ```
 
-**Gi?i th�ch:**
-- K? th?a `Exception` ?? c� `Message`, `StackTrace`, etc.
-- `ErrorMessages`: List errors (cho validation)
-- `StatusCode`: HTTP status code t??ng ?ng
-- Default status code: 500 (InternalServerError)
+**Giải thích:**
+- Kế thừa `Exception` để có sẵn `Message`, `StackTrace`, `InnerException`, etc.
+- `ErrorMessages`: List errors - useful cho validation errors có nhiều lỗi
+- `StatusCode`: HTTP status code tương ứng - middleware sẽ dùng để set response status
+- Default status code: 500 (InternalServerError) - safe default cho unknown errors
+
+**Tại sao kế thừa Exception:**
+- Có đầy đủ exception properties (Message, StackTrace, InnerException)
+- Có thể throw và catch như normal exceptions
+- Framework support (try-catch, logging, etc.)
+
+**Lợi ích:**
+- ✅ Type-safe exceptions
+- ✅ HTTP status code embedded
+- ✅ Support multiple error messages
+- ✅ Easy to extend
 
 ---
 
-### B??c 4.2: NotFoundException
+### Bước 4.2: NotFoundException
 
-**L�m g�:** Exception khi kh�ng t�m th?y entity.
+**Làm gì:** Exception khi không tìm thấy entity/resource.
+
+**Tại sao:** Cần một exception type riêng cho "not found" để trả đúng HTTP 404.
 
 **File:** `src/Core/Application/Common/Exceptions/NotFoundException.cs`
 
@@ -187,29 +230,50 @@ using System.Net;
 namespace ECO.WebApi.Application.Common.Exceptions;
 
 /// <summary>
-/// Exception khi kh�ng t�m th?y entity
+/// Exception khi không tìm thấy entity/resource
 /// HTTP Status Code: 404 Not Found
 /// </summary>
 public class NotFoundException : CustomException
 {
+    /// <summary>
+    /// Constructor với message
+    /// </summary>
+  /// <param name="message">Message mô tả entity nào không tìm thấy</param>
     public NotFoundException(string message)
         : base(message, null, HttpStatusCode.NotFound)
-    {
+ {
     }
 }
 ```
 
+**Giải thích:**
+- Kế thừa `CustomException`
+- Hardcode `HttpStatusCode.NotFound` (404)
+- Không cần `ErrorMessages` list (chỉ có 1 message)
+
 **Usage:**
 ```csharp
+// Trong handler
 var product = await _repository.FirstOrDefaultAsync(spec, ct)
-    ?? throw new NotFoundException($"Product with ID {request.Id} was not found.");
+  ?? throw new NotFoundException($"Product with ID {request.Id} was not found.");
+
+// Trong service
+var user = await _userManager.FindByIdAsync(userId)
+    ?? throw new NotFoundException($"User with ID {userId} not found.");
 ```
+
+**Lợi ích:**
+- ✅ Clear semantic meaning (not found)
+- ✅ Automatic HTTP 404 status code
+- ✅ Consistent error handling
 
 ---
 
-### B??c 4.3: UnauthorizedException
+### Bước 4.3: UnauthorizedException
 
-**L�m g�:** Exception khi user ch?a authenticate.
+**Làm gì:** Exception khi user chưa authenticate (chưa login).
+
+**Tại sao:** Cần phân biệt giữa "chưa login" (401) và "không có permission" (403).
 
 **File:** `src/Core/Application/Common/Exceptions/UnauthorizedException.cs`
 
@@ -219,29 +283,48 @@ using System.Net;
 namespace ECO.WebApi.Application.Common.Exceptions;
 
 /// <summary>
-/// Exception khi user ch?a authenticate
+/// Exception khi user chưa authenticate (chưa login)
 /// HTTP Status Code: 401 Unauthorized
 /// </summary>
 public class UnauthorizedException : CustomException
 {
+    /// <summary>
+    /// Constructor với message
+    /// </summary>
+    /// <param name="message">Message yêu cầu user login</param>
     public UnauthorizedException(string message)
-       : base(message, null, HttpStatusCode.Unauthorized)
+        : base(message, null, HttpStatusCode.Unauthorized)
     {
     }
 }
 ```
 
+**Giải thích:**
+- Hardcode `HttpStatusCode.Unauthorized` (401)
+- Dùng khi user chưa authenticate (chưa có JWT token)
+
 **Usage:**
 ```csharp
+// Check authentication
 if (!_currentUser.IsAuthenticated())
     throw new UnauthorizedException("You must be logged in to access this resource.");
+
+// Invalid token
+if (!await _tokenService.ValidateTokenAsync(token))
+    throw new UnauthorizedException("Invalid or expired token.");
 ```
+
+**Phân biệt với 403 Forbidden:**
+- **401 Unauthorized:** Chưa login (cần authenticate)
+- **403 Forbidden:** Đã login nhưng không có permission (cần authorization)
 
 ---
 
-### B??c 4.4: ForbiddenException
+### Bước 4.4: ForbiddenException
 
-**L�m g�:** Exception khi user kh�ng c� permission.
+**Làm gì:** Exception khi user không có permission để thực hiện action.
+
+**Tại sao:** User đã login nhưng không có quyền - cần trả HTTP 403.
 
 **File:** `src/Core/Application/Common/Exceptions/ForbiddenException.cs`
 
@@ -251,29 +334,48 @@ using System.Net;
 namespace ECO.WebApi.Application.Common.Exceptions;
 
 /// <summary>
-/// Exception khi user kh�ng c� permission
+/// Exception khi user không có permission để thực hiện action
 /// HTTP Status Code: 403 Forbidden
 /// </summary>
 public class ForbiddenException : CustomException
 {
-    public ForbiddenException(string message)
+    /// <summary>
+    /// Constructor với message
+    /// </summary>
+    /// <param name="message">Message mô tả permission nào bị thiếu</param>
+  public ForbiddenException(string message)
         : base(message, null, HttpStatusCode.Forbidden)
-    {
+ {
     }
 }
 ```
 
+**Giải thích:**
+- Hardcode `HttpStatusCode.Forbidden` (403)
+- Dùng khi user đã authenticate nhưng không có permission
+
 **Usage:**
 ```csharp
+// Check permission
 if (!_currentUser.IsInRole("Admin"))
     throw new ForbiddenException("You do not have permission to access this resource.");
+
+// Check specific permission
+if (!await _authorizationService.HasPermissionAsync("Products.Delete"))
+    throw new ForbiddenException("You do not have permission to delete products.");
 ```
+
+**Phân biệt với 401 Unauthorized:**
+- **401:** Chưa login → cần authenticate
+- **403:** Đã login nhưng không đủ quyền → cần permission
 
 ---
 
-### B??c 4.5: ConflictException
+### Bước 4.5: ConflictException
 
-**L�m g�:** Exception khi c� conflict (duplicate, etc.).
+**Làm gì:** Exception khi có conflict (duplicate resource, business rule violation).
+
+**Tại sao:** Cần một exception type cho conflict cases - trả HTTP 409.
 
 **File:** `src/Core/Application/Common/Exceptions/ConflictException.cs`
 
@@ -283,29 +385,53 @@ using System.Net;
 namespace ECO.WebApi.Application.Common.Exceptions;
 
 /// <summary>
-/// Exception khi c� conflict (duplicate entity, etc.)
+/// Exception khi có conflict (duplicate entity, business rule violation, etc.)
 /// HTTP Status Code: 409 Conflict
 /// </summary>
 public class ConflictException : CustomException
 {
+    /// <summary>
+    /// Constructor với message
+    /// </summary>
+    /// <param name="message">Message mô tả conflict gì</param>
     public ConflictException(string message)
         : base(message, null, HttpStatusCode.Conflict)
- {
+    {
     }
 }
 ```
 
+**Giải thích:**
+- Hardcode `HttpStatusCode.Conflict` (409)
+- Dùng cho duplicate resources hoặc business rule violations
+
 **Usage:**
 ```csharp
+// Duplicate email
+if (await _userManager.FindByEmailAsync(request.Email) != null)
+    throw new ConflictException($"Email {request.Email} is already registered.");
+
+// Duplicate role
 if (await _roleManager.RoleExistsAsync(request.Name))
     throw new ConflictException($"Role {request.Name} already exists.");
+
+// Business rule
+if (product.Stock < request.Quantity)
+    throw new ConflictException("Insufficient stock for this order.");
 ```
+
+**Lợi ích:**
+- ✅ Clear semantic meaning (conflict)
+- ✅ Appropriate HTTP status code (409)
+- ✅ Used for duplicate checks
 
 ---
 
-### B??c 4.6: InternalServerException
+### Bước 4.6: InternalServerException
 
-**L�m g�:** Exception cho internal server errors.
+**Làm gì:** Exception cho internal server errors hoặc unexpected errors.
+
+**Tại sao:** Cần một exception type cho errors không expected - trả HTTP 500.
 
 **File:** `src/Core/Application/Common/Exceptions/InternalServerException.cs`
 
@@ -315,11 +441,16 @@ using System.Net;
 namespace ECO.WebApi.Application.Common.Exceptions;
 
 /// <summary>
-/// Exception cho internal server errors
+/// Exception cho internal server errors hoặc unexpected errors
 /// HTTP Status Code: 500 Internal Server Error
 /// </summary>
 public class InternalServerException : CustomException
 {
+    /// <summary>
+    /// Constructor với message và optional error list
+    /// </summary>
+    /// <param name="message">Error message chính</param>
+    /// <param name="errors">Danh sách detailed errors (optional)</param>
     public InternalServerException(string message, List<string>? errors = default)
         : base(message, errors, HttpStatusCode.InternalServerError)
     {
@@ -327,20 +458,53 @@ public class InternalServerException : CustomException
 }
 ```
 
+**Giải thích:**
+- Hardcode `HttpStatusCode.InternalServerError` (500)
+- Support `errors` list để include detailed error messages
+- Dùng cho unexpected errors hoặc system errors
+
 **Usage:**
 ```csharp
+// Identity operation failed
 var result = await _roleManager.CreateAsync(role);
 if (!result.Succeeded)
-    throw new InternalServerException("Register role failed", result.Errors.Select(e => e.Description).ToList());
+    throw new InternalServerException(
+    "Register role failed",
+        result.Errors.Select(e => e.Description).ToList());
+
+// Database connection failed
+try
+{
+ await _db.SaveChangesAsync();
+}
+catch (Exception ex)
+{
+    throw new InternalServerException("Database operation failed", new List<string> { ex.Message });
+}
+
+// External service failed
+if (!response.IsSuccessStatusCode)
+    throw new InternalServerException("External service call failed");
 ```
+
+**Lợi ích:**
+- ✅ Support detailed error list
+- ✅ Used for unexpected errors
+- ✅ Clear semantic meaning
 
 ---
 
 ## 5. Implement ExceptionMiddleware
 
-### B??c 5.1: ExceptionMiddleware Class
+### Bước 5.1: ExceptionMiddleware Class
 
-**L�m g�:** Middleware ?? catch t?t c? exceptions v� tr? v? error responses.
+**Làm gì:** Middleware để catch tất cả exceptions và trả về error responses nhất quán.
+
+**Tại sao:** 
+- Centralized error handling
+- Consistent error format
+- Automatic logging với context
+- Proper HTTP status codes
 
 **File:** `src/Infrastructure/Infrastructure/Middleware/ExceptionMiddleware.cs`
 
@@ -355,163 +519,185 @@ using System.Net;
 namespace ECO.WebApi.Infrastructure.Middleware;
 
 /// <summary>
-/// Middleware ?? catch v� handle t?t c? exceptions
+/// Middleware để catch và handle tất cả exceptions
+/// Phải đặt đầu tiên trong middleware pipeline
 /// </summary>
 internal class ExceptionMiddleware : IMiddleware
 {
     private readonly ICurrentUser _currentUser;
     private readonly ISerializerService _jsonSerializer;
 
-    public ExceptionMiddleware(
-        ICurrentUser currentUser,
+ public ExceptionMiddleware(
+ ICurrentUser currentUser,
         ISerializerService jsonSerializer)
     {
-        _currentUser = currentUser;
-        _jsonSerializer = jsonSerializer;
+      _currentUser = currentUser;
+      _jsonSerializer = jsonSerializer;
     }
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
-      try
-      {
-  await next(context);
-        }
-        catch (Exception exception)
-        {
-          // 1. L?y user context
-            string email = _currentUser.GetUserEmail() is string userEmail ? userEmail : "Anonymous";
- var userId = _currentUser.GetUserId();
-         
-      // 2. Push context v�o Serilog
-            if (userId != Guid.Empty)
-                LogContext.PushProperty("UserId", userId);
-            LogContext.PushProperty("UserEmail", email);
-
-       // 3. Generate unique error ID
-        string errorId = Guid.NewGuid().ToString();
-LogContext.PushProperty("ErrorId", errorId);
-            LogContext.PushProperty("StackTrace", exception.StackTrace);
-
-            // 4. T?o ErrorResult
-         var errorResult = new ErrorResult
-      {
-       Source = exception.TargetSite?.DeclaringType?.FullName,
-     Exception = exception.Message.Trim(),
-        ErrorId = errorId,
-     SupportMessage = $"Provide the ErrorId {errorId} to the support team for further analysis."
-          };
-
-            // 5. Handle inner exception (unwrap)
-            if (exception is not CustomException && exception.InnerException != null)
+        try
      {
-     while (exception.InnerException != null)
-             {
-         exception = exception.InnerException;
-  }
-            }
-
-            // 6. Handle FluentValidation exceptions
-            if (exception is FluentValidation.ValidationException fluentException)
-   {
-         errorResult.Exception = "One or More Validations failed.";
-        foreach (var error in fluentException.Errors)
-    {
-            errorResult.Messages.Add(error.ErrorMessage);
-           }
+        // Continue với request pipeline
+         await next(context);
      }
-
-  // 7. Set status code d?a tr�n exception type
-            switch (exception)
-       {
-    case CustomException e:
-         errorResult.StatusCode = (int)e.StatusCode;
-         if (e.ErrorMessages is not null)
+ catch (Exception exception)
      {
-                 errorResult.Messages = e.ErrorMessages;
-      }
-      break;
+        // 1. Lấy user context
+        string email = _currentUser.GetUserEmail() is string userEmail ? userEmail : "Anonymous";
+        var userId = _currentUser.GetUserId();
 
-                case KeyNotFoundException:
-                errorResult.StatusCode = (int)HttpStatusCode.NotFound;
-           break;
+        // 2. Push context vào Serilog
+        if (userId != Guid.Empty)
+        LogContext.PushProperty("UserId", userId);
+        LogContext.PushProperty("UserEmail", email);
 
-        case FluentValidation.ValidationException:
-             errorResult.StatusCode = (int)HttpStatusCode.BadRequest;
-       break;
+        // 3. Generate unique error ID
+        string errorId = Guid.NewGuid().ToString();
+        LogContext.PushProperty("ErrorId", errorId);
+        LogContext.PushProperty("StackTrace", exception.StackTrace);
 
-       default:
-        errorResult.StatusCode = (int)HttpStatusCode.InternalServerError;
-      break;
+        // 4. Tạo ErrorResult
+        var errorResult = new ErrorResult
+        {
+            Source = exception.TargetSite?.DeclaringType?.FullName,
+            Exception = exception.Message.Trim(),
+            ErrorId = errorId,
+            SupportMessage = $"Provide the ErrorId {errorId} to the support team for further analysis."
+        };
+
+        // 5. Handle inner exception (unwrap)
+        if (exception is not CustomException && exception.InnerException != null)
+        {
+           while (exception.InnerException != null)
+           {
+                exception = exception.InnerException;
+           }
         }
 
-          // 8. Log error
-         Log.Error($"{errorResult.Exception} Request failed with Status Code {errorResult.StatusCode} and Error Id {errorId}.");
+        // 6. Handle FluentValidation exceptions
+        if (exception is FluentValidation.ValidationException fluentException)
+        {
+            errorResult.Exception = "One or More Validations failed.";
+            foreach (var error in fluentException.Errors)
+            {
+                errorResult.Messages.Add(error.ErrorMessage);
+            }
+         }
+
+         // 7. Set status code dựa trên exception type
+         switch (exception)
+            {
+            case CustomException e:
+            errorResult.StatusCode = (int)e.StatusCode;
+                if (e.ErrorMessages is not null)
+                {
+                    errorResult.Messages = e.ErrorMessages;
+                }
+            break;
+
+            case KeyNotFoundException:
+                errorResult.StatusCode = (int)HttpStatusCode.NotFound;
+                break;
+
+            case FluentValidation.ValidationException:
+                errorResult.StatusCode = (int)HttpStatusCode.BadRequest;
+                break;
+
+            default:
+                errorResult.StatusCode = (int)HttpStatusCode.InternalServerError;
+                break;
+                }
+
+            // 8. Log error
+            Log.Error($"{errorResult.Exception} Request failed with Status Code {errorResult.StatusCode} and Error Id {errorId}.");
 
             // 9. Write error response
             var response = context.Response;
             if (!response.HasStarted)
-{
-       response.ContentType = "application/json";
- response.StatusCode = errorResult.StatusCode;
-      await response.WriteAsync(_jsonSerializer.Serialize(errorResult));
-            }
-          else
             {
-  Log.Warning("Can't write error response. Response has already started.");
+                 response.ContentType = "application/json";
+                 response.StatusCode = errorResult.StatusCode;
+                await response.WriteAsync(_jsonSerializer.Serialize(errorResult));
             }
-   }
+            else
+            {
+                Log.Warning("Can't write error response. Response has already started.");
+            }
+        }
     }
 }
 ```
 
-**Gi?i th�ch flow:**
+**Giải thích flow chi tiết:**
 
-**1. L?y user context:**
-- User email (ho?c "Anonymous" n?u ch?a login)
-- User ID
+**Step 1: Lấy user context**
+- Lấy user email (hoặc "Anonymous" nếu chưa login)
+- Lấy user ID
 
-**2. Push context v�o Serilog:**
+**Step 2: Push context vào Serilog**
 - UserId, UserEmail, ErrorId, StackTrace
-- ?? logs c� ?? context khi debug
+- Để logs có đủ context khi debug
 
-**3. Generate unique error ID:**
-- D�ng Guid ?? c� unique ID
-- User c� th? cung c?p ErrorId cho support team
+**Step 3: Generate unique error ID**
+- Dùng Guid để có unique ID
+- User có thể cung cấp ErrorId cho support team
 
-**4. T?o ErrorResult:**
-- Source: Class v� method g�y ra exception
+**Step 4: Tạo ErrorResult**
+- Source: Class và method gây ra exception
 - Exception: Exception message
 - ErrorId: Unique ID
-- SupportMessage: H??ng d?n user
+- SupportMessage: Hướng dẫn user
 
-**5. Handle inner exception:**
-- Unwrap inner exceptions
-- L?y exception message g?c
+**Step 5: Handle inner exception (unwrap)**
+- Unwrap inner exceptions để lấy root cause
+- Lấy exception message gốc
 
-**6. Handle FluentValidation:**
-- Validation errors t? FluentValidation
-- Add t?t c? error messages v�o `Messages` list
+**Step 6: Handle FluentValidation**
+- Validation errors từ FluentValidation
+- Add tất cả error messages vào `Messages` list
 
-**7. Set status code:**
-- `CustomException`: L?y `StatusCode` t? exception
+**Step 7: Set status code**
+- `CustomException`: Lấy `StatusCode` từ exception
 - `KeyNotFoundException`: 404 Not Found
 - `ValidationException`: 400 Bad Request
 - Default: 500 Internal Server Error
 
-**8. Log error:**
-- Log v?i Serilog
-- Include ErrorId ?? tracking
+**Step 8: Log error**
+- Log với Serilog
+- Include ErrorId để tracking
 
-**9. Write error response:**
+**Step 9: Write error response**
 - Set `ContentType` = "application/json"
 - Set `StatusCode`
-- Serialize `ErrorResult` v� write v�o response
+- Serialize `ErrorResult` và write vào response
+- Check `response.HasStarted` để tránh lỗi
+
+**Tại sao design này:**
+- Catch all exceptions trong một nơi
+- Consistent error format
+- Rich logging với context
+- User-friendly error messages
+- Secure (không expose sensitive info)
+
+**Lợi ích:**
+- ✅ Centralized error handling
+- ✅ Consistent response format
+- ✅ Automatic logging
+- ✅ Support validation errors
+- ✅ Unwrap inner exceptions
+- ✅ Unique error tracking
 
 ---
 
 ## 6. Register Middleware
 
-### B??c 6.1: Middleware Registration
+### Bước 6.1: Middleware Registration
+
+**Làm gì:** Tạo extension methods để register và use ExceptionMiddleware.
+
+**Tại sao:** Modular và clean registration pattern.
 
 **File:** `src/Infrastructure/Infrastructure/Middleware/Startup.cs`
 
@@ -524,76 +710,151 @@ namespace ECO.WebApi.Infrastructure.Middleware;
 internal static class Startup
 {
     /// <summary>
-    /// Add middleware services
+    /// Add middleware services vào DI container
     /// </summary>
     internal static IServiceCollection AddExceptionMiddleware(this IServiceCollection services) =>
         services.AddScoped<ExceptionMiddleware>();
 
     /// <summary>
-    /// Use exception middleware
+  /// Use exception middleware trong request pipeline
     /// </summary>
     internal static IApplicationBuilder UseExceptionMiddleware(this IApplicationBuilder app) =>
      app.UseMiddleware<ExceptionMiddleware>();
 }
 ```
 
+**Giải thích:**
+- `AddExceptionMiddleware()`: Register middleware as Scoped service
+- `UseExceptionMiddleware()`: Add middleware vào pipeline
+- Extension methods để code gọn và consistent
+
+**Tại sao Scoped:**
+- Mỗi request có instance riêng
+- Access được ICurrentUser (cũng là Scoped)
+- Thread-safe
+
 ---
 
-### B??c 6.2: Update Infrastructure Startup
+### Bước 6.2: Update Infrastructure Startup
+
+**Làm gì:** Update Infrastructure Startup để register ExceptionMiddleware.
+
+**Tại sao:** Centralized registration trong Infrastructure layer.
 
 **File:** `src/Infrastructure/Infrastructure/Startup.cs`
 
 ```csharp
+using ECO.WebApi.Infrastructure.Auth;
+using ECO.WebApi.Infrastructure.Common;
 using ECO.WebApi.Infrastructure.Middleware;
-// ... other usings
+using ECO.WebApi.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ECO.WebApi.Infrastructure;
 
 public static class Startup
 {
     public static IServiceCollection AddInfrastructure(
-        this IServiceCollection services, 
-        IConfiguration config)
-    {
-      return services
-     .AddPersistence()
-            // ... other services
- .AddExceptionMiddleware()  // ? Add n�y
-       .AddRouting(options => options.LowercaseUrls = true);
+this IServiceCollection services,
+      IConfiguration config)
+ {
+        return services
+        .AddPersistence()
+     .AddCurrentUser()
+       .AddCommonServices()
+  .AddExceptionMiddleware()  // ← Add này
+            .AddRouting(options => options.LowercaseUrls = true);
     }
 
     public static IApplicationBuilder UseInfrastructure(
-        this IApplicationBuilder builder, 
-        IConfiguration config)
-  {
+        this IApplicationBuilder builder,
+    IConfiguration config)
+    {
         return builder
-       .UseExceptionMiddleware()  // ? PH?I ??U TI�N
-     .UseRouting()
+         .UseExceptionMiddleware()  // ← PHẢI ĐẦU TIÊN
+    .UseRouting()
         .UseCurrentUserMiddleware()
-            .UseHttpsRedirection()
+       .UseHttpsRedirection()
             .UseAuthentication()
-       .UseAuthorization();
+  .UseAuthorization();
     }
 }
 ```
 
-**?? L?u � th? t? middleware:**
+**⚠️ LƯU Ý THỨ TỰ MIDDLEWARE (QUAN TRỌNG!):**
+
 ```
-1. UseExceptionMiddleware()  ? PH?I ??U TI�N (?? catch t?t c? exceptions)
+1. UseExceptionMiddleware()  ← PHẢI ĐẦU TIÊN (catch tất cả exceptions)
 2. UseRouting()
 3. UseCurrentUserMiddleware()
-4. UseAuthentication()
-5. UseAuthorization()
-6. MapControllers() / MapEndpoints()
+4. UseHttpsRedirection()
+5. UseAuthentication()
+6. UseAuthorization()
+7. MapControllers() / MapEndpoints()
 ```
+
+**Tại sao thứ tự này:**
+- `UseExceptionMiddleware()` đầu tiên → catch tất cả exceptions từ các middleware sau
+- `UseRouting()` → xác định endpoint
+- `UseCurrentUserMiddleware()` → set current user từ JWT
+- `UseAuthentication()` → authenticate user (JWT middleware)
+- `UseAuthorization()` → check permissions
+- Endpoints cuối cùng
+
+**Lợi ích:**
+- ✅ Centralized registration
+- ✅ Modular và maintainable
+- ✅ Clear middleware order
 
 ---
 
 ## 7. Testing
 
-### B??c 7.1: Test NotFoundException
+### Bước 7.1: Test NotFoundException
 
-**Request:**
+**Làm gì:** Test exception khi không tìm thấy entity.
+
+**File:** `src/Core/Application/Catalog/Products/GetProductRequest.cs`
+
+```csharp
+using ECO.WebApi.Application.Common.Exceptions;
+using ECO.WebApi.Application.Common.Interfaces;
+using ECO.WebApi.Application.Common.Specification;
+using ECO.WebApi.Domain.Catalog;
+using Mapster;
+using MediatR;
+
+namespace ECO.WebApi.Application.Catalog.Products;
+
+public class GetProductRequest : IRequest<ProductDto>
+{
+    public Guid Id { get; set; }
+}
+
+public class GetProductHandler : IRequestHandler<GetProductRequest, ProductDto>
+{
+    private readonly IRepository<Product> _repository;
+
+    public GetProductHandler(IRepository<Product> repository)
+    {
+        _repository = repository;
+    }
+
+    public async Task<ProductDto> Handle(GetProductRequest request, CancellationToken ct)
+    {
+        // Throw NotFoundException nếu không tìm thấy
+var product = await _repository.FirstOrDefaultAsync(
+            new ProductByIdSpec(request.Id), ct)
+            ?? throw new NotFoundException($"Product with ID {request.Id} was not found.");
+
+        return product.Adapt<ProductDto>();
+    }
+}
+```
+
+**API Request:**
 ```bash
 curl -X GET https://localhost:7001/api/products/00000000-0000-0000-0000-000000000001
 ```
@@ -602,7 +863,7 @@ curl -X GET https://localhost:7001/api/products/00000000-0000-0000-0000-00000000
 ```json
 {
   "messages": [],
-  "source": "ECO.WebApi.Application.Catalog.Products.GetProductRequestHandler.Handle",
+  "source": "ECO.WebApi.Application.Catalog.Products.GetProductHandler.Handle",
   "exception": "Product with ID 00000000-0000-0000-0000-000000000001 was not found.",
   "errorId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "supportMessage": "Provide the ErrorId a1b2c3d4-... to the support team for further analysis.",
@@ -612,13 +873,64 @@ curl -X GET https://localhost:7001/api/products/00000000-0000-0000-0000-00000000
 
 ---
 
-### B??c 7.2: Test ValidationException
+### Bước 7.2: Test ValidationException
 
-**Request:**
+**Làm gì:** Test FluentValidation exceptions với multiple errors.
+
+**File:** `src/Core/Application/Catalog/Products/CreateProductRequest.cs`
+
+```csharp
+using ECO.WebApi.Application.Common.Interfaces;
+using ECO.WebApi.Domain.Catalog;
+using FluentValidation;
+using MediatR;
+
+namespace ECO.WebApi.Application.Catalog.Products;
+
+public class CreateProductRequest : IRequest<Guid>
+{
+    public string Name { get; set; } = default!;
+    public decimal Price { get; set; }
+}
+
+public class CreateProductValidator : AbstractValidator<CreateProductRequest>
+{
+    public CreateProductValidator()
+    {
+        RuleFor(x => x.Name)
+     .NotEmpty().WithMessage("Product name is required.")
+      .MaximumLength(200).WithMessage("Product name must not exceed 200 characters.");
+
+     RuleFor(x => x.Price)
+            .GreaterThan(0).WithMessage("Price must be greater than 0.");
+    }
+}
+
+public class CreateProductHandler : IRequestHandler<CreateProductRequest, Guid>
+{
+    private readonly IRepository<Product> _repository;
+
+    public CreateProductHandler(IRepository<Product> repository)
+    {
+        _repository = repository;
+    }
+
+    public async Task<Guid> Handle(CreateProductRequest request, CancellationToken ct)
+    {
+        var product = Product.Create(request.Name, request.Price);
+        await _repository.AddAsync(product, ct);
+        await _repository.SaveChangesAsync(ct);
+
+        return product.Id;
+    }
+}
+```
+
+**API Request:**
 ```bash
 curl -X POST https://localhost:7001/api/products \
   -H "Content-Type: application/json" \
--d '{
+  -d '{
     "name": "",
     "price": -100
   }'
@@ -631,7 +943,7 @@ curl -X POST https://localhost:7001/api/products \
     "Product name is required.",
     "Price must be greater than 0."
   ],
-"source": null,
+  "source": null,
   "exception": "One or More Validations failed.",
   "errorId": "b2c3d4e5-f6g7-8901-bcde-f12345678901",
   "supportMessage": "Provide the ErrorId b2c3d4e5-... to the support team for further analysis.",
@@ -641,9 +953,11 @@ curl -X POST https://localhost:7001/api/products \
 
 ---
 
-### B??c 7.3: Test UnauthorizedException
+### Bước 7.3: Test UnauthorizedException
 
-**Request (without token):**
+**Làm gì:** Test exception khi user chưa authenticate.
+
+**API Request (without token):**
 ```bash
 curl -X GET https://localhost:7001/api/users/me
 ```
@@ -662,9 +976,53 @@ curl -X GET https://localhost:7001/api/users/me
 
 ---
 
-### B??c 7.4: Test ConflictException
+### Bước 7.4: Test ConflictException
 
-**Request:**
+**Làm gì:** Test exception khi có duplicate resource.
+
+**File:** `src/Core/Application/Identity/Roles/CreateRoleRequest.cs`
+
+```csharp
+using ECO.WebApi.Application.Common.Exceptions;
+using ECO.WebApi.Domain.Identity;
+using MediatR;
+using Microsoft.AspNetCore.Identity;
+
+namespace ECO.WebApi.Application.Identity.Roles;
+
+public class CreateRoleRequest : IRequest<Guid>
+{
+    public string Name { get; set; } = default!;
+}
+
+public class CreateRoleHandler : IRequestHandler<CreateRoleRequest, Guid>
+{
+    private readonly RoleManager<ApplicationRole> _roleManager;
+
+  public CreateRoleHandler(RoleManager<ApplicationRole> roleManager)
+    {
+        _roleManager = roleManager;
+    }
+
+    public async Task<Guid> Handle(CreateRoleRequest request, CancellationToken ct)
+    {
+ // Check duplicate
+        if (await _roleManager.RoleExistsAsync(request.Name))
+ throw new ConflictException($"Role {request.Name} already exists.");
+
+        var role = new ApplicationRole
+   {
+    Name = request.Name,
+            NormalizedName = request.Name.ToUpperInvariant()
+   };
+
+      await _roleManager.CreateAsync(role);
+  return role.Id;
+    }
+}
+```
+
+**API Request:**
 ```bash
 curl -X POST https://localhost:7001/api/roles \
   -H "Content-Type: application/json" \
@@ -677,7 +1035,7 @@ curl -X POST https://localhost:7001/api/roles \
 ```json
 {
   "messages": [],
-  "source": "ECO.WebApi.Infrastructure.Identity.RoleService.CreateOrUpdateAsync",
+  "source": "ECO.WebApi.Application.Identity.Roles.CreateRoleHandler.Handle",
   "exception": "Role Admin already exists.",
   "errorId": "d4e5f6g7-h8i9-0123-defg-234567890123",
   "supportMessage": "Provide the ErrorId d4e5f6g7-... to the support team for further analysis.",
@@ -687,277 +1045,384 @@ curl -X POST https://localhost:7001/api/roles \
 
 ---
 
-## 8. Common Issues
+## 8. Common Issues & Solutions
 
 ### Issue 1: "Response has already started"
 
-**Tri?u ch?ng:**
+**Triệu chứng:**
 ```
 Can't write error response. Response has already started.
 ```
 
-**Nguy�n nh�n:** 
-Response ?� ???c g?i m?t ph?n (headers ho?c body) tr??c khi exception x?y ra.
+**Nguyên nhân:**
+Response đã được gửi một phần (headers hoặc body) trước khi exception xảy ra.
 
-**Gi?i ph�p:**
-- ??m b?o exception x?y ra TR??C khi `await next()` g?i response
-- Ho?c d�ng `response.HasStarted` ?? check (?� c� trong code)
-
----
-
-### Issue 2: Inner exceptions kh�ng ???c log
-
-**Tri?u ch?ng:**
-Exception message kh�ng r� r�ng, thi?u details.
-
-**Nguy�n nh�n:**
-Inner exception kh�ng ???c unwrap.
-
-**Gi?i ph�p:**
-Code ?� handle unwrap inner exceptions:
+**Giải pháp:**
+- Đảm bảo exception xảy ra TRƯỚC khi `await next()` gửi response
+- Code đã handle case này với `response.HasStarted` check:
 ```csharp
-if (exception is not CustomException && exception.InnerException != null)
+if (!response.HasStarted)
 {
-    while (exception.InnerException != null)
-    {
-        exception = exception.InnerException;
-  }
+    // Safe to write response
+}
+else
+{
+    Log.Warning("Can't write error response. Response has already started.");
 }
 ```
 
 ---
 
-### Issue 3: ValidationException kh�ng c� messages
+### Issue 2: Inner exceptions không được log
 
-**Tri?u ch?ng:**
-Validation errors kh�ng hi?n trong response.
+**Triệu chứng:**
+Exception message không rõ ràng, thiếu details.
 
-**Nguy�n nh�n:**
-FluentValidation exceptions kh�ng ???c handle ?�ng.
+**Nguyên nhân:**
+Inner exception không được unwrap.
 
-**Gi?i ph�p:**
-Code ?� handle FluentValidation:
+**Giải pháp:**
+Code đã handle unwrap inner exceptions:
+```csharp
+if (exception is not CustomException && exception.InnerException != null)
+{
+    while (exception.InnerException != null)
+    {
+      exception = exception.InnerException;
+    }
+}
+```
+
+**Lợi ích:**
+- Lấy được root cause exception
+- Message rõ ràng hơn
+
+---
+
+### Issue 3: ValidationException không có messages
+
+**Triệu chứng:**
+Validation errors không hiện trong response.
+
+**Nguyên nhân:**
+FluentValidation exceptions không được handle đúng.
+
+**Giải pháp:**
+Code đã handle FluentValidation:
 ```csharp
 if (exception is FluentValidation.ValidationException fluentException)
 {
     errorResult.Exception = "One or More Validations failed.";
     foreach (var error in fluentException.Errors)
     {
-   errorResult.Messages.Add(error.ErrorMessage);
+        errorResult.Messages.Add(error.ErrorMessage);
     }
 }
+```
+
+---
+
+### Issue 4: Sensitive information exposed
+
+**Triệu chứng:**
+Error messages expose database connection strings, stack traces, etc.
+
+**Giải pháp:**
+- Custom exceptions chỉ chứa user-friendly messages
+- Stack traces chỉ log, không trả về client
+- Database errors được wrap trong InternalServerException với generic message
+
+**Example:**
+```csharp
+// ❌ Wrong - Expose connection string
+throw new Exception($"Database connection failed: Server={server};Database={db}");
+
+// ✅ Right - Generic message
+throw new InternalServerException("Database connection failed");
 ```
 
 ---
 
 ## 9. Best Practices
 
-### ? Do's (N�n l�m)
+### ✅ Do's (Nên làm)
 
 **1. Throw specific exceptions:**
 ```csharp
-// ? ?�ng - Specific exception
+// ✅ Đúng - Specific exception
 throw new NotFoundException($"Product {id} not found.");
 
-// ? Sai - Generic exception
+// ❌ Sai - Generic exception
 throw new Exception("Not found");
 ```
 
 **2. Include context in message:**
 ```csharp
-// ? ?�ng - Include ID/name
+// ✅ Đúng - Include ID/name
 throw new NotFoundException($"Product with ID {request.Id} was not found.");
 
-// ? Sai - Generic message
+// ❌ Sai - Generic message
 throw new NotFoundException("Product not found");
 ```
 
 **3. Use proper status codes:**
 ```csharp
-// ? ?�ng
-NotFoundException ? 404
-UnauthorizedException ? 401
-ForbiddenException ? 403
-ConflictException ? 409
+// ✅ Đúng
+NotFoundException → 404
+UnauthorizedException → 401
+ForbiddenException → 403
+ConflictException → 409
+InternalServerException → 500
 
-// ? Sai - D�ng sai status code
+// ❌ Sai - Dùng sai status code
 throw new CustomException("Not found", null, HttpStatusCode.OK); // 200
 ```
 
----
-
-### ? Don'ts (Kh�ng n�n l�m)
-
-**1. Catch exceptions trong handlers:**
+**4. Let middleware handle exceptions:**
 ```csharp
-// ? Sai - Catch trong handler
+// ✅ Đúng - Throw exception, để middleware handle
+public async Task<ProductDto> Handle(...)
+{
+    var product = await _repository.FirstOrDefaultAsync(spec)
+  ?? throw new NotFoundException($"Product {id} not found.");
+    
+    return product.Adapt<ProductDto>();
+}
+
+// ❌ Sai - Catch và return null
 public async Task<ProductDto> Handle(...)
 {
     try
     {
         var product = await _repository.FirstOrDefaultAsync(spec);
-        if (product == null) return null; // Sai!
+     if (product == null) return null; // Client không biết lỗi gì
     }
     catch (Exception ex)
     {
-        // Log v� swallow exception - Sai!
+ // Swallow exception - Sai!
         return null;
-  }
-}
-
-// ? ?�ng - Throw exception, ?? middleware handle
-public async Task<ProductDto> Handle(...)
-{
-    var product = await _repository.FirstOrDefaultAsync(spec)
-        ?? throw new NotFoundException($"Product {id} not found.");
-    
-    return product.Adapt<ProductDto>();
+    }
 }
 ```
 
-**2. Return null thay v� throw exception:**
+---
+
+### ❌ Don'ts (Không nên làm)
+
+**1. Catch exceptions trong handlers:**
 ```csharp
-// ? Sai
+// ❌ Sai - Catch trong handler
+public async Task<ProductDto> Handle(...)
+{
+    try
+    {
+        var product = await _repository.FirstOrDefaultAsync(spec);
+        if (product == null) return null;
+    }
+    catch (Exception ex)
+    {
+        // Log và swallow exception - Sai!
+        _logger.LogError(ex, "Error");
+        return null;
+    }
+}
+```
+
+**2. Return null thay vì throw exception:**
+```csharp
+// ❌ Sai
 public async Task<ProductDto> GetProduct(Guid id)
 {
     var product = await _repository.GetByIdAsync(id);
-    if (product == null) return null; // Client kh�ng bi?t l?i g�
+    if (product == null) return null; // Client không biết lỗi gì
 }
 
-// ? ?�ng
+// ✅ Đúng
 public async Task<ProductDto> GetProduct(Guid id)
 {
     var product = await _repository.GetByIdAsync(id)
         ?? throw new NotFoundException($"Product {id} not found.");
     
-    return product.Adapt<ProductDto>();
+  return product.Adapt<ProductDto>();
 }
 ```
 
 **3. Expose sensitive information:**
 ```csharp
-// ? Sai - Expose connection string
+// ❌ Sai - Expose connection string
 throw new Exception($"Database connection failed: {connectionString}");
 
-// ? ?�ng - Generic message
+// ❌ Sai - Expose internal paths
+throw new Exception($"File not found at {internalPath}");
+
+// ✅ Đúng - Generic message
 throw new InternalServerException("Database connection failed");
+throw new NotFoundException("File not found");
 ```
 
 ---
 
-### ?? Tips
+### 💡 Tips
 
 **1. Use ErrorId for debugging:**
-- User b�o l?i ? Cung c?p ErrorId
+- User báo lỗi → Cung cấp ErrorId
 - Support team search logs theo ErrorId
-- C� ?? context ?? debug (UserId, StackTrace, etc.)
+- Có đủ context để debug (UserId, StackTrace, Request, etc.)
+
+**Example flow:**
+```
+1. User gặp error → Copy ErrorId từ response
+2. User report cho support: "ErrorId: a1b2c3d4-..."
+3. Support team search logs: Log.ForContext("ErrorId", "a1b2c3d4-...")
+4. Có đầy đủ context: UserId, UserEmail, StackTrace, Request
+```
 
 **2. Localization:**
-C� th? extend ?? support multiple languages:
+Có thể extend để support multiple languages:
 ```csharp
 // Future enhancement
 public class NotFoundException : CustomException
 {
     public NotFoundException(string messageKey, params object[] args)
-        : base(_localizer[messageKey, args], null, HttpStatusCode.NotFound)
+ : base(_localizer[messageKey, args], null, HttpStatusCode.NotFound)
     {
-    }
+  }
 }
+
+// Usage
+throw new NotFoundException("Product.NotFound", productId);
 ```
 
 **3. Custom error codes:**
-C� th? th�m error codes ngo�i HTTP status codes:
+Có thể thêm error codes ngoài HTTP status codes:
 ```csharp
 public class ErrorResult
 {
     public string? ErrorCode { get; set; } // "PRODUCT_NOT_FOUND", "INVALID_PAYMENT"
     // ... existing properties
 }
+
+// Usage
+var errorResult = new ErrorResult
+{
+    ErrorCode = "PRODUCT_NOT_FOUND",
+    StatusCode = 404,
+    // ...
+};
 ```
 
 ---
 
 ## 10. Summary
 
-### ? ?� ho�n th�nh trong b??c n�y:
+### ✅ Đã hoàn thành trong bước này:
 
 **Exception Models:**
-- ? `ErrorResult` model (error response format)
-- ? `CustomException` base class
-- ? `NotFoundException` (404)
-- ? `UnauthorizedException` (401)
-- ? `ForbiddenException` (403)
-- ? `ConflictException` (409)
-- ? `InternalServerException` (500)
+- ✅ `ErrorResult` model (error response format)
+- ✅ `CustomException` base class
+- ✅ `NotFoundException` (404)
+- ✅ `UnauthorizedException` (401)
+- ✅ `ForbiddenException` (403)
+- ✅ `ConflictException` (409)
+- ✅ `InternalServerException` (500)
 
 **Middleware:**
-- ? `ExceptionMiddleware` implementation
-- ? Global exception handling
-- ? Logging v?i context (UserId, ErrorId, StackTrace)
-- ? Proper HTTP status codes
+- ✅ `ExceptionMiddleware` implementation
+- ✅ Global exception handling
+- ✅ Logging với context (UserId, ErrorId, StackTrace)
+- ✅ Proper HTTP status codes
+- ✅ FluentValidation support
+- ✅ Inner exception unwrapping
 
 **Features:**
-- ? Centralized error handling
-- ? Consistent error format
-- ? Support FluentValidation errors
-- ? Unwrap inner exceptions
-- ? Unique ErrorId for tracking
+- ✅ Centralized error handling
+- ✅ Consistent error format
+- ✅ User-friendly error messages
+- ✅ Secure (no sensitive info exposure)
+- ✅ Unique ErrorId for tracking
 
-### ?? Key Concepts:
+### 🎯 Key Concepts:
 
-**CustomException:**
-- Base class cho t?t c? custom exceptions
-- C� `StatusCode` v� `ErrorMessages`
-- K? th?a t? `Exception`
-
-**ExceptionMiddleware:**
-- Catch t?t c? exceptions
-- Convert th�nh `ErrorResult`
-- Log v?i full context
-- Tr? v? JSON response
-
-**Error Flow:**
+**CustomException Hierarchy:**
 ```
-Handler throws exception
-    ?
-ExceptionMiddleware catches
-    ?
-Create ErrorResult (with ErrorId)
-    ?
-Log with context
-    ?
-Return JSON response (with status code)
+Exception (System)
+    └─ CustomException (Base)
+   ├─ NotFoundException (404)
+├─ UnauthorizedException (401)
+        ├─ ForbiddenException (403)
+        ├─ ConflictException (409)
+        └─ InternalServerException (500)
 ```
 
-### ?? File Structure:
+**ExceptionMiddleware Flow:**
+```
+Request → try { await next() } → Response
+      ↓ (exception)
+          catch (Exception)
+     ↓
+    1. Get user context
+ 2. Push to Serilog
+    3. Generate ErrorId
+    4. Create ErrorResult
+    5. Unwrap inner exception
+    6. Handle FluentValidation
+    7. Set status code
+    8. Log error
+    9. Write JSON response
+```
+
+**Error Response Format:**
+```json
+{
+  "messages": [],
+  "source": "Namespace.Class.Method",
+  "exception": "Error message",
+  "errorId": "guid",
+  "supportMessage": "Contact support with ErrorId",
+  "statusCode": 404
+}
+```
+
+### 📁 File Structure:
 
 ```
 src/Core/Application/Common/Exceptions/
-??? CustomException.cs
-??? NotFoundException.cs
-??? UnauthorizedException.cs
-??? ForbiddenException.cs
-??? ConflictException.cs
-??? InternalServerException.cs
+├── CustomException.cs
+├── NotFoundException.cs
+├── UnauthorizedException.cs
+├── ForbiddenException.cs
+├── ConflictException.cs
+└── InternalServerException.cs
 
 src/Infrastructure/Infrastructure/Middleware/
-??? ErrorResult.cs
-??? ExceptionMiddleware.cs
-??? Startup.cs
+├── ErrorResult.cs
+├── ExceptionMiddleware.cs
+└── Startup.cs
 ```
+
+### 🔑 Important Points:
+
+1. **Middleware Order:** ExceptionMiddleware phải đầu tiên
+2. **Status Codes:** Mỗi exception type có HTTP status riêng
+3. **Logging:** Tự động log với context (UserId, ErrorId)
+4. **Security:** Không expose sensitive information
+5. **Validation:** Support FluentValidation exceptions
+6. **Tracking:** Unique ErrorId cho mỗi error
 
 ---
 
 ## 11. Next Steps
 
-**Ti?p theo:** [BUILD_14 - Validation Behavior](BUILD_14_Validation_Behavior.md)
+**Tiếp theo:** [BUILD_14 - Validation Behavior](BUILD_14_Validation_Behavior.md)
 
-Trong b??c ti?p theo, ch�ng ta s?:
-1. ? Setup FluentValidation
-2. ? T?o `ValidationBehavior` (MediatR pipeline)
-3. ? Validator examples
-4. ? Auto-register validators
+Trong bước tiếp theo, chúng ta sẽ:
+1. ✅ Setup FluentValidation
+2. ✅ Tạo `ValidationBehavior` (MediatR pipeline behavior)
+3. ✅ Validator examples (CreateUserRequestValidator, UpdateProductRequestValidator)
+4. ✅ Auto-register validators
+5. ✅ Validation error handling
+6. ✅ Custom validation rules
 
 ---
 
-**Quay l?i:** [M?c l?c](BUILD_INDEX.md)
+**Quay lại:** [Mục lục](BUILD_INDEX.md)

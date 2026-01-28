@@ -1,50 +1,50 @@
-# Common Services - CurrentUser, Serializer, Event Publisher
+﻿# Common Services - CurrentUser, Serializer, Event Publisher
 
-> ?? [Quay l?i M?c l?c](BUILD_INDEX.md)  
-> ?? **Prerequisites:** B??c 11 (Repository Pattern) ?� ho�n th�nh
+> 👉 [Quay lại Mục lục](BUILD_INDEX.md)  
+> 👉 **Prerequisites:** Bước 11 (Repository Pattern) đã hoàn thành
 
-T�i li?u n�y h??ng d?n x�y d?ng c�c Core Services n?n t?ng: CurrentUser, Serializer, v� Event Publisher.
+Tài liệu này hướng dẫn xây dựng các Core Services nền tảng: CurrentUser, Serializer, và Event Publisher.
 
 ---
 
 ## 1. Overview
 
-**L�m g�:** X�y d?ng c�c core services ???c s? d?ng xuy�n su?t application.
+**Làm gì:** Xây dựng các core services được sử dụng xuyên suốt application.
 
-**T?i sao c?n:**
-- **CurrentUser Service:** L?y th�ng tin user hi?n t?i t? JWT token trong m?i handler/service
+**Tại sao cần:**
+- **CurrentUser Service:** Lấy thông tin user hiện tại từ JWT token trong mọi handler/service
 - **Serializer Service:** Serialize/deserialize objects cho caching, logging, messaging
-- **Event Publisher:** Publish domain events ?? trigger c�c event handlers (decoupling)
+- **Event Publisher:** Publish domain events để trigger các event handlers (decoupling)
 
-**Trong b??c n�y ch�ng ta s?:**
-- ? T?o `ICurrentUser` v� `ICurrentUserInitializer` interfaces
-- ? Implement `CurrentUser` service v?i ClaimsPrincipal
-- ? T?o `CurrentUserMiddleware` ?? auto-set current user
-- ? T?o `ISerializerService` interface
-- ? Implement `NewtonSoftService` (JSON serialization)
-- ? T?o `IEventPublisher` interface
-- ? Implement `EventPublisher` v?i MediatR integration
-- ? Register services v� middleware
+**Trong bước này chúng ta sẽ:**
+- ✓ Tạo `ICurrentUser` và `ICurrentUserInitializer` interfaces
+- ✓ Implement `CurrentUser` service với ClaimsPrincipal
+- ✓ Tạo `CurrentUserMiddleware` để auto-set current user
+- ✓ Tạo `ISerializerService` interface
+- ✓ Implement `NewtonSoftService` (JSON serialization)
+- ✓ Tạo `IEventPublisher` interface
+- ✓ Implement `EventPublisher` với MediatR integration
+- ✓ Register services và middleware
 
 **Real-world example:**
 ```csharp
-// Trong handler - L?y current user
+// Trong handler - Lấy current user
 public class CreateProductHandler : IRequestHandler<CreateProductRequest, Guid>
 {
- private readonly ICurrentUser _currentUser;
-    private readonly IEventPublisher _eventPublisher;
+    private readonly ICurrentUser _currentUser;
+  private readonly IEventPublisher _eventPublisher;
 
     public async Task<Guid> Handle(CreateProductRequest request, CancellationToken ct)
- {
-     // Auto c� th�ng tin user hi?n t?i
+    {
+        // Auto có thông tin user hiện tại
   var userId = _currentUser.GetUserId();
-    var userEmail = _currentUser.GetUserEmail();
-    
-      var product = Product.Create(request.Name, request.Price);
-     
-     // Publish domain event
-        await _eventPublisher.PublishAsync(new ProductCreatedEvent(product));
+ var userEmail = _currentUser.GetUserEmail();
         
+      var product = Product.Create(request.Name, request.Price);
+      
+        // Publish domain event
+await _eventPublisher.PublishAsync(new ProductCreatedEvent(product));
+   
         return product.Id;
     }
 }
@@ -54,31 +54,31 @@ public class CreateProductHandler : IRequestHandler<CreateProductRequest, Guid>
 
 ## 2. Add Required Packages
 
-### B??c 2.1: Add Newtonsoft.Json Package
+### Bước 2.1: Add Newtonsoft.Json Package
 
 **File:** `src/Infrastructure/Infrastructure/Infrastructure.csproj`
 
 ```xml
 <ItemGroup>
     <!-- JSON Serialization -->
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+ <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 </ItemGroup>
 ```
 
-**Gi?i th�ch:**
-- `Newtonsoft.Json`: JSON serializer/deserializer (mature v� feature-rich h?n System.Text.Json)
+**Giải thích:**
+- `Newtonsoft.Json`: JSON serializer/deserializer (mature và feature-rich hơn System.Text.Json)
 
-**?? L?u �:** MediatR ?� c� t? Application layer, kh�ng c?n add l?i.
+**⚠️ Lưu ý:** MediatR đã có từ Application layer, không cần add lại.
 
 ---
 
 ## 3. CurrentUser Service
 
-### B??c 3.1: ICurrentUser Interface
+### Bước 3.1: ICurrentUser Interface
 
-**L�m g�:** T?o interface ?? l?y th�ng tin user hi?n t?i t? JWT token.
+**Làm gì:** Tạo interface để lấy thông tin user hiện tại từ JWT token.
 
-**T?i sao:** Handlers/Services c?n bi?t user n�o ?ang th?c hi?n action (audit, authorization).
+**Tại sao:** Handlers/Services cần biết user nào đang thực hiện action (audit, authorization).
 
 **File:** `src/Core/Application/Common/Interfaces/ICurrentUser.cs`
 
@@ -88,62 +88,62 @@ using System.Security.Claims;
 namespace ECO.WebApi.Application.Common.Interfaces;
 
 /// <summary>
-/// Interface ?? l?y th�ng tin user hi?n t?i t? JWT token
+/// Interface để lấy thông tin user hiện tại từ JWT token
 /// </summary>
 public interface ICurrentUser
 {
     /// <summary>
-    /// User name t? Identity.Name
-    /// </summary>
+    /// User name từ Identity.Name
+  /// </summary>
     string? Name { get; }
 
     /// <summary>
-  /// L?y User ID (Guid) t? NameIdentifier claim
-    /// </summary>
-    Guid GetUserId();
+    /// Lấy User ID (Guid) từ NameIdentifier claim
+  /// </summary>
+ Guid GetUserId();
 
-/// <summary>
-    /// L?y User Email t? Email claim
+    /// <summary>
+    /// Lấy User Email từ Email claim
     /// </summary>
     string? GetUserEmail();
 
     /// <summary>
-    /// Check user ?� authenticate ch?a
+    /// Check user đã authenticate chưa
     /// </summary>
     bool IsAuthenticated();
 
     /// <summary>
-    /// Check user c� role c? th? kh�ng
+    /// Check user có role cụ thể không
     /// </summary>
     bool IsInRole(string role);
 
- /// <summary>
-  /// L?y t?t c? claims c?a user
-/// </summary>
- IEnumerable<Claim>? GetUserClaims();
+    /// <summary>
+    /// Lấy tất cả claims của user
+    /// </summary>
+    IEnumerable<Claim>? GetUserClaims();
 }
 ```
 
-**Gi?i th�ch:**
-- `Name`: Display name t? JWT claims
-- `GetUserId()`: User ID (Guid) t? NameIdentifier claim
-- `GetUserEmail()`: Email t? Email claim
-- `IsAuthenticated()`: Check xem user ?� login ch?a
-- `IsInRole(role)`: Check user c� role c? th? (Admin, Basic, etc.)
-- `GetUserClaims()`: L?y all claims ?? custom logic
+**Giải thích:**
+- `Name`: Display name từ JWT claims
+- `GetUserId()`: User ID (Guid) từ NameIdentifier claim
+- `GetUserEmail()`: Email từ Email claim
+- `IsAuthenticated()`: Check xem user đã login chưa
+- `IsInRole(role)`: Check user có role cụ thể (Admin, Basic, etc.)
+- `GetUserClaims()`: Lấy all claims để custom logic
 
-**T?i sao t�ch interface:**
+**Tại sao tách interface:**
 - Read-only trong handlers/services
-- D? mock cho unit testing
+- Dễ mock cho unit testing
 - Separation of concerns
 
 ---
 
-### B??c 3.2: ICurrentUserInitializer Interface
+### Bước 3.2: ICurrentUserInitializer Interface
 
-**L�m g�:** Interface ?? set current user (d�ng trong middleware).
+**Làm gì:** Interface để set current user (dùng trong middleware).
 
-**T?i sao:** Middleware c?n set user t? HttpContext, c�n handlers ch? c?n ??c.
+**Tại sao:** Middleware cần set user từ HttpContext, còn handlers chỉ cần đọc.
 
 **File:** `src/Core/Application/Common/Interfaces/ICurrentUserInitializer.cs`
 
@@ -153,12 +153,12 @@ using System.Security.Claims;
 namespace ECO.WebApi.Application.Common.Interfaces;
 
 /// <summary>
-/// Interface ?? initialize current user (d�ng trong middleware)
+/// Interface để initialize current user (dùng trong middleware)
 /// </summary>
 public interface ICurrentUserInitializer
 {
     /// <summary>
-    /// Set current user t? ClaimsPrincipal (t? JWT token)
+    /// Set current user từ ClaimsPrincipal (từ JWT token)
     /// </summary>
     void SetCurrentUser(ClaimsPrincipal user);
 
@@ -169,22 +169,22 @@ public interface ICurrentUserInitializer
 }
 ```
 
-**Gi?i th�ch:**
-- `SetCurrentUser()`: Set t? HttpContext.User (c� JWT token)
-- `SetCurrentUserId()`: Set manually cho background jobs (kh�ng c� HTTP context)
+**Giải thích:**
+- `SetCurrentUser()`: Set từ HttpContext.User (có JWT token)
+- `SetCurrentUserId()`: Set manually cho background jobs (không có HTTP context)
 
-**T?i sao t�ch 2 interfaces:**
+**Tại sao tách 2 interfaces:**
 - `ICurrentUser`: Read-only cho handlers/services
 - `ICurrentUserInitializer`: Write-only cho middleware
 - Better encapsulation
 
 ---
 
-### B??c 3.3: ClaimsPrincipal Extension Methods
+### Bước 3.3: ClaimsPrincipal Extension Methods
 
-**L�m g�:** Extension methods ?? l?y claims t? ClaimsPrincipal d? d�ng h?n.
+**Làm gì:** Extension methods để lấy claims từ ClaimsPrincipal dễ dàng hơn.
 
-**T?i sao:** Code g?n h?n, reusable, type-safe.
+**Tại sao:** Code gọn hơn, reusable, type-safe.
 
 **File:** `src/Core/Shared/Authorization/ClaimsPrincipalExtensions.cs`
 
@@ -199,83 +199,83 @@ namespace System.Security.Claims;
 public static class ClaimsPrincipalExtensions
 {
     /// <summary>
-    /// L?y Email t? ClaimTypes.Email
+    /// Lấy Email từ ClaimTypes.Email
     /// </summary>
     public static string? GetEmail(this ClaimsPrincipal principal)
-      => principal.FindFirstValue(ClaimTypes.Email);
+  => principal.FindFirstValue(ClaimTypes.Email);
 
     /// <summary>
-    /// L?y Full Name t? ECOClaims.Fullname
+    /// Lấy Full Name từ ECOClaims.Fullname
     /// </summary>
     public static string? GetFullName(this ClaimsPrincipal principal)
-      => principal?.FindFirst(ECOClaims.Fullname)?.Value;
+        => principal?.FindFirst(ECOClaims.Fullname)?.Value;
 
     /// <summary>
-    /// L?y First Name t? ClaimTypes.Name
+    /// Lấy First Name từ ClaimTypes.Name
     /// </summary>
     public static string? GetFirstName(this ClaimsPrincipal principal)
-        => principal?.FindFirst(ClaimTypes.Name)?.Value;
+      => principal?.FindFirst(ClaimTypes.Name)?.Value;
 
     /// <summary>
-    /// L?y Surname t? ClaimTypes.Surname
-    /// </summary>
+    /// Lấy Surname từ ClaimTypes.Surname
+/// </summary>
     public static string? GetSurname(this ClaimsPrincipal principal)
-=> principal?.FindFirst(ClaimTypes.Surname)?.Value;
+    => principal?.FindFirst(ClaimTypes.Surname)?.Value;
 
     /// <summary>
-    /// L?y Phone Number t? ClaimTypes.MobilePhone
+    /// Lấy Phone Number từ ClaimTypes.MobilePhone
     /// </summary>
     public static string? GetPhoneNumber(this ClaimsPrincipal principal)
         => principal.FindFirstValue(ClaimTypes.MobilePhone);
 
     /// <summary>
-    /// L?y User ID t? ClaimTypes.NameIdentifier
+    /// Lấy User ID từ ClaimTypes.NameIdentifier
     /// </summary>
     public static string? GetUserId(this ClaimsPrincipal principal)
-       => principal.FindFirstValue(ClaimTypes.NameIdentifier);
+        => principal.FindFirstValue(ClaimTypes.NameIdentifier);
 
     /// <summary>
-    /// L?y Image URL t? ECOClaims.ImageUrl
+    /// Lấy Image URL từ ECOClaims.ImageUrl
     /// </summary>
     public static string? GetImageUrl(this ClaimsPrincipal principal)
-       => principal.FindFirstValue(ECOClaims.ImageUrl);
+     => principal.FindFirstValue(ECOClaims.ImageUrl);
 
     /// <summary>
-    /// L?y Token Expiration t? ECOClaims.Expiration
+    /// Lấy Token Expiration từ ECOClaims.Expiration
     /// </summary>
-    public static DateTimeOffset GetExpiration(this ClaimsPrincipal principal) =>
-    DateTimeOffset.FromUnixTimeSeconds(Convert.ToInt64(
-            principal.FindFirstValue(ECOClaims.Expiration)));
+ public static DateTimeOffset GetExpiration(this ClaimsPrincipal principal) =>
+        DateTimeOffset.FromUnixTimeSeconds(Convert.ToInt64(
+    principal.FindFirstValue(ECOClaims.Expiration)));
 
     /// <summary>
-  /// Helper method ?? t�m claim value
+    /// Helper method để tìm claim value
     /// </summary>
     private static string? FindFirstValue(this ClaimsPrincipal principal, string claimType) =>
         principal is null
-  ? throw new ArgumentNullException(nameof(principal))
+? throw new ArgumentNullException(nameof(principal))
             : principal.FindFirst(claimType)?.Value;
 }
 ```
 
-**Gi?i th�ch:**
-- Extension methods ?? code g?n h?n: `user.GetUserId()` thay v� `user.FindFirst(ClaimTypes.NameIdentifier)?.Value`
+**Giải thích:**
+- Extension methods để code gọn hơn: `user.GetUserId()` thay vì `user.FindFirst(ClaimTypes.NameIdentifier)?.Value`
 - Support custom claims: `Fullname`, `ImageUrl`, `Expiration`
-- Null-safe v?i `?` operator
-- Private `FindFirstValue()` helper ?? avoid repetition
+- Null-safe với `?` operator
+- Private `FindFirstValue()` helper để avoid repetition
 
-**L?i �ch:**
-- ? Code g?n, d? ??c
-- ? Type-safe
-- ? Reusable
-- ? D? maintain
+**Lợi ích:**
+- ✓ Code gọn, dễ đọc
+- ✓ Type-safe
+- ✓ Reusable
+- ✓ Dễ maintain
 
 ---
 
-### B??c 3.4: CurrentUser Implementation
+### Bước 3.4: CurrentUser Implementation
 
-**L�m g�:** Implement CurrentUser service k?t h?p ICurrentUser v� ICurrentUserInitializer.
+**Làm gì:** Implement CurrentUser service kết hợp ICurrentUser và ICurrentUserInitializer.
 
-**T?i sao:** M?t class implement c? 2 interfaces, scoped per request.
+**Tại sao:** Một class implement cả 2 interfaces, scoped per request.
 
 **File:** `src/Infrastructure/Infrastructure/Auth/CurrentUser.cs`
 
@@ -286,8 +286,8 @@ using ECO.WebApi.Application.Common.Interfaces;
 namespace ECO.WebApi.Infrastructure.Auth;
 
 /// <summary>
-/// Implementation c?a ICurrentUser v� ICurrentUserInitializer
-/// Scoped per request - m?i HTTP request c� instance ri�ng
+/// Implementation của ICurrentUser và ICurrentUserInitializer
+/// Scoped per request - mỗi HTTP request có instance riêng
 /// </summary>
 public class CurrentUser : ICurrentUser, ICurrentUserInitializer
 {
@@ -295,103 +295,103 @@ public class CurrentUser : ICurrentUser, ICurrentUserInitializer
     private Guid _userId = Guid.Empty;
 
     /// <summary>
-    /// User name t? Identity.Name
+    /// User name từ Identity.Name
     /// </summary>
     public string? Name => _user?.Identity?.Name;
 
     /// <summary>
-    /// L?y User ID t? NameIdentifier claim
-    /// </summary>
+    /// Lấy User ID từ NameIdentifier claim
+  /// </summary>
     public Guid GetUserId() =>
         IsAuthenticated()
-? Guid.Parse(_user?.GetUserId() ?? Guid.Empty.ToString())
-: _userId;
+            ? Guid.Parse(_user?.GetUserId() ?? Guid.Empty.ToString())
+            : _userId;
 
     /// <summary>
-    /// L?y User Email t? Email claim
+    /// Lấy User Email từ Email claim
     /// </summary>
-    public string? GetUserEmail() =>
-      IsAuthenticated()
- ? _user!.GetEmail()
-  : string.Empty;
+public string? GetUserEmail() =>
+        IsAuthenticated()
+        ? _user!.GetEmail()
+            : string.Empty;
 
-    /// <summary>
-    /// Check user ?� authenticate ch?a
+  /// <summary>
+    /// Check user đã authenticate chưa
     /// </summary>
-  public bool IsAuthenticated() =>
-        _user?.Identity?.IsAuthenticated is true;
+    public bool IsAuthenticated() =>
+_user?.Identity?.IsAuthenticated is true;
 
-    /// <summary>
-    /// Check user c� role kh�ng
+  /// <summary>
+    /// Check user có role không
     /// </summary>
     public bool IsInRole(string role) =>
-     _user?.IsInRole(role) is true;
+        _user?.IsInRole(role) is true;
 
     /// <summary>
-    /// L?y t?t c? claims
+    /// Lấy tất cả claims
     /// </summary>
     public IEnumerable<Claim>? GetUserClaims() =>
- _user?.Claims;
+        _user?.Claims;
 
     /// <summary>
-    /// Set current user t? ClaimsPrincipal
-    /// Ch? ???c g?i m?t l?n per request (t? middleware)
+    /// Set current user từ ClaimsPrincipal
+    /// Chỉ được gọi một lần per request (từ middleware)
     /// </summary>
     public void SetCurrentUser(ClaimsPrincipal user)
     {
         if (_user != null)
         {
- throw new Exception("Method reserved for in-scope initialization");
+  throw new Exception("Method reserved for in-scope initialization");
         }
 
- _user = user;
+        _user = user;
     }
 
-    /// <summary>
-  /// Set current user ID manually (cho background jobs)
+ /// <summary>
+    /// Set current user ID manually (cho background jobs)
     /// </summary>
     public void SetCurrentUserId(string userId)
- {
+    {
         if (_userId != Guid.Empty)
-  {
-            throw new Exception("Method reserved for in-scope initialization");
-        }
+        {
+     throw new Exception("Method reserved for in-scope initialization");
+     }
 
         if (!string.IsNullOrEmpty(userId))
         {
-        _userId = Guid.Parse(userId);
+    _userId = Guid.Parse(userId);
         }
     }
 }
 ```
 
-**Gi?i th�ch:**
+**Giải thích:**
 
 **Private fields:**
-- `_user`: ClaimsPrincipal t? JWT token (HTTP requests)
-- `_userId`: User ID manual (background jobs kh�ng c� HTTP context)
+- `_user`: ClaimsPrincipal từ JWT token (HTTP requests)
+- `_userId`: User ID manual (background jobs không có HTTP context)
 
 **Thread-safety:**
-- Service l� `Scoped` ? m?i request c� instance ri�ng
-- Check `_user != null` ?? prevent double initialization
-- Throw exception n?u g?i `SetCurrentUser()` nhi?u l?n
+- Service là `Scoped` → mỗi request có instance riêng
+- Check `_user != null` để prevent double initialization
+- Throw exception nếu gọi `SetCurrentUser()` nhiều lần
 
 **Fallback logic:**
-- N?u authenticated ? l?y t? claims
-- N?u kh�ng ? return empty/default values (background jobs)
+- Nếu authenticated → lấy từ claims
+- Nếu không → return empty/default values (background jobs)
 
-**T?i sao c?n _userId ri�ng:**
-- Background jobs (Hangfire) kh�ng c� HTTP context
-- V?n c?n track user th?c hi?n job
+**Tại sao cần _userId riêng:**
+- Background jobs (Hangfire) không có HTTP context
+- Vẫn cần track user thực hiện job
 - Set manual qua `SetCurrentUserId()`
 
 ---
 
-### B??c 3.5: CurrentUserMiddleware
+### Bước 3.5: CurrentUserMiddleware
 
-**L�m g�:** Middleware ?? t? ??ng set current user t? HttpContext.User.
+**Làm gì:** Middleware để tự động set current user từ HttpContext.User.
 
-**T?i sao:** M?i request ??u c?n user context, middleware t? ??ng set thay v� manual.
+**Tại sao:** Mỗi request đều cần user context, middleware tự động set thay vì manual.
 
 **File:** `src/Infrastructure/Infrastructure/Auth/CurrentUserMiddleware.cs`
 
@@ -402,8 +402,8 @@ using Microsoft.AspNetCore.Http;
 namespace ECO.WebApi.Infrastructure.Auth;
 
 /// <summary>
-/// Middleware ?? set current user t? HttpContext.User
-/// Ph?i ??t SAU UseAuthentication() trong pipeline
+/// Middleware để set current user từ HttpContext.User
+/// Phải đặt SAU UseAuthentication() trong pipeline
 /// </summary>
 public class CurrentUserMiddleware : IMiddleware
 {
@@ -413,39 +413,39 @@ public class CurrentUserMiddleware : IMiddleware
         _currentUserInitializer = currentUserInitializer;
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
-    {
-        // Set current user t? HttpContext.User (?� authenticate b?i JWT middleware)
-        _currentUserInitializer.SetCurrentUser(context.User);
-   
-        // Continue pipeline
-    await next(context);
-    }
+  {
+        // Set current user từ HttpContext.User (đã authenticate bởi JWT middleware)
+    _currentUserInitializer.SetCurrentUser(context.User);
+        
+      // Continue pipeline
+        await next(context);
+}
 }
 ```
 
-**Gi?i th�ch:**
-- `IMiddleware` interface ? ASP.NET Core middleware pattern
-- `SetCurrentUser(context.User)` ? Set ClaimsPrincipal t? authenticated user
-- `await next(context)` ? Continue pipeline
+**Giải thích:**
+- `IMiddleware` interface → ASP.NET Core middleware pattern
+- `SetCurrentUser(context.User)` → Set ClaimsPrincipal từ authenticated user
+- `await next(context)` → Continue pipeline
 
-**Th? t? middleware (QUAN TR?NG):**
+**Thứ tự middleware (QUAN TRỌNG):**
 ```
 1. UseRouting()
-2. UseAuthentication()           ? JWT middleware populate context.User
-3. UseCurrentUserMiddleware()    ? Set ICurrentUser t? context.User
+2. UseAuthentication()   → JWT middleware populate context.User
+3. UseCurrentUserMiddleware()    → Set ICurrentUser từ context.User
 4. UseAuthorization()
 5. MapControllers()
 ```
 
-**?? L?u �:** Middleware n�y ph?i ??t SAU `UseAuthentication()` ?? c� `context.User`.
+**⚠️ Lưu ý:** Middleware này phải đặt SAU `UseAuthentication()` để có `context.User`.
 
 ---
 
-### B??c 3.6: Register CurrentUser Service
+### Bước 3.6: Register CurrentUser Service
 
-**L�m g�:** Register CurrentUser v� middleware v�o DI container.
+**Làm gì:** Register CurrentUser và middleware vào DI container.
 
-**T?i sao:** ASP.NET Core c?n bi?t c�ch t?o v� inject services.
+**Tại sao:** ASP.NET Core cần biết cách tạo và inject services.
 
 **File:** `src/Infrastructure/Infrastructure/Auth/Startup.cs`
 
@@ -463,44 +463,44 @@ internal static class Startup
     /// </summary>
     internal static IServiceCollection AddCurrentUser(this IServiceCollection services)
     {
-        // Register middleware as Scoped (per request)
-      services.AddScoped<CurrentUserMiddleware>();
+    // Register middleware as Scoped (per request)
+   services.AddScoped<CurrentUserMiddleware>();
         
-     // Register CurrentUser as Scoped - m?i request m?t instance
-     // C? 2 interfaces ??u resolve v? c�ng instance
-services.AddScoped<ICurrentUser, CurrentUser>();
+        // Register CurrentUser as Scoped - mỗi request một instance
+        // Cả 2 interfaces đều resolve về cùng instance
+        services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<ICurrentUserInitializer, CurrentUser>();
 
-        return services;
+   return services;
     }
 
     /// <summary>
     /// Use CurrentUser middleware
-    /// </summary>
-    internal static IApplicationBuilder UseCurrentUserMiddleware(this IApplicationBuilder app) =>
-      app.UseMiddleware<CurrentUserMiddleware>();
+  /// </summary>
+ internal static IApplicationBuilder UseCurrentUserMiddleware(this IApplicationBuilder app) =>
+ app.UseMiddleware<CurrentUserMiddleware>();
 }
 ```
 
-**Gi?i th�ch:**
-- `Scoped` lifetime ? m?i HTTP request c� instance ri�ng, dispose sau khi request done
-- `ICurrentUser` v� `ICurrentUserInitializer` ? c�ng resolve v? m?t instance `CurrentUser`
-- Extension methods ?? code g?n
+**Giải thích:**
+- `Scoped` lifetime → mỗi HTTP request có instance riêng, dispose sau khi request done
+- `ICurrentUser` và `ICurrentUserInitializer` → cùng resolve về một instance `CurrentUser`
+- Extension methods để code gọn
 
-**T?i sao Scoped:**
-- ? M?i request c� user ri�ng (thread-safe)
-- ? Dispose t? ??ng sau request
-- ? Performance t?t h?n Transient
+**Tại sao Scoped:**
+- ✓ Mỗi request có user riêng (thread-safe)
+- ✓ Dispose tự động sau request
+- ✓ Performance tốt hơn Transient
 
 ---
 
 ## 4. Serializer Service
 
-### B??c 4.1: ISerializerService Interface
+### Bước 4.1: ISerializerService Interface
 
-**L�m g�:** Interface ?? serialize/deserialize objects th�nh JSON.
+**Làm gì:** Interface để serialize/deserialize objects thành JSON.
 
-**T?i sao:** Caching, logging, messaging ??u c?n serialize objects. Interface ?? d? thay ??i implementation.
+**Tại sao:** Caching, logging, messaging đều cần serialize objects. Interface để dễ thay đổi implementation.
 
 **File:** `src/Core/Application/Common/Interfaces/ISerializerService.cs`
 
@@ -508,46 +508,46 @@ services.AddScoped<ICurrentUser, CurrentUser>();
 namespace ECO.WebApi.Application.Common.Interfaces;
 
 /// <summary>
-/// Interface ?? serialize/deserialize objects
-/// D�ng cho caching, logging, messaging, etc.
+/// Interface để serialize/deserialize objects
+/// Dùng cho caching, logging, messaging, etc.
 /// </summary>
 public interface ISerializerService : ITransientService
 {
     /// <summary>
-    /// Serialize object th�nh JSON string
+    /// Serialize object thành JSON string
     /// </summary>
     string Serialize<T>(T obj);
 
-    /// <summary>
-    /// Serialize object th�nh JSON string v?i type c? th?
-/// </summary>
-    string Serialize<T>(T obj, Type type);
+ /// <summary>
+    /// Serialize object thành JSON string với type cụ thể
+ /// </summary>
+  string Serialize<T>(T obj, Type type);
 
     /// <summary>
-    /// Deserialize JSON string th�nh object
+    /// Deserialize JSON string thành object
     /// </summary>
     T Deserialize<T>(string text);
 }
 ```
 
-**Gi?i th�ch:**
-- `Transient` lifetime ? t?o instance m?i m?i l?n inject (lightweight)
-- Generic methods ? support any type
-- 2 overloads cho `Serialize()` ?? flexible
+**Giải thích:**
+- `Transient` lifetime → tạo instance mới mỗi lần inject (lightweight)
+- Generic methods → support any type
+- 2 overloads cho `Serialize()` để flexible
 
 **Use cases:**
-- **Caching:** Serialize objects tr??c khi cache v�o Redis
-- **Logging:** Serialize request/response ?? log
-- **Messaging:** Serialize events/commands ?? send qua queue
-- **Database:** Serialize complex objects v�o JSON column
+- **Caching:** Serialize objects trước khi cache vào Redis
+- **Logging:** Serialize request/response để log
+- **Messaging:** Serialize events/commands để send qua queue
+- **Database:** Serialize complex objects vào JSON column
 
 ---
 
-### B??c 4.2: NewtonSoftService Implementation
+### Bước 4.2: NewtonSoftService Implementation
 
-**L�m g�:** Implement serializer s? d?ng Newtonsoft.Json.
+**Làm gì:** Implement serializer sử dụng Newtonsoft.Json.
 
-**T?i sao:** Newtonsoft.Json mature h?n, feature-rich h?n System.Text.Json. Support nhi?u scenarios ph?c t?p.
+**Tại sao:** Newtonsoft.Json mature hơn, feature-rich hơn System.Text.Json. Support nhiều scenarios phức tạp.
 
 **File:** `src/Infrastructure/Infrastructure/Common/Services/NewtonSoftService.cs`
 
@@ -560,63 +560,63 @@ using Newtonsoft.Json.Serialization;
 namespace ECO.WebApi.Infrastructure.Common.Services;
 
 /// <summary>
-/// JSON serializer implementation s? d?ng Newtonsoft.Json
+/// JSON serializer implementation sử dụng Newtonsoft.Json
 /// </summary>
 public class NewtonSoftService : ISerializerService
 {
     /// <summary>
-    /// Deserialize JSON string th�nh object
-  /// </summary>
+    /// Deserialize JSON string thành object
+    /// </summary>
     public T Deserialize<T>(string text)
     {
         return JsonConvert.DeserializeObject<T>(text)!;
-    }
+  }
 
     /// <summary>
-    /// Serialize object th�nh JSON string v?i custom settings
-/// </summary>
+    /// Serialize object thành JSON string với custom settings
+    /// </summary>
     public string Serialize<T>(T obj)
     {
         return JsonConvert.SerializeObject(obj, new JsonSerializerSettings
-        {
-          // CamelCase property names (firstName thay v� FirstName)
-         ContractResolver = new CamelCasePropertyNamesContractResolver(),
-            
- // Ignore null values (kh�ng serialize properties null)
-            NullValueHandling = NullValueHandling.Ignore,
-            
-      // Enum as string (thay v� number)
-    Converters = new List<JsonConverter>
-            {
-       new StringEnumConverter { CamelCaseText = true }
- }
-        });
+  {
+     // CamelCase property names (firstName thay vì FirstName)
+ ContractResolver = new CamelCasePropertyNamesContractResolver(),
+        
+   // Ignore null values (không serialize properties null)
+    NullValueHandling = NullValueHandling.Ignore,
+      
+            // Enum as string (thay vì number)
+            Converters = new List<JsonConverter>
+  {
+new StringEnumConverter { CamelCaseText = true }
+            }
+  });
     }
 
- /// <summary>
-    /// Serialize object th�nh JSON string v?i type c? th?
+    /// <summary>
+    /// Serialize object thành JSON string với type cụ thể
     /// </summary>
     public string Serialize<T>(T obj, Type type)
-    {
-        return JsonConvert.SerializeObject(obj, type, new JsonSerializerSettings());
+{
+  return JsonConvert.SerializeObject(obj, type, new JsonSerializerSettings());
     }
 }
 ```
 
-**Gi?i th�ch JsonSerializerSettings:**
+**Giải thích JsonSerializerSettings:**
 
 **CamelCasePropertyNamesContractResolver:**
-- Property names ? camelCase: `firstName` thay v� `FirstName`
-- Chu?n JSON API
+- Property names → camelCase: `firstName` thay vì `FirstName`
+- Chuẩn JSON API
 
 **NullValueHandling.Ignore:**
-- Kh�ng serialize properties null
-- Gi?m response size
+- Không serialize properties null
+- Giảm response size
 - Cleaner JSON
 
 **StringEnumConverter:**
-- Enum as string: `"active"` thay v� `1`
-- D? ??c, d? debug
+- Enum as string: `"active"` thay vì `1`
+- Dễ đọc, dễ debug
 - API-friendly
 
 **Example:**
@@ -643,20 +643,20 @@ var json = _serializer.Serialize(product);
 
 // Output
 {"id":"...","name":"iPhone","status":"active"}
-// (description b? b? v� null, status l� "active" thay v� 1)
+// (description bị bỏ vì null, status là "active" thay vì 1)
 ```
 
-**L?i �ch:**
-- ? API-friendly format
-- ? Smaller response size
-- ? Human-readable
-- ? Easy debugging
+**Lợi ích:**
+- ✓ API-friendly format
+- ✓ Smaller response size
+- ✓ Human-readable
+- ✓ Easy debugging
 
 ---
 
-### B??c 4.3: Register Serializer Service
+### Bước 4.3: Register Serializer Service
 
-**L�m g�:** Register serializer service v�o DI container.
+**Làm gì:** Register serializer service vào DI container.
 
 **File:** `src/Infrastructure/Infrastructure/Common/Startup.cs`
 
@@ -670,31 +670,31 @@ namespace ECO.WebApi.Infrastructure.Common;
 internal static class Startup
 {
     /// <summary>
-    /// Register common services
+  /// Register common services
     /// </summary>
-    internal static IServiceCollection AddCommonServices(this IServiceCollection services)
+  internal static IServiceCollection AddCommonServices(this IServiceCollection services)
     {
         // Register Serializer as Transient
         services.AddTransient<ISerializerService, NewtonSoftService>();
 
         return services;
-  }
+    }
 }
 ```
 
-**Gi?i th�ch:**
-- `Transient` lifetime ? lightweight, stateless service
-- Extension method pattern ?? modular registration
+**Giải thích:**
+- `Transient` lifetime → lightweight, stateless service
+- Extension method pattern để modular registration
 
 ---
 
 ## 5. Event Publisher Service
 
-### B??c 5.1: IEvent Marker Interface
+### Bước 5.1: IEvent Marker Interface
 
-**L�m g�:** Marker interface cho t?t c? domain events.
+**Làm gì:** Marker interface cho tất cả domain events.
 
-**T?i sao:** ?�nh d?u class l� domain event, support generic event handling.
+**Tại sao:** Đánh dấu class là domain event, support generic event handling.
 
 **File:** `src/Core/Shared/Events/IEvent.cs`
 
@@ -702,7 +702,7 @@ internal static class Startup
 namespace ECO.WebApi.Shared.Events;
 
 /// <summary>
-/// Marker interface cho t?t c? domain events
+/// Marker interface cho tất cả domain events
 /// Domain events represent something that happened in the domain
 /// </summary>
 public interface IEvent
@@ -710,23 +710,23 @@ public interface IEvent
 }
 ```
 
-**Gi?i th�ch:**
-- Marker interface ? kh�ng c� methods
-- T?t c? domain events ph?i implement
-- ? Shared layer ? c� th? d�ng ? m?i layer
+**Giải thích:**
+- Marker interface → không có methods
+- Tất cả domain events phải implement
+- Ở Shared layer → có thể dùng ở mọi layer
 
-**T?i sao trong Shared layer:**
-- Domain events l� contract
-- Application v� Infrastructure ??u c?n
+**Tại sao trong Shared layer:**
+- Domain events là contract
+- Application và Infrastructure đều cần
 - No dependencies
 
 ---
 
-### B??c 5.2: EventNotification Wrapper
+### Bước 5.2: EventNotification Wrapper
 
-**L�m g�:** Wrapper class ?? wrap IEvent th�nh INotification (MediatR).
+**Làm gì:** Wrapper class để wrap IEvent thành INotification (MediatR).
 
-**T?i sao:** Domain events (`IEvent`) kh�ng ph? thu?c MediatR. Wrapper ?? publish qua MediatR.
+**Tại sao:** Domain events (`IEvent`) không phụ thuộc MediatR. Wrapper để publish qua MediatR.
 
 **File:** `src/Core/Application/Common/Events/EventNotification.cs`
 
@@ -737,40 +737,40 @@ using MediatR;
 namespace ECO.WebApi.Application.Common.Events;
 
 /// <summary>
-/// Wrapper class ?? wrap IEvent th�nh INotification (MediatR)
-/// Gi? cho Domain layer kh�ng ph? thu?c MediatR
+/// Wrapper class để wrap IEvent thành INotification (MediatR)
+/// Giữ cho Domain layer không phụ thuộc MediatR
 /// </summary>
 public class EventNotification<TEvent> : INotification
     where TEvent : IEvent
 {
     public EventNotification(TEvent @event) => Event = @event;
 
-  /// <summary>
-    /// Domain event ???c wrap
+    /// <summary>
+    /// Domain event được wrap
     /// </summary>
     public TEvent Event { get; }
 }
 ```
 
-**Gi?i th�ch:**
-- `INotification` ? MediatR notification interface
-- Wrap `IEvent` th�nh `INotification` ?? publish qua MediatR
-- Generic class ? support any event type
+**Giải thích:**
+- `INotification` → MediatR notification interface
+- Wrap `IEvent` thành `INotification` để publish qua MediatR
+- Generic class → support any event type
 
-**T?i sao c?n wrapper:**
-- Domain events (`IEvent`) **kh�ng ph? thu?c** MediatR ? Clean Architecture
-- MediatR c?n `INotification` ?? publish ? Infrastructure concern
-- Wrapper t�ch bi?t Domain v� Infrastructure ? Separation of concerns
+**Tại sao cần wrapper:**
+- Domain events (`IEvent`) **không phụ thuộc** MediatR → Clean Architecture
+- MediatR cần `INotification` để publish → Infrastructure concern
+- Wrapper tách biệt Domain và Infrastructure → Separation of concerns
 
 **Design pattern:** Adapter Pattern
 
 ---
 
-### B??c 5.3: IEventPublisher Interface
+### Bước 5.3: IEventPublisher Interface
 
-**L�m g�:** Interface ?? publish domain events.
+**Làm gì:** Interface để publish domain events.
 
-**T?i sao:** Application layer c?n publish events, nh?ng kh�ng bi?t implementation (MediatR).
+**Tại sao:** Application layer cần publish events, nhưng không biết implementation (MediatR).
 
 **File:** `src/Core/Application/Common/Events/IEventPublisher.cs`
 
@@ -781,8 +781,8 @@ using ECO.WebApi.Shared.Events;
 namespace ECO.WebApi.Application.Common.Events;
 
 /// <summary>
-/// Interface ?? publish domain events
-/// Implementation s? d�ng MediatR ?? dispatch events ??n handlers
+/// Interface để publish domain events
+/// Implementation sẽ dùng MediatR để dispatch events đến handlers
 /// </summary>
 public interface IEventPublisher : ITransientService
 {
@@ -793,23 +793,23 @@ public interface IEventPublisher : ITransientService
 }
 ```
 
-**Gi?i th�ch:**
+**Giải thích:**
 - `Transient` lifetime
 - Accept `IEvent` (domain abstraction)
-- Async method ? await handlers
+- Async method → await handlers
 
-**L?i �ch:**
-- ? Application layer kh�ng ph? thu?c MediatR
-- ? D? mock cho testing
-- ? D? thay ??i implementation
+**Lợi ích:**
+- ✓ Application layer không phụ thuộc MediatR
+- ✓ Dễ mock cho testing
+- ✓ Dễ thay đổi implementation
 
 ---
 
-### B??c 5.4: EventPublisher Implementation
+### Bước 5.4: EventPublisher Implementation
 
-**L�m g�:** Implement EventPublisher s? d?ng MediatR ?? dispatch events.
+**Làm gì:** Implement EventPublisher sử dụng MediatR để dispatch events.
 
-**T?i sao:** MediatR handle event routing v� invocation. Ch�ng ta ch? c?n wrap events.
+**Tại sao:** MediatR handle event routing và invocation. Chúng ta chỉ cần wrap events.
 
 **File:** `src/Infrastructure/Infrastructure/Common/Events/EventPublisher.cs`
 
@@ -822,50 +822,50 @@ using Microsoft.Extensions.Logging;
 namespace ECO.WebApi.Infrastructure.Common.Events;
 
 /// <summary>
-/// Implementation c?a IEventPublisher s? d?ng MediatR
+/// Implementation của IEventPublisher sử dụng MediatR
 /// </summary>
 public class EventPublisher : IEventPublisher
 {
     private readonly ILogger<EventPublisher> _logger;
     private readonly IPublisher _mediator;
 
- public EventPublisher(ILogger<EventPublisher> logger, IPublisher mediator) =>
-     (_logger, _mediator) = (logger, mediator);
+    public EventPublisher(ILogger<EventPublisher> logger, IPublisher mediator) =>
+        (_logger, _mediator) = (logger, mediator);
 
     /// <summary>
     /// Publish domain event qua MediatR
     /// </summary>
-    public Task PublishAsync(IEvent @event)
+  public Task PublishAsync(IEvent @event)
     {
-        // Log event type ?? tracking
+      // Log event type để tracking
         _logger.LogInformation("Publishing Event: {EventType}", @event.GetType().Name);
-    
-     // Wrap event th�nh EventNotification v� publish qua MediatR
+        
+        // Wrap event thành EventNotification và publish qua MediatR
         return _mediator.Publish(CreateEventNotification(@event));
     }
 
     /// <summary>
-/// Create EventNotification&lt;TEvent&gt; t? IEvent b?ng reflection
-    /// V� runtime type, kh�ng th? d�ng generic compile-time
+    /// Create EventNotification&lt;TEvent&gt; từ IEvent bằng reflection
+    /// Vì runtime type, không thể dùng generic compile-time
     /// </summary>
-  private static INotification CreateEventNotification(IEvent @event)
+    private static INotification CreateEventNotification(IEvent @event)
     {
-    // Step 1: L?y runtime type c?a event (v� d?: ProductCreatedEvent)
-  var eventType = @event.GetType();
-      
-        // Step 2: T?o generic type EventNotification<ProductCreatedEvent>
+   // Step 1: Lấy runtime type của event (ví dụ: ProductCreatedEvent)
+    var eventType = @event.GetType();
+        
+    // Step 2: Tạo generic type EventNotification<ProductCreatedEvent>
         var notificationType = typeof(EventNotification<>).MakeGenericType(eventType);
         
         // Step 3: Create instance: new EventNotification<ProductCreatedEvent>(event)
-        var instance = Activator.CreateInstance(notificationType, @event);
+     var instance = Activator.CreateInstance(notificationType, @event);
 
-        // Step 4: Cast v? INotification
-   return (INotification)instance!;
+        // Step 4: Cast về INotification
+        return (INotification)instance!;
     }
 }
 ```
 
-**Gi?i th�ch Reflection Magic:**
+**Giải thích Reflection Magic:**
 
 ```csharp
 // Input: ProductCreatedEvent (implements IEvent)
@@ -888,23 +888,23 @@ return (INotification)instance;
 // MediatR accepts INotification
 ```
 
-**T?i sao c?n reflection:**
-- `IEvent` l� interface ? kh�ng bi?t concrete type compile-time
-- Runtime type ? ph?i d�ng reflection ?? t?o `EventNotification<T>`
-- Generic type argument c?n runtime type information
+**Tại sao cần reflection:**
+- `IEvent` là interface → không biết concrete type compile-time
+- Runtime type → phải dùng reflection để tạo `EventNotification<T>`
+- Generic type argument cần runtime type information
 
 **Performance consideration:**
-- Reflection c� overhead nh?ng acceptable
-- Events kh�ng publish th??ng xuy�n nh? queries
-- Tradeoff ?? gi? clean architecture
+- Reflection có overhead nhưng acceptable
+- Events không publish thường xuyên như queries
+- Tradeoff để giữ clean architecture
 
 ---
 
-### B??c 5.5: EventNotificationHandler Base Class
+### Bước 5.5: EventNotificationHandler Base Class
 
-**L�m g�:** Base class ?? d? d�ng t?o event handlers.
+**Làm gì:** Base class để dễ dàng tạo event handlers.
 
-**T?i sao:** Auto unwrap EventNotification, handlers ch? c?n handle domain event.
+**Tại sao:** Auto unwrap EventNotification, handlers chỉ cần handle domain event.
 
 **File:** `src/Core/Application/Common/Events/IEventNotificationHandler.cs`
 
@@ -924,69 +924,69 @@ public interface IEventNotificationHandler<TEvent> : INotificationHandler<EventN
 
 /// <summary>
 /// Abstract base class cho event notification handlers
-/// Auto unwrap EventNotification ?? handlers ch? c?n handle domain event
+/// Auto unwrap EventNotification để handlers chỉ cần handle domain event
 /// </summary>
 public abstract class EventNotificationHandler<TEvent> : INotificationHandler<EventNotification<TEvent>>
-    where TEvent : IEvent
+  where TEvent : IEvent
 {
     /// <summary>
-    /// Handle EventNotification (wrapper) - auto called b?i MediatR
+    /// Handle EventNotification (wrapper) - auto called bởi MediatR
     /// </summary>
     public Task Handle(EventNotification<TEvent> notification, CancellationToken cancellationToken) =>
-        Handle(notification.Event, cancellationToken);
+   Handle(notification.Event, cancellationToken);
 
-/// <summary>
-    /// Handle domain event (ph?i implement trong derived class)
+    /// <summary>
+    /// Handle domain event (phải implement trong derived class)
     /// </summary>
     public abstract Task Handle(TEvent @event, CancellationToken cancellationToken);
 }
 ```
 
-**Gi?i th�ch:**
+**Giải thích:**
 
 **Interface shorthand:**
-- `IEventNotificationHandler<ProductCreatedEvent>` thay v� `INotificationHandler<EventNotification<ProductCreatedEvent>>`
-- G?n h?n, d? ??c h?n
+- `IEventNotificationHandler<ProductCreatedEvent>` thay vì `INotificationHandler<EventNotification<ProductCreatedEvent>>`
+- Gọn hơn, dễ đọc hơn
 
 **Abstract class:**
-- Auto unwrap `EventNotification` ? handler ch? c?n handle `TEvent`
-- Abstract method ? force derived classes implement
+- Auto unwrap `EventNotification` → handler chỉ cần handle `TEvent`
+- Abstract method → force derived classes implement
 - Template Method pattern
 
 **Usage example:**
 ```csharp
-// ? Kh�ng d�ng base class - ph?i unwrap manually
+// ❌ Không dùng base class - phải unwrap manually
 public class ProductCreatedHandler : INotificationHandler<EventNotification<ProductCreatedEvent>>
 {
     public Task Handle(EventNotification<ProductCreatedEvent> notification, ...)
     {
         var @event = notification.Event; // Unwrap manually
-        // Handle event logic
+ // Handle event logic
     }
 }
 
-// ? D�ng base class - auto unwrap
+// ✓ Dùng base class - auto unwrap
 public class ProductCreatedHandler : EventNotificationHandler<ProductCreatedEvent>
 {
     public override Task Handle(ProductCreatedEvent @event, ...)
-    {
-        // Handle event directly - ?� unwrap r?i
-  _logger.LogInformation("Product created: {Name}", @event.Product.Name);
+  {
+        // Handle event directly - đã unwrap rồi
+        _logger.LogInformation("Product created: {Name}", @event.Product.Name);
         return Task.CompletedTask;
     }
 }
 ```
 
-**L?i �ch:**
-- ? Code g?n h?n
-- ? �t boilerplate
-- ? Focus v�o business logic
+**Lợi ích:**
+- ✓ Code gọn hơn
+- ✓ Ít boilerplate
+- ✓ Focus vào business logic
 
 ---
 
-### B??c 5.6: Register Event Publisher
+### Bước 5.6: Register Event Publisher
 
-**L�m g�:** Register EventPublisher v�o DI container.
+**Làm gì:** Register EventPublisher vào DI container.
 
 **File:** `src/Infrastructure/Infrastructure/Common/Startup.cs`
 
@@ -1008,23 +1008,23 @@ internal static class Startup
         services.AddTransient<IEventPublisher, EventPublisher>();
 
    return services;
-    }
+  }
 }
 ```
 
-**Gi?i th�ch:**
-- `Transient` lifetime ? stateless service
-- MediatR auto-scan v� register event handlers
+**Giải thích:**
+- `Transient` lifetime → stateless service
+- MediatR auto-scan và register event handlers
 
 ---
 
 ## 6. Update Infrastructure Startup
 
-### B??c 6.1: Consolidate All Services
+### Bước 6.1: Consolidate All Services
 
-**L�m g�:** Update Infrastructure Startup ?? register t?t c? services.
+**Làm gì:** Update Infrastructure Startup để register tất cả services.
 
-**T?i sao:** Centralized registration, d? maintain.
+**Tại sao:** Centralized registration, dễ maintain.
 
 **File:** `src/Infrastructure/Infrastructure/Startup.cs`
 
@@ -1047,48 +1047,48 @@ public static class Startup
         this IServiceCollection services,
         IConfiguration config)
     {
-        return services
-            // Persistence (DbContext, Repositories)
-        .AddPersistence()
-         
-          // CurrentUser service
-            .AddCurrentUser()
+  return services
+       // Persistence (DbContext, Repositories)
+            .AddPersistence()
             
-            // Common services (Serializer, EventPublisher)
-            .AddCommonServices()
-            
-    // Routing
-          .AddRouting(options => options.LowercaseUrls = true);
+  // CurrentUser service
+    .AddCurrentUser()
+  
+   // Common services (Serializer, EventPublisher)
+        .AddCommonServices()
+  
+            // Routing
+            .AddRouting(options => options.LowercaseUrls = true);
     }
 
     /// <summary>
     /// Use infrastructure middleware
     /// </summary>
-    public static IApplicationBuilder UseInfrastructure(
-   this IApplicationBuilder builder,
+ public static IApplicationBuilder UseInfrastructure(
+ this IApplicationBuilder builder,
         IConfiguration config)
     {
-        return builder
-      .UseRouting()
+      return builder
+            .UseRouting()
        
-            // CurrentUser middleware - SAU UseRouting, TR??C UseAuthentication
-         .UseCurrentUserMiddleware()
- 
-  .UseHttpsRedirection();
+      // CurrentUser middleware - SAU UseRouting, TRƯỚC UseAuthentication
+     .UseCurrentUserMiddleware()
+            
+        .UseHttpsRedirection();
     }
 }
 ```
 
-**?? L?u � th? t? middleware:**
+**⚠️ Lưu ý thứ tự middleware:**
 ```
 1. UseRouting()
-2. UseCurrentUserMiddleware()  ? Set current user
-3. UseAuthentication()          ? Will add in BUILD_15
-4. UseAuthorization()           ? Will add in BUILD_17
+2. UseCurrentUserMiddleware()  → Set current user
+3. UseAuthentication()   → Will add in BUILD_15
+4. UseAuthorization()           → Will add in BUILD_17
 5. MapControllers()
 ```
 
-**Gi?i th�ch:**
+**Giải thích:**
 - Fluent interface pattern (.AddX().AddY())
 - Modular registration
 - Clear middleware order
@@ -1097,7 +1097,7 @@ public static class Startup
 
 ## 7. Testing
 
-### B??c 7.1: Test CurrentUser Service
+### Bước 7.1: Test CurrentUser Service
 
 **Create test handler:**
 
@@ -1113,10 +1113,10 @@ public class GetMyProfileRequest : IRequest<UserDetailDto> { }
 
 public class GetMyProfileHandler : IRequestHandler<GetMyProfileRequest, UserDetailDto>
 {
-  private readonly ICurrentUser _currentUser;
+    private readonly ICurrentUser _currentUser;
     private readonly IUserService _userService;
 
-  public GetMyProfileHandler(ICurrentUser currentUser, IUserService userService)
+    public GetMyProfileHandler(ICurrentUser currentUser, IUserService userService)
     {
         _currentUser = currentUser;
         _userService = userService;
@@ -1124,22 +1124,22 @@ public class GetMyProfileHandler : IRequestHandler<GetMyProfileRequest, UserDeta
 
     public async Task<UserDetailDto> Handle(GetMyProfileRequest request, CancellationToken ct)
     {
-        // L?y current user info t? JWT token
- var userId = _currentUser.GetUserId();
-   var email = _currentUser.GetUserEmail();
+     // Lấy current user info từ JWT token
+        var userId = _currentUser.GetUserId();
+        var email = _currentUser.GetUserEmail();
         var isAuthenticated = _currentUser.IsAuthenticated();
 
         // Get user from database
         var user = await _userService.GetAsync(userId.ToString(), ct);
-     
-      return user;
+        
+        return user;
     }
 }
 ```
 
-**Test v?i curl:**
+**Test với curl:**
 ```bash
-# Step 1: Login ?? l?y token
+# Step 1: Login để lấy token
 curl -X POST https://localhost:7001/api/tokens \
   -H "Content-Type: application/json" \
   -d '{
@@ -1164,41 +1164,41 @@ curl -X GET https://localhost:7001/api/users/me \
 
 ---
 
-### B??c 7.2: Test Serializer Service
+### Bước 7.2: Test Serializer Service
 
 **Create test:**
 ```csharp
 public class SerializerTest
 {
-    private readonly ISerializerService _serializer;
+  private readonly ISerializerService _serializer;
 
     public void Test()
     {
-        var product = new Product
-        {
-        Id = Guid.NewGuid(),
+var product = new Product
+   {
+   Id = Guid.NewGuid(),
             Name = "Test Product",
-      Price = 100,
-          Status = ProductStatus.Active,
-            Description = null
+            Price = 100,
+     Status = ProductStatus.Active,
+    Description = null
         };
 
         // Serialize
-     var json = _serializer.Serialize(product);
-   Console.WriteLine(json);
+        var json = _serializer.Serialize(product);
+        Console.WriteLine(json);
         // Output: {"id":"...","name":"Test Product","price":100,"status":"active"}
 
         // Deserialize
         var deserialized = _serializer.Deserialize<Product>(json);
         Assert.Equal(product.Id, deserialized.Id);
-    Assert.Equal(product.Name, deserialized.Name);
+        Assert.Equal(product.Name, deserialized.Name);
     }
 }
 ```
 
 ---
 
-### B??c 7.3: Test Event Publisher
+### Bước 7.3: Test Event Publisher
 
 **Create domain event:**
 ```csharp
@@ -1212,9 +1212,9 @@ public class ProductCreatedEvent : IEvent
     public Product Product { get; }
 
     public ProductCreatedEvent(Product product)
- {
-   Product = product;
-    }
+{
+        Product = product;
+ }
 }
 ```
 
@@ -1233,20 +1233,20 @@ public class ProductCreatedEventHandler : EventNotificationHandler<ProductCreate
 
     public ProductCreatedEventHandler(ILogger<ProductCreatedEventHandler> logger)
     {
-    _logger = logger;
+        _logger = logger;
     }
 
-    public override Task Handle(ProductCreatedEvent @event, CancellationToken ct)
-    {
+  public override Task Handle(ProductCreatedEvent @event, CancellationToken ct)
+  {
         _logger.LogInformation("Product created: {ProductId} - {ProductName}",
- @event.Product.Id,
-            @event.Product.Name);
+      @event.Product.Id,
+         @event.Product.Name);
 
-     // TODO: Send email notification
+    // TODO: Send email notification
         // TODO: Update cache
-        // TODO: Send webhook
-        
-        return Task.CompletedTask;
+     // TODO: Send webhook
+   
+   return Task.CompletedTask;
     }
 }
 ```
@@ -1262,12 +1262,12 @@ public class CreateProductHandler : IRequestHandler<CreateProductRequest, Guid>
     {
         var product = Product.Create(request.Name, request.Price);
         
-      await _repository.AddAsync(product, ct);
+        await _repository.AddAsync(product, ct);
         await _repository.SaveChangesAsync(ct);
- 
+    
         // Publish event SAU KHI save
         await _eventPublisher.PublishAsync(new ProductCreatedEvent(product));
-  
+   
         return product.Id;
     }
 }
@@ -1283,93 +1283,93 @@ info: Product created: a1b2c3d4-e5f6-... - iPhone 15
 
 ## 8. Summary
 
-### ? ?� ho�n th�nh trong b??c n�y:
+### ✓ Đã hoàn thành trong bước này:
 
 **CurrentUser Service:**
-- ? `ICurrentUser` interface (GetUserId, GetEmail, IsAuthenticated, etc.)
-- ? `ICurrentUserInitializer` interface (SetCurrentUser, SetCurrentUserId)
-- ? `ClaimsPrincipalExtensions` (helper methods)
-- ? `CurrentUser` implementation (v?i ClaimsPrincipal)
-- ? `CurrentUserMiddleware` (auto-set current user)
-- ? Service registration (Scoped)
+- ✓ `ICurrentUser` interface (GetUserId, GetEmail, IsAuthenticated, etc.)
+- ✓ `ICurrentUserInitializer` interface (SetCurrentUser, SetCurrentUserId)
+- ✓ `ClaimsPrincipalExtensions` (helper methods)
+- ✓ `CurrentUser` implementation (với ClaimsPrincipal)
+- ✓ `CurrentUserMiddleware` (auto-set current user)
+- ✓ Service registration (Scoped)
 
 **Serializer Service:**
-- ? `ISerializerService` interface (Serialize, Deserialize)
-- ? `NewtonSoftService` implementation (Newtonsoft.Json)
-- ? Settings: CamelCase, Ignore nulls, Enum as string
-- ? Service registration (Transient)
+- ✓ `ISerializerService` interface (Serialize, Deserialize)
+- ✓ `NewtonSoftService` implementation (Newtonsoft.Json)
+- ✓ Settings: CamelCase, Ignore nulls, Enum as string
+- ✓ Service registration (Transient)
 
 **Event Publisher:**
-- ? `IEvent` marker interface (Shared layer)
-- ? `EventNotification<TEvent>` wrapper (Application layer)
-- ? `IEventPublisher` interface (PublishAsync)
-- ? `EventPublisher` implementation (v?i MediatR + reflection)
-- ? `EventNotificationHandler<TEvent>` base class
-- ? Service registration (Transient)
+- ✓ `IEvent` marker interface (Shared layer)
+- ✓ `EventNotification<TEvent>` wrapper (Application layer)
+- ✓ `IEventPublisher` interface (PublishAsync)
+- ✓ `EventPublisher` implementation (với MediatR + reflection)
+- ✓ `EventNotificationHandler<TEvent>` base class
+- ✓ Service registration (Transient)
 
-### ?? Key Concepts:
+### 🎯 Key Concepts:
 
 **CurrentUser:**
-- Scoped service ? m?i request m?t instance
-- Thread-safe v?i ClaimsPrincipal
-- Middleware auto-set t? JWT token
+- Scoped service → mỗi request một instance
+- Thread-safe với ClaimsPrincipal
+- Middleware auto-set từ JWT token
 - Fallback cho background jobs
 
 **Serializer:**
-- Transient service ? stateless
-- JSON serialization v?i custom settings
+- Transient service → stateless
+- JSON serialization với custom settings
 - API-friendly format (camelCase, no nulls, enum strings)
 
 **Event Publisher:**
 - Publish domain events qua MediatR
-- Decouple domain logic v� side effects
-- Multiple handlers cho m?t event
-- Reflection ?? support runtime types
+- Decouple domain logic và side effects
+- Multiple handlers cho một event
+- Reflection để support runtime types
 
-### ?? File Structure:
+### 📁 File Structure:
 
 ```
 src/Core/Application/Common/
-??? Interfaces/
-?   ??? ICurrentUser.cs
-?   ??? ICurrentUserInitializer.cs
-?   ??? ISerializerService.cs
-??? Events/
-    ??? IEventPublisher.cs
-    ??? EventNotification.cs
-    ??? IEventNotificationHandler.cs
+├── Interfaces/
+│   ├── ICurrentUser.cs
+│   ├── ICurrentUserInitializer.cs
+│   └── ISerializerService.cs
+└── Events/
+    ├── IEventPublisher.cs
+    ├── EventNotification.cs
+    └── IEventNotificationHandler.cs
 
 src/Core/Shared/
-??? Events/
-?   ??? IEvent.cs
-??? Authorization/
-    ??? ClaimsPrincipalExtensions.cs
+├── Events/
+│   └── IEvent.cs
+└── Authorization/
+    └── ClaimsPrincipalExtensions.cs
 
 src/Infrastructure/Infrastructure/
-??? Auth/
-?   ??? CurrentUser.cs
-?   ??? CurrentUserMiddleware.cs
-?   ??? Startup.cs
-??? Common/
-    ??? Services/
-    ? ??? NewtonSoftService.cs
-  ??? Events/
-    ?   ??? EventPublisher.cs
-    ??? Startup.cs
+├── Auth/
+│   ├── CurrentUser.cs
+│   ├── CurrentUserMiddleware.cs
+│   └── Startup.cs
+└── Common/
+    ├── Services/
+    │   └── NewtonSoftService.cs
+    ├── Events/
+  │   └── EventPublisher.cs
+    └── Startup.cs
 ```
 
 ---
 
 ## 9. Next Steps
 
-**Ti?p theo:** [BUILD_13 - Exception Handling & Middleware](BUILD_13_Exceptions_Middleware.md)
+**Tiếp theo:** [BUILD_13 - Exception Handling & Middleware](BUILD_13_Exceptions_Middleware.md)
 
-Trong b??c ti?p theo, ch�ng ta s?:
-1. ? T?o Custom Exceptions (NotFoundException, UnauthorizedException, ForbiddenException, ConflictException, InternalServerException)
-2. ? T?o ErrorResult model (error response format)
-3. ? Implement ExceptionMiddleware (global exception handler)
-4. ? Register middleware pipeline
+Trong bước tiếp theo, chúng ta sẽ:
+1. ✓ Tạo Custom Exceptions (NotFoundException, UnauthorizedException, ForbiddenException, ConflictException, InternalServerException)
+2. ✓ Tạo ErrorResult model (error response format)
+3. ✓ Implement ExceptionMiddleware (global exception handler)
+4. ✓ Register middleware pipeline
 
 ---
 
-**Quay l?i:** [M?c l?c](BUILD_INDEX.md)
+**Quay lại:** [Mục lục](BUILD_INDEX.md)
