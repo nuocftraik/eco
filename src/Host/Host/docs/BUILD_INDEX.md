@@ -97,11 +97,14 @@ Xây dựng hệ thống authentication và authorization.
 | Bước | Tài liệu | Nội dung | Prerequisites |
 |------|----------|----------|---------------|
 | 15 | [BUILD_15](BUILD_15_JWT_Authentication.md) | JWT tokens, Token service | Phase 3 |
-| 16 | [BUILD_16](BUILD_16_Identity_Services.md) | User service, Role service, Function service | Bước 15 |
-| 17 | [BUILD_17](BUILD_17_Permission_Authorization.md) | Permission-based authorization | Bước 16 |
+| 16A | [BUILD_16A](BUILD_16A_User_Service.md) | User management service | Bước 15 |
+| 16B | [BUILD_16B](BUILD_16B_Role_Service.md) | Role management service | Bước 16A |
+| 16C | [BUILD_16C](BUILD_16C_Function_Service.md) | Function (Permission) management service | Bước 16B |
+| 17 | [BUILD_17](BUILD_17_Permission_Authorization.md) | Permission-based authorization | Bước 16C |
 | 18 | [BUILD_18](BUILD_18_OAuth2_Integration.md) | Google/Facebook OAuth2 login | Bước 17 |
 
 **Kết quả Phase 4:** Authentication & Authorization hoàn chỉnh (JWT, Permissions, OAuth2).
+
 
 ---
 
