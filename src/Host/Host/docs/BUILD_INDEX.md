@@ -797,6 +797,168 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 
 ---
 
+## 🤖 **IX. AI-Assisted Development Infrastructure**
+
+### **Agent Memories Location**
+
+ECO.WebApi hỗ trợ AI-assisted development với tập hợp tài liệu kiến thức có cấu trúc:
+
+```
+.agent/
+├── memories/
+│   ├── 01_architecture.md          # Clean Architecture patterns
+│   ├── 02_coding_standards.md      # Coding conventions
+│   ├── 03_database_patterns.md     # Database design patterns
+│   └── 04_api_patterns.md          # RESTful API conventions
+├── skills/                          # Custom agent skills (future)
+│   ├── eco_crud_generator/         # Generate CRUD operations
+│   ├── eco_migration_helper/       # EF Core migrations
+│   └── eco_test_generator/         # Unit test scaffolding
+├── rules.md                         # Development rules
+└── target_instructions.md           # Agent objectives
+```
+
+### **Memory Files Purpose**
+
+| File | Purpose | Content |
+|------|---------|---------|
+| `01_architecture.md` | Core architecture | Clean Architecture layers, dependencies, design patterns |
+| `02_coding_standards.md` | Coding conventions | Naming, structure, code quality rules |
+| `03_database_patterns.md` | Database patterns | EF Core, migrations, seeding, queries |
+| `04_api_patterns.md` | API design | RESTful conventions, routing, responses |
+| `rules.md` | Development rules | Code generation, security, workflow |
+| `target_instructions.md` | Agent capabilities | Objectives, tasks, response patterns |
+
+### **Quick AI Assistant Commands**
+
+Khi làm việc với AI agent, bạn có thể sử dụng các lệnh:
+
+```bash
+# Generate CRUD
+"/generate-crud Product"
+→ Tạo đầy đủ CRUD cho entity Product
+
+# Add Feature
+"/add-feature OrderManagement"
+→ Plan và generate feature mới
+
+# Review Code
+"/review-code ProductService.cs"
+→ Kiểm tra code theo ECO standards
+
+# Create Migration
+"/create-migration AddProductTable"
+→ Generate migration command
+
+# Explain Concept
+"/explain Repository Pattern"
+→ Giải thích pattern trong context ECO
+
+# Refactor code
+"/refactor ProductController.cs"
+→ Đề xuất cải tiến
+
+# Generate Tests
+"/test ProductService"
+→ Tạo unit tests
+
+# Generate Documentation
+"/docs Authentication"
+→ Tạo tài liệu
+```
+
+### **Agent Capabilities**
+
+AI assistant có thể giúp bạn:
+
+1. **✅ Code Generation**: Tạo code theo ECO patterns
+   - Entities với business logic
+   - DTOs và validators
+   - Handlers (Commands/Queries)
+   - Controllers với routing chuẩn
+   - EF Core configurations
+   - Unit và integration tests
+
+2. **✅ Code Review**: Kiểm tra code theo standards
+   - Clean Architecture compliance
+   - StyleCop + SonarAnalyzer rules
+   - Naming conventions
+   - Anti-patterns
+   - Security vulnerabilities
+
+3. **✅ Documentation**: Tự động generate docs
+   - XML documentation
+   - README files
+   - API documentation
+   - Architecture diagrams
+
+4. **✅ Refactoring**: Cải thiện code
+   - Extract interfaces
+   - Apply design patterns
+   - Performance optimization
+   - Reduce duplication
+
+### **How to Use Agent Effectively**
+
+**1. Bắt đầu với context:**
+```
+Tôi đang làm việc với ECO.WebApi. 
+Tôi muốn thêm feature quản lý sản phẩm.
+```
+
+**2. Agent sẽ tham khảo memories:**
+- `.agent/memories/01_architecture.md` cho layer structure
+- `.agent/memories/02_coding_standards.md` cho naming
+- `.agent/memories/03_database_patterns.md` cho database
+- `.agent/memories/04_api_patterns.md` cho API design
+- `.agent/rules.md` cho development rules
+
+**3. Agent sẽ generate code:**
+- Full code, không có placeholders
+- Tuân thủ ECO conventions
+- Include XML documentation
+- Ready to compile
+
+**4. Bạn review và apply:**
+- Copy code vào project
+- Run migration nếu có
+- Test endpoints
+- Commit changes
+
+### **Agent Learning Resources**
+
+Agent luôn tham khảo:
+- ✅ `.agent/memories/` - Core knowledge base
+- ✅ `.agent/rules.md` - Development rules
+- ✅ `.agent/target_instructions.md` - Agent objectives
+- ✅ `docs/BUILD_INDEX.md` - Full documentation roadmap
+- ✅ `docs/MODULE_DOCUMENTATION_TEMPLATE.md` - Doc template
+- ✅ `docs/BUILD_XX_*.md` - Specific module docs
+
+### **Benefits of AI-Assisted Development**
+
+1. **🚀 Faster Development**
+   - Generate boilerplate code instantly
+   - No manual repetitive work
+   - Focus on business logic
+
+2. **✅ Consistent Quality**
+   - Always follow patterns
+   - No naming inconsistencies
+   - Proper error handling
+
+3. **📚 Learning Tool**
+   - Explains WHY, not just WHAT
+   - Teaches best practices
+   - References documentation
+
+4. **🔍 Code Review Assistant**
+   - Catch issues early
+   - Enforce standards
+   - Suggest improvements
+
+---
+
 ## 📝 Notes
 
 - **Version:** .NET 8.0

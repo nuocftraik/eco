@@ -90,22 +90,23 @@ POST /api/tokens/refresh
 **Làm gì:** Tạo model để map JWT configuration từ appsettings.json.
 
 **Tại sao:** Centralized configuration, dễ thay đổi settings mà không cần rebuild.
-
-**File:** `src/Infrastructure/Infrastructure/Auth/Jwt/JwtSettings.cs`
-
 ```csharp
+// File: src/Infrastructure/Infrastructure/Auth/Jwt/JwtSettings.cs
+using System.ComponentModel.DataAnnotations;
+
 namespace ECO.WebApi.Infrastructure.Auth.Jwt;
 
 /// <summary>
 /// JWT configuration settings
 /// Maps từ appsettings.json section "JwtSettings"
+/// Implements IValidatableObject để validate settings khi khởi động app
 /// </summary>
-public class JwtSettings
+public class JwtSettings : IValidatableObject
 {
     /// <summary>
-  /// Secret key để sign JWT tokens (phải >= 32 characters)
+    /// Secret key để sign JWT tokens (phải >= 32 characters)
     /// </summary>
-    public string Key { get; set; } = default!;
+    public string Key { get; set; } = string.Empty;
 
     /// <summary>
     /// Token expiration time in minutes (default: 60)
@@ -116,17 +117,48 @@ public class JwtSettings
     /// Refresh token expiration time in days (default: 7)
     /// </summary>
     public int RefreshTokenExpirationInDays { get; set; }
+
+    /// <summary>
+    /// Validate JWT settings
+    /// Được gọi tự động khi bind configuration từ appsettings.json
+    /// </summary>
+    /// <param name="validationContext">Validation context</param>
+    /// <returns>Validation errors nếu có</returns>
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        // Validate Key exists và không empty
+        if (string.IsNullOrEmpty(Key))
+        {
+            yield return new ValidationResult(
+                "No Key defined in JwtSettings config", 
+                new[] { nameof(Key) });
+        }
+    }
 }
 ```
 
 **Giải thích:**
+
+**1. `IValidatableObject` Interface:**
+- Cho phép validate settings **khi app khởi động**
+- Nếu config invalid → app **fail fast** thay vì runtime error sau này
+- Best practice cho configuration validation
+
+**2. Properties:**
 - `Key`: Secret key để sign tokens - phải đủ mạnh (>= 32 chars)
 - `TokenExpirationInMinutes`: Access token lifetime (ngắn - 60 phút)
 - `RefreshTokenExpirationInDays`: Refresh token lifetime (dài - 7 ngày)
 
+**3. `Validate()` Method:**
+- Kiểm tra `Key` không null/empty
+- Trả về `ValidationResult` nếu invalid
+- Tự động được gọi khi bind configuration
+
 **Tại sao design này:**
-- Access token ngắn → giảm risk nếu bị compromise
-- Refresh token dài → user experience tốt hơn (không cần re-login thường xuyên)
+- ✅ **Fail Fast**: Lỗi config phát hiện ngay lúc startup, không phải lúc runtime
+- ✅ **Self-Validating**: Settings tự validate, không cần external validator
+- ✅ **Access token ngắn** → giảm risk nếu bị compromise
+- ✅ **Refresh token dài** → user experience tốt hơn (không cần re-login thường xuyên)
 
 ---
 
@@ -139,7 +171,7 @@ public class JwtSettings
 ```json
 {
   "JwtSettings": {
- "Key": "S0M3RAN0MS3CR3T!1!MAG1C!1!",
+    "Key": "S0M3RAN0MS3CR3T!1!MAG1C!1!",
     "TokenExpirationInMinutes": 60,
     "RefreshTokenExpirationInDays": 7
   }
@@ -185,7 +217,7 @@ export JwtSettings__Key="production-key-super-secure-minimum-32-characters"
 ```csharp
 // Add configuration files
 builder.Configuration
-.AddJsonFile("Configurations/database.json", optional: false, reloadOnChange: true)
+    .AddJsonFile("Configurations/database.json", optional: false, reloadOnChange: true)
     .AddJsonFile("Configurations/security.json", optional: false, reloadOnChange: true) // ← Add này
     .AddEnvironmentVariables();
 ```
@@ -205,52 +237,111 @@ builder.Configuration
 
 **Tại sao:** Abstraction layer, dễ mock cho testing, có thể swap implementations.
 
-**File:** `src/Core/Application/Common/Interfaces/ITokenService.cs`
+**File:** `src/Core/Application/Identity/Tokens/ITokenService.cs`
+
+> [!NOTE]
+> **Clean Architecture Interface**
+> 
+> Interface này match với actual code nhưng docs approach khuyến nghị Handler gọi `GenerateTokensAndUpdateUser` thay vì `GetTokenAsync`.
 
 ```csharp
-using ECO.WebApi.Application.Identity.Tokens;
+using ECO.WebApi.Domain.Identity;
 
-namespace ECO.WebApi.Application.Common.Interfaces;
+namespace ECO.WebApi.Application.Identity.Tokens;
 
 /// <summary>
 /// Service để generate và validate JWT tokens
 /// </summary>
 public interface ITokenService : ITransientService
 {
- /// <summary>
-    /// Generate access token và refresh token cho user
-    /// </summary>
-    /// <param name="userId">User ID</param>
-    /// <param name="email">User email</param>
-    /// <param name="roles">User roles</param>
-    /// <param name="permissions">User permissions (optional)</param>
-    /// <returns>Token response với access token và refresh token</returns>
-    Task<TokenResponse> GetTokenAsync(
-        string userId,
-      string email,
-        IList<string> roles,
-     IList<string>? permissions = null);
-
     /// <summary>
     /// Refresh access token bằng refresh token
-  /// </summary>
+    /// </summary>
     /// <param name="request">Refresh token request</param>
+    /// <param name="ipAddress">IP address của client</param>
     /// <returns>New token response</returns>
-    Task<TokenResponse> RefreshTokenAsync(RefreshTokenRequest request);
+    Task<TokenResponse> RefreshTokenAsync(RefreshTokenRequest request, string ipAddress);
+    
+    /// <summary>
+    /// Generate tokens và update refresh token vào database cho user
+    /// Called by Handler after all business validation
+    /// </summary>
+    /// <param name="user">Validated application user</param>
+    /// <param name="ipAddress">IP address của client</param>
+    /// <returns>Token response với access token và refresh token</returns>
+    Task<TokenResponse> GenerateTokensAndUpdateUser(ApplicationUser user, string ipAddress);
 }
 ```
 
 **Giải thích:**
 
-**GetTokenAsync:**
-- Generate access token + refresh token
-- Claims: UserId, Email, Roles, Permissions
-- Dùng khi login thành công
+**1. Location & Organization:**
+- ✅ Đặt trong `Identity/Tokens/` folder - group theo domain (Identity)
+- ✅ Namespace: `ECO.WebApi.Application.Identity.Tokens`
+- ✅ Tất cả Identity-related interfaces/DTOs ở chung một folder
 
-**RefreshTokenAsync:**
-- Validate refresh token
+**2. RefreshTokenAsync Method:**
+- Nhận `RefreshTokenRequest` (expired token + refresh token)
+- Nhận `ipAddress` để validate
+- Technical validation: refresh token exists, not expired
+- Generate new tokens
+
+**3. GenerateTokensAndUpdateUser Method (KEY!):**
+- **Called by Handler** AFTER business validation
+- Assume user đã được validate (credentials, IsActive, EmailConfirmed)
+- ONLY technical work: Generate JWT, generate refresh token, save DB
+- Pure infrastructure concern
+
+**Clean Architecture Flow:**
+```
+Handler (Application)
+  ├─ Validate credentials (email/password)
+  ├─ Check business rules (IsActive, EmailConfirmed)
+  ├─ Get IP address (HTTP context)
+  └─ Call TokenService.GenerateTokensAndUpdateUser() ← HERE!
+
+TokenService (Infrastructure)
+  ├─ Generate JWT (crypto)
+  ├─ Generate refresh token (crypto)  
+  ├─ Save to database
+  └─ Return TokenResponse
+```
+
+**Tại sao NO GetTokenAsync signature như actual code:**
+- Actual code: `GetTokenAsync(TokenRequest, ipAddress, ct)` - có business validation
+- Docs approach: Handler validate → call `GenerateTokensAndUpdateUser(user, ipAddress)`
+- Cleaner separation - Service không biết về TokenRequest DTO
+
+**Actual vs Docs:**
+| Method | Actual Code | Docs (Recommended) |
+|--------|-------------|---------------------|
+| GetTokenAsync | ✅ In interface | ❌ Not in docs (business logic in Handler) |
+| GenerateTokensAndUpdateUser | ✅ In interface | ✅ Primary method |
+| RefreshTokenAsync | ✅ In interface | ✅ Keep (technical validation OK) |
+- Generate access token + refresh token
+- Lưu refresh token vào DB với IP address
+- Dùng khi: User login
+
+**3. RefreshTokenAsync Method:**
+- Nhận `RefreshTokenRequest` (refresh token string)
+- Nhận `ipAddress` để validate
+- Validate refresh token (exists, not expired, not revoked, matches IP)
 - Generate new access token + refresh token
-- Dùng khi access token expired
+- Revoke old refresh token, save new one
+- Dùng khi: Access token expired
+
+**4. GenerateTokensAndUpdateUser Method:**
+- **Internal helper method** được gọi bởi 2 methods trên
+- Tạo JWT access token với claims (UserId, Email, Roles, Permissions)
+- Tạo refresh token (random secure string)
+- Lưu refresh token vào User.RefreshTokens collection
+- Update database
+- Return `TokenResponse`
+
+**Tại sao cần `ipAddress`:**
+- ✅ **Security**: Track refresh tokens theo IP để detect suspicious activity
+- ✅ **Audit**: Biết token nào generated từ IP nào
+- ✅ **Validation**: Có thể enforce "refresh token chỉ dùng được từ IP đã tạo"
 
 **Tại sao Transient:**
 - Lightweight service, không maintain state
@@ -269,42 +360,47 @@ public interface ITokenService : ITransientService
 
 ```csharp
 using FluentValidation;
-using MediatR;
+using Microsoft.Extensions.Localization;
 
 namespace ECO.WebApi.Application.Identity.Tokens;
 
 /// <summary>
 /// Request DTO để login và lấy tokens
 /// </summary>
-public class TokenRequest : IRequest<TokenResponse>
-{
-    /// <summary>
-    /// User email
-    /// </summary>
-    public string Email { get; set; } = default!;
+public record TokenRequest(string Email, string Password);
 
-    /// <summary>
-    /// User password
-    /// </summary>
-    public string Password { get; set; } = default!;
-}
-
-/// <summary>
-/// Validator cho TokenRequest
-/// </summary>
 public class TokenRequestValidator : AbstractValidator<TokenRequest>
 {
     public TokenRequestValidator()
     {
-        RuleFor(x => x.Email)
-    .NotEmpty().WithMessage("Email is required.")
-            .EmailAddress().WithMessage("Invalid email format.");
+        RuleFor(p => p.Email).Cascade(CascadeMode.Stop)
+            .NotEmpty()
+            .EmailAddress()
+                .WithMessage("Invalid Email Address.");
 
-        RuleFor(x => x.Password)
-        .NotEmpty().WithMessage("Password is required.");
+        RuleFor(p => p.Password).Cascade(CascadeMode.Stop)
+            .NotEmpty();
     }
 }
 ```
+
+**Giải thích:**
+
+**1. Record Type:**
+- ✅ Dùng `record` thay vì `class` - immutable by default
+- ✅ Positional syntax: `TokenRequest(string Email, string Password)`
+- ✅ Auto-generated properties, Equals, GetHashCode, ToString
+- ✅ Perfect cho DTOs - no business logic, just data
+
+**2. Validator:**
+- ✅ Inherit từ `AbstractValidator<TokenRequest>` (FluentValidation base class)
+- ✅ `Cascade(CascadeMode.Stop)` - dừng validation nếu rule đầu fail
+- ✅ `NotEmpty()` check trước `EmailAddress()` - tránh null reference
+
+**Tại sao Cascade(CascadeMode.Stop):**
+- Nếu Email null/empty → không cần check EmailAddress() nữa
+- Giảm unnecessary validation calls
+- Clear error messages (chỉ 1 lỗi đầu tiên)
 
 **Giải thích:**
 - Simple request: Email + Password
@@ -322,32 +418,32 @@ public class TokenRequestValidator : AbstractValidator<TokenRequest>
 ```csharp
 namespace ECO.WebApi.Application.Identity.Tokens;
 
+namespace ECO.WebApi.Application.Identity.Tokens;
+
 /// <summary>
 /// Response DTO chứa access token và refresh token
 /// </summary>
-public class TokenResponse
-{
-    /// <summary>
- /// JWT access token (dùng cho Authorization header)
-    /// </summary>
-    public string Token { get; set; } = default!;
-
-    /// <summary>
-    /// Refresh token (dùng để renew access token)
-    /// </summary>
-    public string RefreshToken { get; set; } = default!;
-
-    /// <summary>
-    /// Refresh token expiry time (UTC)
-    /// </summary>
-  public DateTime RefreshTokenExpiryTime { get; set; }
-}
+public record TokenResponse(string accessToken, string refreshToken, DateTime RefreshTokenExpiryTime);
 ```
 
 **Giải thích:**
-- `Token`: Access token - dùng trong Authorization header
-- `RefreshToken`: Refresh token - dùng để renew khi access token expired
-- `RefreshTokenExpiryTime`: Client biết khi nào cần refresh
+
+**Record with Positional Parameters:**
+- ✅ `record TokenResponse(...)` - immutable, concise
+- ✅ Parameters: `accessToken`, `refreshToken`, `RefreshTokenExpiryTime`
+- ✅ Lowercase parameter names (camelCase) - auto-generated properties vẫn là PascalCase
+- ✅ No need explicit properties - compiler generates them
+
+**Properties Generated:**
+- `public string accessToken { get; init; }`
+- `public string refreshToken { get; init; }`
+- `public DateTime RefreshTokenExpiryTime { get; init; }`
+
+**Why record:**
+- Perfect for response DTOs - data container only
+- Value equality by default
+- Immutable - cannot change after creation
+- Deconstruction support
 
 ---
 
@@ -358,45 +454,27 @@ public class TokenResponse
 **File:** `src/Core/Application/Identity/Tokens/RefreshTokenRequest.cs`
 
 ```csharp
-using FluentValidation;
-using MediatR;
+
 
 namespace ECO.WebApi.Application.Identity.Tokens;
 
 /// <summary>
 /// Request DTO để refresh access token
 /// </summary>
-public class RefreshTokenRequest : IRequest<TokenResponse>
-{
-    /// <summary>
-    /// Expired access token
-    /// </summary>
-    public string Token { get; set; } = default!;
-
-    /// <summary>
-    /// Valid refresh token
-    /// </summary>
-    public string RefreshToken { get; set; } = default!;
-}
-
-/// <summary>
-/// Validator cho RefreshTokenRequest
-/// </summary>
-public class RefreshTokenRequestValidator : AbstractValidator<RefreshTokenRequest>
-{
-    public RefreshTokenRequestValidator()
-    {
-   RuleFor(x => x.Token)
-    .NotEmpty().WithMessage("Token is required.");
-
-        RuleFor(x => x.RefreshToken)
-    .NotEmpty().WithMessage("Refresh token is required.");
- }
-}
+public record RefreshTokenRequest(string Token, string RefreshToken);
 ```
 
 **Giải thích:**
-- Client gửi cả access token (expired) và refresh token
+
+**Record with Positional Parameters:**
+- ✅ `record RefreshTokenRequest(string Token, string RefreshToken)` 
+- ✅ `Token`: Expired access token (cần để validate user identity)
+- ✅ `RefreshToken`: Valid refresh token (để verify request hợp lệ)
+
+**No Validator:**
+- Không cần validator riêng cho RefreshTokenRequest
+- Validation được thực hiện trong TokenService.RefreshTokenAsync()
+- Check: token valid format, refresh token exists, not expired, not revoked
 - Server validate refresh token
 - Generate new tokens nếu refresh token valid
 
@@ -408,16 +486,21 @@ public class RefreshTokenRequestValidator : AbstractValidator<RefreshTokenReques
 
 **Làm gì:** Implement TokenService với JWT generation và validation.
 
-**Tại sao:** Core logic để generate secure JWT tokens với claims.
+**Tại sao:** Technical implementation - pure infrastructure concerns.
 
-**File:** `src/Infrastructure/Infrastructure/Auth/Jwt/TokenService.cs`
+**File:** `src/Infrastructure/Infrastructure/Identity/TokenService.cs`
+
+> [!IMPORTANT]
+> **Clean Architecture Approach (Recommended)**
+> 
+> Docs này follow Clean Architecture principles - business validation nằm ở Handler layer.
+> Actual code hiện tại có business logic trong Service (pragmatic approach).
+> Docs này là recommended best practice để tách rời concerns properly.
 
 ```csharp
-using ECO.WebApi.Application.Common.Exceptions;
-using ECO.WebApi.Application.Common.Interfaces;
 using ECO.WebApi.Application.Identity.Tokens;
 using ECO.WebApi.Domain.Identity;
-using ECO.WebApi.Shared.Authorization;
+using ECO.WebApi.Infrastructure.Auth.Jwt;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -425,237 +508,265 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using ECO.WebApi.Shared.Authorization;
 
-namespace ECO.WebApi.Infrastructure.Auth.Jwt;
+namespace ECO.WebApi.Infrastructure.Identity;
 
 /// <summary>
 /// Implementation của ITokenService
-/// Generate và validate JWT tokens
+/// PURE technical implementation - NO business validation
 /// </summary>
-public class TokenService : ITokenService
+internal class TokenService : ITokenService
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly JwtSettings _jwtSettings;
 
     public TokenService(
-     UserManager<ApplicationUser> userManager,
-  IOptions<JwtSettings> jwtSettings)
+        UserManager<ApplicationUser> userManager,
+        IOptions<JwtSettings> jwtSettings)
     {
-    _userManager = userManager;
+        _userManager = userManager;
         _jwtSettings = jwtSettings.Value;
     }
 
     /// <summary>
-    /// Generate access token và refresh token
+    /// Generate tokens and update user in database
+    /// Called by Handler AFTER business validation
     /// </summary>
-    public async Task<TokenResponse> GetTokenAsync(
-      string userId,
-        string email,
-        IList<string> roles,
-   IList<string>? permissions = null)
+    public async Task<TokenResponse> GenerateTokensAndUpdateUser(ApplicationUser user, string ipAddress)
     {
-   // 1. Lấy user từ database
-        var user = await _userManager.FindByIdAsync(userId)
-            ?? throw new NotFoundException($"User with ID {userId} not found.");
+        // 1. Generate JWT access token
+        string token = GenerateJwt(user, ipAddress);
 
-        // 2. Generate access token
-        var token = GenerateJwt(user, roles, permissions);
+        // 2. Generate refresh token
+        user.RefreshToken = GenerateRefreshToken();
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationInDays);
 
-        // 3. Generate refresh token
-     var refreshToken = GenerateRefreshToken();
-        var refreshTokenExpiryTime = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationInDays);
-
-        // 4. Save refresh token vào database
-      user.RefreshToken = refreshToken;
-        user.RefreshTokenExpiryTime = refreshTokenExpiryTime;
+        // 3. Save to database
         await _userManager.UpdateAsync(user);
 
-        // 5. Return token response
-        return new TokenResponse
-        {
-     Token = token,
-        RefreshToken = refreshToken,
-            RefreshTokenExpiryTime = refreshTokenExpiryTime
-};
+        // 4. Return response (record constructor)
+        return new TokenResponse(token, user.RefreshToken, user.RefreshTokenExpiryTime);
     }
 
     /// <summary>
-    /// Refresh access token
+    /// Refresh tokens using valid refresh token
     /// </summary>
-    public async Task<TokenResponse> RefreshTokenAsync(RefreshTokenRequest request)
+    public async Task<TokenResponse> RefreshTokenAsync(RefreshTokenRequest request, string ipAddress)
     {
-        // 1. Validate access token (allow expired)
-   var userPrincipal = GetPrincipalFromExpiredToken(request.Token);
- var userId = userPrincipal.FindFirstValue(ClaimTypes.NameIdentifier)
-         ?? throw new UnauthorizedException("Invalid token.");
-
-        // 2. Lấy user từ database
- var user = await _userManager.FindByIdAsync(userId)
-            ?? throw new NotFoundException($"User with ID {userId} not found.");
-
-  // 3. Validate refresh token
-        if (user.RefreshToken != request.RefreshToken)
-            throw new UnauthorizedException("Invalid refresh token.");
-
-        if (user.RefreshTokenExpiryTime <= DateTime.UtcNow)
-            throw new UnauthorizedException("Refresh token has expired.");
-
-        // 4. Generate new tokens
-        var roles = await _userManager.GetRolesAsync(user);
-        var permissions = await GetPermissionsAsync(user);
-
-        return await GetTokenAsync(user.Id.ToString(), user.Email!, roles, permissions);
-    }
-
-    /// <summary>
-    /// Generate JWT access token
-    /// </summary>
-    private string GenerateJwt(ApplicationUser user, IList<string> roles, IList<string>? permissions)
-    {
-    // 1. Create claims
-        var claims = new List<Claim>
+        // 1. Extract user email from expired token (allow expired)
+        var userPrincipal = GetPrincipalFromExpiredToken(request.Token);
+        string? userEmail = userPrincipal.GetEmail();
+        
+        // 2. Find user
+        var user = await _userManager.FindByEmailAsync(userEmail!);
+        if (user == null)
         {
- new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Email, user.Email!),
-        new(ClaimTypes.Name, user.FirstName ?? string.Empty),
-   new(ClaimTypes.Surname, user.LastName ?? string.Empty),
-  new(ECOClaims.Fullname, $"{user.FirstName} {user.LastName}"),
-   new(ECOClaims.ImageUrl, user.ImageUrl ?? string.Empty),
-   new(ECOClaims.Expiration, DateTime.UtcNow.AddMinutes(_jwtSettings.TokenExpirationInMinutes).ToUnixTimeSeconds().ToString())
-        };
-
-        // 2. Add roles vào claims
-        foreach (var role in roles)
- {
-            claims.Add(new Claim(ClaimTypes.Role, role));
+            throw new UnauthorizedException("Authentication Failed.");
         }
 
-        // 3. Add permissions vào claims
-      if (permissions != null)
- {
-          foreach (var permission in permissions)
-       {
-       claims.Add(new Claim(ECOClaims.Permission, permission));
-       }
- }
+        // 3. Validate refresh token
+        if (user.RefreshToken != request.RefreshToken || 
+            user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+        {
+            throw new UnauthorizedException("Invalid Refresh Token.");
+        }
 
-        // 4. Create signing credentials
-        var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
-        var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
-
-        // 5. Create JWT token
-  var jwtSecurityToken = new JwtSecurityToken(
-    claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_jwtSettings.TokenExpirationInMinutes),
-            signingCredentials: signingCredentials);
-
-    // 6. Return token string
-        return new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
+        // 4. Generate new tokens
+        return await GenerateTokensAndUpdateUser(user, ipAddress);
     }
 
     /// <summary>
-    /// Generate random refresh token
+    /// Generate JWT with claims - Expression-bodied member
     /// </summary>
- private static string GenerateRefreshToken()
+    private string GenerateJwt(ApplicationUser user, string ipAddress) =>
+        GenerateEncryptedToken(GetSigningCredentials(), GetClaims(user, ipAddress));
+
+    /// <summary>
+    /// Build claims list - Expression-bodied member
+    /// </summary>
+    private IEnumerable<Claim> GetClaims(ApplicationUser user, string ipAddress) =>
+        new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user.Id),
+            new(ClaimTypes.Email, user.Email!),
+            new(ECOClaims.Fullname, $"{user.FirstName} {user.LastName}"),
+            new(ClaimTypes.Name, user.FirstName ?? string.Empty),
+            new(ClaimTypes.Surname, user.LastName ?? string.Empty),
+            new(ECOClaims.IpAddress, ipAddress),
+            new(ECOClaims.ImageUrl, user.ImageUrl ?? string.Empty),
+            new(ClaimTypes.MobilePhone, user.PhoneNumber ?? string.Empty)
+        };
+
+    /// <summary>
+    /// Generate cryptographically secure refresh token
+    /// </summary>
+    private static string GenerateRefreshToken()
     {
-     var randomNumber = new byte[32];
-    using var rng = RandomNumberGenerator.Create();
-  rng.GetBytes(randomNumber);
+        byte[] randomNumber = new byte[32];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
         return Convert.ToBase64String(randomNumber);
     }
 
     /// <summary>
-    /// Get principal từ expired token
+    /// Generate encrypted JWT token
+    /// </summary>
+    private string GenerateEncryptedToken(SigningCredentials signingCredentials, IEnumerable<Claim> claims)
+    {
+        var token = new JwtSecurityToken(
+           claims: claims,
+           expires: DateTime.UtcNow.AddMinutes(_jwtSettings.TokenExpirationInMinutes),
+           signingCredentials: signingCredentials);
+        var tokenHandler = new JwtSecurityTokenHandler();
+        return tokenHandler.WriteToken(token);
+    }
+
+    /// <summary>
+    /// Validate expired token and extract claims principal
     /// </summary>
     private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
     {
         var tokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key)),
-       ValidateIssuer = false,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key)),
+            ValidateIssuer = false,
             ValidateAudience = false,
-    ValidateLifetime = false // Allow expired tokens
+            RoleClaimType = ClaimTypes.Role,
+            ClockSkew = TimeSpan.Zero,
+            ValidateLifetime = false // Allow expired tokens for refresh
         };
-
+        
         var tokenHandler = new JwtSecurityTokenHandler();
         var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var securityToken);
-
+        
         if (securityToken is not JwtSecurityToken jwtSecurityToken ||
-       !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
- {
-            throw new UnauthorizedException("Invalid token.");
-    }
+            !jwtSecurityToken.Header.Alg.Equals(
+                SecurityAlgorithms.HmacSha256,
+                StringComparison.InvariantCultureIgnoreCase))
+        {
+            throw new UnauthorizedException("Invalid Token.");
+        }
 
         return principal;
     }
 
     /// <summary>
-    /// Get user permissions từ roles
+    /// Create signing credentials for JWT
     /// </summary>
-    private async Task<List<string>> GetPermissionsAsync(ApplicationUser user)
+    private SigningCredentials GetSigningCredentials()
     {
-      var permissions = new List<string>();
-        var roles = await _userManager.GetRolesAsync(user);
-
-        foreach (var roleName in roles)
-        {
-            var role = await _userManager.Users
-  .SelectMany(u => u.UserRoles)
-         .Where(ur => ur.Role.Name == roleName)
-            .Select(ur => ur.Role)
-          .FirstOrDefaultAsync();
-
-   if (role?.RoleClaims != null)
-        {
-         permissions.AddRange(
-       role.RoleClaims
-                 .Where(rc => rc.ClaimType == ECOClaims.Permission)
-            .Select(rc => rc.ClaimValue!)
-     );
-            }
-        }
-
-        return permissions.Distinct().ToList();
+        byte[] secret = Encoding.UTF8.GetBytes(_jwtSettings.Key);
+        return new SigningCredentials(new SymmetricSecurityKey(secret), SecurityAlgorithms.HmacSha256);
     }
 }
 ```
 
-**Giải thích chi tiết:**
+**Giải thích Clean Architecture Approach:**
 
-**GetTokenAsync Flow:**
-1. Lấy user từ database
-2. Generate JWT với claims (UserId, Email, Roles, Permissions)
-3. Generate random refresh token
-4. Save refresh token + expiry vào database
-5. Return TokenResponse
+**1. NO Business Validation:**
+- ✅ KHÔNG check email/password (Handler's job)
+- ✅ KHÔNG check IsActive (Handler's job)
+- ✅ KHÔNG check EmailConfirmed (Handler's job)
+- ✅ CHỈ technical: generate JWT, hash, database operations
 
-**JWT Claims:**
-- `NameIdentifier`: User ID (Guid)
-- `Email`: User email
-- `Name`: First name
-- `Surname`: Last name
-- `Fullname`: Full name (custom claim)
-- `Role`: User roles (multiple claims)
-- `Permission`: User permissions (multiple claims)
+**2. Public Methods:**
 
-**RefreshTokenAsync Flow:**
-1. Validate access token (allow expired)
-2. Extract UserId từ token
-3. Validate refresh token trong database
-4. Check expiry time
-5. Generate new tokens
+**GenerateTokensAndUpdateUser(user, ipAddress):**
+- Assume user đã được validate bởi Handler
+- Generate JWT với user claims
+- Generate refresh token (crypto secure)
+- Save refresh token to database
+- Return TokenResponse
 
-**Security:**
-- Refresh token: Random 32 bytes, Base64 encoded
-- JWT signed với HmacSha256
-- Refresh token stored trong database (not in JWT)
+**RefreshTokenAsync(request, ipAddress):**
+- Extract user từ expired token
+- Validate refresh token (technical validation)
+- Generate new tokens
 
-**Tại sao design này:**
-- Access token stateless (no database lookup)
-- Refresh token stateful (database validation)
-- Short-lived access token (security)
-- Long-lived refresh token (UX)
+**3. Private Technical Methods:**
+
+**GenerateJwt:** Expression-bodied member
+- Compose: GetSigningCredentials + GetClaims + GenerateEncryptedToken
+- Pure function - no side effects
+
+**GetClaims:** Expression-bodied member  
+- Build claims list from user properties
+- Include ipAddress for audit
+- No roles/permissions (added later by middleware)
+
+**GenerateRefreshToken:** Static method
+- Cryptographically secure random 32 bytes
+- Base64 encoded
+- Stateless - no dependencies
+
+**GetSigningCredentials:**
+- Create HMACSHA256 signing key
+- From JwtSettings.Key
+
+**GetPrincipalFromExpiredToken:**
+- Allow expired tokens (for refresh flow)
+- Validate signature still valid
+- Extract ClaimsPrincipal
+
+**4. Architecture Benefits:**
+
+| Concern | Location | Responsibility |
+|---------|----------|----------------|
+| **Business Rules** | Handler | User validation, authorization |
+| **Technical Implementation** | Service | JWT generation, crypto, DB |
+| **HTTP Context** | Handler | IP address, request info |
+| **Configuration** | Service | JwtSettings |
+
+**5. Dependency Injection:**
+- ✅ `UserManager<ApplicationUser>` - for DB operations only
+- ✅ `IOptions<JwtSettings>` - configuration
+- ❌ REMOVED `SecuritySettings` - business concern, belongs in Handler
+
+**6. Why Expression-Bodied Members:**
+```csharp
+// Clean, functional style
+private string GenerateJwt(ApplicationUser user, string ipAddress) =>
+    GenerateEncryptedToken(GetSigningCredentials(), GetClaims(user, ipAddress));
+```
+- More concise than method body
+- Shows intent: pure transformation
+- Better readability for simple methods
+
+**7. Claims Structure:**
+- User identity: NameIdentifier, Email, Name, Surname
+- Custom claims: Fullname, IpAddress, ImageUrl, MobilePhone
+- NO Roles/Permissions here (added by authentication middleware later)
+
+**8. Security:**
+- Refresh token: 32 random bytes (256 bits entropy)
+- JWT signature: HMACSHA256
+- Token validation: strict algorithm check
+- ClockSkew: Zero for refresh flow
+
+**Comparison với Actual Code:**
+
+| Aspect | Actual Code (Pragmatic) | Docs (Clean Architecture) |
+|--------|-------------------------|---------------------------|
+| Business validation | In Service | In Handler |
+| SecuritySettings | Injected in Service | Only in Handler |
+| GetTokenAsync signature | (TokenRequest, ipAddress, ct) | Removed - use GenerateTokensAndUpdateUser |
+| Separation | Mixed concerns | Pure separation |
+| Testability | Harder - infrastructure tests | Easy - unit test technical logic |
+
+**Khi nào dùng approach nào:**
+
+**Actual Code (Pragmatic):**
+- ✅ Small/Medium projects
+- ✅ Rapid development
+- ✅ Less boilerplate
+
+**Docs Approach (Clean Architecture):**
+- ✅ Large/Enterprise projects
+- ✅ Long-term maintainability
+- ✅ Proper separation of concerns
+- ✅ Easy to test each layer independently
 
 ---
 
@@ -663,16 +774,31 @@ public class TokenService : ITokenService
 
 ### Bước 7.1: GetTokenHandler
 
-**Làm gì:** Handler để xử lý login request.
+**Làm gì:** Handler để xử lý login request với business validation.
+
+**Tại sao:** Business orchestration layer - validate credentials, check business rules, delegate to Service.
 
 **File:** `src/Core/Application/Identity/Tokens/GetTokenHandler.cs`
 
+> [!IMPORTANT]
+> **Handler Responsibilities (Clean Architecture)**
+> 
+> Handler chứa ALL business validation logic:
+> - Find user by email (normalize)
+> - Check password
+> - Validate user status (IsActive, EmailConfirmed)
+> - Get IP address from HTTP context
+> - Delegate technical work to TokenService
+
 ```csharp
 using ECO.WebApi.Application.Common.Exceptions;
-using ECO.WebApi.Application.Common.Interfaces;
+using ECO.WebApi.Application.Identity.Tokens;
 using ECO.WebApi.Domain.Identity;
+using ECO.WebApi.Infrastructure.Auth;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 
 namespace ECO.WebApi.Application.Identity.Tokens;
 
@@ -682,73 +808,144 @@ namespace ECO.WebApi.Application.Identity.Tokens;
 public class GetTokenHandler : IRequestHandler<TokenRequest, TokenResponse>
 {
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly ITokenService _tokenService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly SecuritySettings _securitySettings;
 
     public GetTokenHandler(
-     UserManager<ApplicationUser> userManager,
-        SignInManager<ApplicationUser> signInManager,
-        ITokenService tokenService)
+        UserManager<ApplicationUser> userManager,
+        ITokenService tokenService,
+        IHttpContextAccessor httpContextAccessor,
+        IOptions<SecuritySettings> securitySettings)
     {
-      _userManager = userManager;
-  _signInManager = signInManager;
-     _tokenService = tokenService;
+        _userManager = userManager;
+        _tokenService = tokenService;
+        _httpContextAccessor = httpContextAccessor;
+        _securitySettings = securitySettings.Value;
     }
 
     public async Task<TokenResponse> Handle(TokenRequest request, CancellationToken cancellationToken)
     {
-        // 1. Tìm user theo email
-        var user = await _userManager.FindByEmailAsync(request.Email);
-        if (user == null)
-    {
-            throw new UnauthorizedException("Invalid email or password.");
+        // 1. Find user and validate credentials
+        var user = await _userManager.FindByEmailAsync(request.Email.Trim().Normalize());
+        if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
+        {
+            throw new UnauthorizedException("Authentication Failed.");
         }
 
-        // 2. Check user active
+        // 2. Validate user status (business rules)
         if (!user.IsActive)
         {
-     throw new UnauthorizedException("User is not active. Please contact administrator.");
-    }
-
-        // 3. Validate password
-        var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
-        
-      if (result.IsLockedOut)
-   {
-        throw new UnauthorizedException("User account is locked out.");
-   }
-
-        if (!result.Succeeded)
-        {
-       throw new UnauthorizedException("Invalid email or password.");
+            throw new UnauthorizedException("User Not Active. Please contact the administrator.");
         }
 
-        // 4. Generate tokens
-        var roles = await _userManager.GetRolesAsync(user);
-        
-        return await _tokenService.GetTokenAsync(
-            user.Id.ToString(),
- user.Email!,
-            roles);
+        if (_securitySettings.RequireConfirmedAccount && !user.EmailConfirmed)
+        {
+            throw new UnauthorizedException("E-Mail not confirmed.");
+        }
+
+        // 3. Get client IP address
+        var forwardedFor = _httpContextAccessor.HttpContext?.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        string ipAddress = !string.IsNullOrEmpty(forwardedFor)
+            ? forwardedFor.Split(',')[0].Trim()
+            : _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+
+        // 4. Delegate technical work to service
+        return await _tokenService.GenerateTokensAndUpdateUser(user, ipAddress);
     }
 }
 ```
 
 **Giải thích:**
 
-**Security checks:**
-1. User tồn tại?
-2. User active?
-3. Password đúng?
-4. Account bị lock?
+**1. Dependencies:**
+- `UserManager<ApplicationUser>` - business validation (find user, check password)
+- `ITokenService` - technical delegation
+- `IHttpContextAccessor` - HTTP context (IP address)
+- `SecuritySettings` - business configuration
 
-**Error Messages:**
-- Generic message "Invalid email or password" (không expose thông tin)
-- Specific message cho locked/inactive (để user biết)
+**2. Handle Method - Inline Logic (YAGNI):**
 
-**Lockout:**
-- `lockoutOnFailure: true` → lock account sau N failed attempts
-- Security feature của ASP.NET Identity
+Không cần chia method nếu chỉ dùng 1 lần! Đơn giản hơn, dễ đọc hơn.
+
+**Step 1: Validate Credentials**
+- Find user: `FindByEmailAsync(email.Trim().Normalize())`
+- Check password: `CheckPasswordAsync(user, password)`
+- Generic error: "Authentication Failed" (security - không reveal user exists)
+
+**Step 2: Business Rules**
+- `user.IsActive` check - admin có thể deactivate user
+- `EmailConfirmed` check - nếu `SecuritySettings.RequireConfirmedAccount = true`
+
+**Step 3: IP Address**
+- Priority 1: `X-Forwarded-For` header (behind proxy/load balancer)
+- Priority 2: `RemoteIpAddress` (direct connection)
+- Fallback: "Unknown"
+
+**Step 4: Delegate**
+- Call `TokenService.GenerateTokensAndUpdateUser(user, ipAddress)`
+- Service handles JWT generation, crypto, DB
+
+**3. Why NO Private Methods:**
+
+❌ **Over-engineering:**
+```csharp
+private async Task<ApplicationUser> ValidateCredentials(...)
+private void ValidateUserStatus(...)
+private string GetClientIpAddress(...)
+```
+
+✅ **YAGNI - Inline:**
+```csharp
+public async Task<TokenResponse> Handle(...)
+{
+    // All logic here - clear, sequential, readable
+}
+```
+
+**Benefits:**
+- Easier to read - no jumping between methods
+- Clear flow - sequential steps
+- Less code - no unnecessary abstractions
+- Still testable - mock dependencies
+
+**4. When to Extract Private Method:**
+
+Extract if:
+- ✅ Called multiple times
+- ✅ Complex algorithm (5+ lines of business logic)
+- ✅ Needs separate unit tests
+
+Don't extract if:
+- ❌ Only called once
+- ❌ Simple validation (1-3 lines)
+- ❌ Just for "clean code" sake
+
+**5. Architecture Benefits:**
+
+| Concern | Handler | Service |
+|---------|---------|---------|
+| Find user | ✅ | - |
+| Check password | ✅ | - |
+| IsActive check | ✅ | - |
+| EmailConfirmed check | ✅ | - |
+| IP address | ✅ | - |
+| Generate JWT | - | ✅ |
+| Crypto | - | ✅ |
+| Database | - | ✅ |
+
+**6. Error Messages:**
+
+| Error | Message |
+|-------|---------|
+| User not found / wrong password | "Authentication Failed." |
+| User not active | "User Not Active. Please contact..." |
+| Email not confirmed | "E-Mail not confirmed." |
+
+**7. Security:**
+- Generic message for invalid credentials
+- Prevent user enumeration attacks
+- Don't reveal if user exists or password wrong
 
 ---
 

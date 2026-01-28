@@ -4,6 +4,146 @@
 
 ---
 
+## 🤖 AI Generation Metadata (NEW - Required for All Docs)
+
+> 🎯 **Purpose**: Mỗi module documentation PHẢI có metadata section này ở đầu file để AI agent hiểu context và generate code chính xác.
+
+### **Metadata Format**
+
+Đặt section này **ngay sau header** của mỗi BUILD_XX file:
+
+```yaml
+---
+ai_metadata:
+  # Who created/generated this doc
+  generated_by: "human" | "ai_assisted" | "ai_generated"
+  
+  # Who reviewed and approved
+  reviewed_by: "vuongnv1206"
+  
+  # Last update date
+  last_updated: "2026-01-28"
+  
+  # Which layer this module belongs to
+  layer: "Application" | "Infrastructure" | "Domain" | "Host" | "Shared"
+  
+  # Design patterns used in this module
+  patterns_used:
+    - "Repository Pattern"
+    - "CQRS with MediatR"
+    - "Specification Pattern"
+    - "Domain Events"
+  
+  # Which BUILD_XX steps this module depends on
+  dependencies:
+    - "BUILD_01_Solution_Setup"
+    - "BUILD_04_Application_Layer"
+    - "BUILD_09_Domain_Base_Entities"
+  
+  # Specific instructions for AI when generating code for this module
+  ai_instructions: |
+    When generating code for this module:
+    1. Follow Clean Architecture strictly
+    2. Use Marker Interfaces for dependency injection
+    3. All requests must have FluentValidation validators
+    4. Include full XML documentation
+    5. Return DTOs from queries, not entities
+    6. Commands return Guid (entity ID)
+---
+```
+
+### **Real Example - Product CRUD Module**
+
+```yaml
+---
+ai_metadata:
+  generated_by: "ai_assisted"
+  reviewed_by: "vuongnv1206"
+  last_updated: "2026-01-28"
+  layer: "Application"
+  patterns_used:
+    - "CQRS with MediatR"
+    - "FluentValidation"
+    - "Specification Pattern"
+    - "Repository Pattern"
+  dependencies:
+    - "BUILD_01_Solution_Setup"
+    - "BUILD_03_Domain_Layer"
+    - "BUILD_04_Application_Layer"
+    - "BUILD_09_Domain_Base_Entities"
+    - "BUILD_11_Repository_Pattern"
+  ai_instructions: |
+    For Product CRUD generation:
+    - Entity location: Domain/Catalog/Product.cs
+    - Use ProductDto for all responses
+    - CreateProductRequest returns Guid (new product ID)
+    - UpdateProductRequest returns Guid
+    - SearchProductsRequest returns PaginatedResult<ProductDto>
+    - All requests must validate CategoryId exists
+    - Use Specification Pattern for search queries
+    - Include [MustHavePermission] on all endpoints
+    - Controller route: api/catalog/products
+---
+```
+
+### **Why This Matters**
+
+**For AI Agents:**
+- ✅ Know which layer to place generated files
+- ✅ Understand patterns to apply
+- ✅ Follow specific naming/routing conventions
+- ✅ Check dependencies before generating
+- ✅ Apply correct validation rules
+
+**For Developers:**
+- ✅ Quick overview of module context
+- ✅ See design patterns used
+- ✅ Understand dependencies
+- ✅ Know who to ask for questions
+
+**For Documentation:**
+- ✅ Track who created/reviewed
+- ✅ Maintain consistency
+- ✅ Enable better search/filtering
+- ✅ Support automated doc generation
+
+### **Field Descriptions**
+
+| Field | Values | Purpose |
+|-------|--------|---------|
+| `generated_by` | human, ai_assisted, ai_generated | Track creation method |
+| `reviewed_by` | Name/username | Track reviewer |
+| `last_updated` | YYYY-MM-DD | Track freshness |
+| `layer` | Application, Infrastructure, Domain, Host, Shared | Target layer |
+| `patterns_used` | Array of pattern names | Design patterns |
+| `dependencies` | Array of BUILD_XX | Required steps |
+| `ai_instructions` | Freeform text | Specific generation rules |
+
+### **Template for New Docs**
+
+Copy this into new BUILD_XX files:
+
+```yaml
+---
+ai_metadata:
+  generated_by: "human"
+  reviewed_by: "vuongnv1206"
+  last_updated: "YYYY-MM-DD"
+  layer: "Application"
+  patterns_used:
+    - "Pattern 1"
+    - "Pattern 2"
+  dependencies:
+    - "BUILD_XX"
+  ai_instructions: |
+    Specific instructions here:
+    - Rule 1
+    - Rule 2
+---
+```
+
+---
+
 ## 📖 Nguyên tắc Viết Docs
 
 ### **1. Self-Contained (Tự đủ)**
@@ -34,23 +174,63 @@
 ## 📖 Cấu trúc chuẩn cho mỗi Module Doc
 
 ### **Header Section**
+
+**Template:**
 ```markdown
 # [Module Name] - [Short Description]
 
 > 📚 [Quay lại Mục lục](BUILD_INDEX.md)  
 > 📋 **Prerequisites:** [Bước trước đó phải hoàn thành]
 
+---
+ai_metadata:
+  generated_by: "human"
+  reviewed_by: "vuongnv1206"
+  last_updated: "YYYY-MM-DD"
+  layer: "Application"
+  patterns_used:
+    - "Pattern 1"
+  dependencies:
+    - "BUILD_XX"
+  ai_instructions: |
+    Specific instructions...
+---
+
 Tài liệu này hướng dẫn xây dựng [Module Name] - [Purpose].
 
 ---
 ```
 
-**Ví dụ:**
+**Ví dụ thực tế:**
 ```markdown
 # Repository Pattern và Specification
 
 > 📚 [Quay lại Mục lục](BUILD_INDEX.md)  
 > 📋 **Prerequisites:** Bước 10 (Service Registration) đã hoàn thành
+
+---
+ai_metadata:
+  generated_by: "human"
+  reviewed_by: "vuongnv1206"
+  last_updated: "2026-01-28"
+  layer: "Application"
+  patterns_used:
+    - "Repository Pattern"
+    - "Specification Pattern"
+    - "Decorator Pattern"
+  dependencies:
+    - "BUILD_04_Application_Layer"
+    - "BUILD_05_Infrastructure_Layer"
+    - "BUILD_09_Domain_Base_Entities"
+    - "BUILD_10_Service_Registration"
+  ai_instructions: |
+    When generating repository code:
+    - IRepository<T> goes in Application layer
+    - ApplicationDbRepository<T> goes in Infrastructure
+    - T must implement IAggregateRoot
+    - Always use Specification pattern for queries
+    - Include EventAddingRepositoryDecorator
+---
 
 Tài liệu này hướng dẫn về Repository Pattern với Ardalis.Specification và Domain Events.
 
