@@ -1,504 +1,801 @@
-# BUILD_16C: Function Service
+﻿# Function Management Service - Function CRUD & Action Assignment
 
-> 📘 **Mục đích:** Xây dựng Function Management Service - quản lý Functions (Permission modules) và Actions.
+> 📚 [Quay lại Mục lục](BUILD_INDEX.md)  
+> 📋 **Prerequisites:** Bước 16B (Role Service) đã hoàn thành
 
-> [!NOTE]
-> **Part of BUILD_16 Identity Services Series**
-> 
-> - BUILD_16A: User Service
-> - BUILD_16B: Role Service
-> - **BUILD_16C (This file):** Function Service
+Tài liệu này hướng dẫn xây dựng Function Management Service - Quản lý Functions và Actions assignments.
 
 ---
 
-## 🤖 AI Generation Metadata
+## 1. Overview
 
-```yaml
----
-ai_metadata:
-  generated_by: "ai_assisted"
-  reviewed_by: "vuongnv1206"
-  last_updated: "2026-01-28"
-  layer: "Application + Infrastructure"
-  patterns_used:
-    - "Service Layer Pattern"
-    - "FluentValidation"
-    - "DTO Pattern"
-    - "Repository Pattern"
-  dependencies:
-    - "BUILD_01_Solution_Setup"
-    - "BUILD_03_Domain_Layer"
-    - "BUILD_04_Application_Layer"
-    - "BUILD_07_Database_Initialization"
-    - "BUILD_11_Repository_Pattern"
-    - "BUILD_16A_User_Service"
-    - "BUILD_16B_Role_Service"
-  ai_instructions: |
-    When working with Function Service:
-    1. Function = Permission module (e.g., "Users", "Products", "Orders")
-    2. Each Function has multiple Actions (e.g., "Read", "Write", "Delete")
-    3. Functions are domain entities (not Identity framework)
-    4. Use Repository pattern for data access
-    5. Simple service - only 4 methods
----
+**Làm gì:** Xây dựng Function Management Service để quản lý Functions (modules/features) và assign Actions to Functions.
+
+**Tại sao cần:**
+- **Function Management:** CRUD operations cho Functions (modules như Users, Products, Orders)
+- **Action Assignment:** Assign Actions (View, Create, Update, Delete) to Functions
+- **Permission System Foundation:** Functions + Actions = Permissions basis
+- **Dynamic Authorization:** Add new modules/features without code changes
+- **Complete Permission Triangle:** Function + Action + Role = Permission
+
+**Trong bước này chúng ta sẽ:**
+- ✅ Tạo IFunctionService interface
+- ✅ Tạo Function DTOs (FunctionDto, CreateOrUpdateFunctionRequest)
+- ✅ Implement FunctionService với các operations:
+  - Get functions list với actions
+  - Get function details
+  - Create/Update functions với action assignments
+  - Delete functions
+- ✅ Complete RoleController với function endpoints
+- ✅ Understand Permission System architecture
+
+**Real-world example:**
+```csharp
+// Admin creates new function (module)
+var createRequest = new CreateOrUpdateFunctionRequest
+{
+    Name = "Orders",
+    ActionIds = new List<Guid>
+    {
+        viewActionId,
+  createActionId,
+        updateActionId,
+        deleteActionId
+    }
+};
+
+var functionId = await _functionService.CreateOrUpdateAsync(createRequest);
+// → Returns function ID
+
+// Admin gets function với actions
+var function = await _functionService.GetByIdAsync(functionId);
+// → Returns FunctionDto with ActionDtos
+
+// Permission System Flow:
+// 1. Define Functions (Users, Products, Orders)
+// 2. Assign Actions to Functions (View, Create, Update, Delete)
+// 3. Assign Function+Action combinations to Roles (via Permission table)
+// 4. Assign Roles to Users
+// → User có permissions qua: User → Role → Permission (Function + Action)
 ```
 
 ---
 
-## 📋 Tổng quan
+## 2. Understanding Permission System Architecture
 
-**Function Service** quản lý Functions (Permission modules) trong hệ thống.
+### Bước 2.1: Permission System Overview
 
-**Concept:**
-- **Function** = Permission module (Users, Products, Orders, etc.)
-- **Action** = Permission type (Read, Write, Delete, etc.)
-- **Permission** = Function + Action combination
+**Architecture Diagram:**
 
-**Example Structure:**
 ```
-Function: "Users"
-├─ Action: "Read"    → Permission: "Permissions.Users.Read"
-├─ Action: "Write"   → Permission: "Permissions.Users.Write"
-└─ Action: "Delete"  → Permission: "Permissions.Users.Delete"
+┌─────────────────────────────────────────────────────────┐
+│              PERMISSION SYSTEM│
+│          (Table-Based Approach)   │
+└─────────────────────────────────────────────────────────┘
 
-Function: "Products"
-├─ Action: "Read"    → Permission: "Permissions.Products.Read"
-└─ Action: "Write"   → Permission: "Permissions.Products.Write"
+┌───────────┐      ┌────────────┐     ┌──────────┐
+│  Action   │          │  Function  │          │   Role   │
+│  (View,   │◄─────────│  (Users,   │     │ (Admin,  │
+│  Create,  │  N   N   │  Products, │          │ Manager) │
+│  Update,  │          │  Orders)   │ │          │
+│  Delete)  │          │            │   │          │
+└───────────┘        └────────────┘      └──────────┘
+      │              │            │
+      │      │          │
+      │        │    │
+      │     ┌───────────────┴────────────────┐      │
+      │   │   ActionInFunction Table       │  │
+      └─────┤  (Function + Action mapping)   │      │
+     └────────────────────────────────┘      │
+         │  │
+   │               │
+            ┌────────┴──────────┐ │
+         │  Permission Table │◄────────────┘
+            │ (Role + Function  │
+          │ + Action)    │
+       └───────────────────┘
+     │
+      │
+             ┌────────▼──────────┐
+     │  UserRoles Table  │
+          │  (User + Role)    │
+           └───────────────────┘
+ │
+      │
+          ┌────────▼──────────┐
+  │   ApplicationUser │
+          └───────────────────┘
 ```
 
-**Quan hệ:**
+**Tables Explained:**
+
+1. **Action Table:**
+   - Stores available actions (View, Create, Update, Delete, Export, etc.)
+   - Seeded on app startup
+   - Reusable across all functions
+
+2. **Function Table:**
+   - Stores modules/features (Users, Products, Orders, etc.)
+   - Seeded on app startup
+   - Represents logical grouping of operations
+
+3. **ActionInFunction Table (Many-to-Many):**
+   - Maps Actions to Functions
+   - Example: Users function có View, Create, Update, Delete actions
+   - Example: Products function có View, Create, Update, Delete, Export actions
+
+4. **Role Table:**
+   - Stores roles (Admin, Manager, Basic, etc.)
+   - Seeded on app startup (Admin, Basic)
+
+5. **Permission Table (Composite Primary Key: RoleId + FunctionId + ActionId):**
+   - **Core của authorization system**
+   - Stores which Function+Action combinations a Role has
+   - Example: Manager role có Users.View, Users.Create, Products.View
+
+6. **UserRoles Table (ASP.NET Core Identity):**
+   - Maps Users to Roles
+   - Example: User John có Manager role
+
+---
+
+### Bước 2.2: Permission Flow Example
+
+**Scenario:** Check if User "John" có permission "Users.Create"
+
+**Flow:**
 ```
-Function ─┐
-          ├─ has many → Actions
-          └─ used by → Roles (via permissions)
+1. User John logs in
+   ↓
+2. System loads John's roles từ UserRoles table
+   → John có "Manager" role
+   ↓
+3. System loads Manager role's permissions từ Permission table
+   → Manager role có:
+     - (Manager, Users, View)
+     - (Manager, Users, Create)
+     - (Manager, Products, View)
+   ↓
+4. System builds permission strings từ Permission table
+   → Permissions: ["Users.View", "Users.Create", "Products.View"]
+   ↓
+5. System adds permissions to JWT claims
+   → JWT token contains: { "permission": ["Users.View", "Users.Create", "Products.View"] }
+   ↓
+6. Frontend calls API: POST /api/users (requires "Users.Create" permission)
+   ↓
+7. PermissionAuthorizationHandler checks JWT claims
+   → Has "Users.Create" permission? YES
+   ↓
+8. Request allowed ✅
 ```
 
 ---
 
-## 1. Function Request
+### Bước 2.3: Why Table-Based Approach?
 
-### Bước 1.1: CreateOrUpdateFunctionRequest
+**Benefits:**
 
-**Làm gì:** Request để create hoặc update function.
+1. **Dynamic:** Add new modules/features without code changes
+2. **Flexible:** Assign any Action to any Function
+3. **Database-driven:** Permissions stored in database, not hardcoded
+4. **UI-friendly:** Easy to build admin UI với checkboxes
+5. **Scalable:** Support unlimited Functions, Actions, Roles
+6. **Auditable:** Track permission changes in database
 
-**File:** `src/Core/Application/Identity/Roles/CreateOrUpdateFunctionRequest.cs`
+**Comparison:**
+
+**❌ Hardcoded Approach:**
+```csharp
+// Hardcoded permissions trong code
+public static class Permissions
+{
+    public const string UsersView = "Users.View";
+    public const string UsersCreate = "Users.Create";
+    public const string ProductsView = "Products.View";
+ // ... thêm 100+ permissions
+}
+```
+**Problems:**
+- Cần deploy code để add permissions
+- Không flexible
+- Hard to maintain
+
+**✅ Table-Based Approach:**
+```csharp
+// Permissions stored trong database
+// Add new function:
+INSERT INTO Function (Name) VALUES ('Orders');
+// Add actions to function:
+INSERT INTO ActionInFunction (FunctionId, ActionId) VALUES (...);
+// Assign permissions to role:
+INSERT INTO Permission (RoleId, FunctionId, ActionId) VALUES (...);
+// No code deployment needed! ✅
+```
+
+---
+
+## 3. Domain Entities
+
+### Bước 3.1: Function Entity
+
+**Làm gì:** Domain entity representing a module/feature.
+
+**Tại sao:** Functions are domain concepts (business modules).
+
+**File:** `src/Core/Domain/Identity/Function.cs`
 
 ```csharp
-using FluentValidation;
+namespace ECO.WebApi.Domain.Identity;
 
-namespace ECO.WebApi.Application.Identity.Roles;
-
-public class CreateOrUpdateFunctionRequest
+/// <summary>
+/// Function entity (represents a module/feature)
+/// Examples: Users, Products, Orders, Categories
+/// </summary>
+public class Function : BaseEntity
 {
-    public Guid? Id { get; set; }
+    /// <summary>
+    /// Function name (e.g., "Users", "Products")
+    /// </summary>
     public string Name { get; set; } = default!;
-}
 
-public class CreateOrUpdateFunctionRequestValidator : AbstractValidator<CreateOrUpdateFunctionRequest>
-{
-    public CreateOrUpdateFunctionRequestValidator() =>
-        RuleFor(x => x.Name)
-            .NotEmpty()
-            .MaximumLength(200);
+    /// <summary>
+    /// Actions assigned to this function (many-to-many relationship)
+    /// </summary>
+    public virtual List<ActionInFunction> ActionInFunctions { get; set; } = new();
+
+    public Function()
+    {
+    }
+
+    /// <summary>
+    /// Add an action to this function
+    /// </summary>
+    public void AddAction(Guid actionId)
+    {
+  ActionInFunctions.Add(new ActionInFunction(actionId, Id));
+    }
+
+    /// <summary>
+    /// Update actions for this function (replace all)
+    /// </summary>
+    public void UpdateActions(List<Guid>? newActionIds)
+    {
+        if (newActionIds == null || newActionIds.Count == 0)
+        {
+            ActionInFunctions.Clear();
+            return;
+        }
+
+        // Remove actions not in new list
+        ActionInFunctions.RemoveAll(aif => !newActionIds.Contains(aif.ActionId));
+
+   // Add new actions not yet in function
+        var existingActionIds = ActionInFunctions.Select(aif => aif.ActionId).ToHashSet();
+        foreach (var actionId in newActionIds)
+        {
+            if (!existingActionIds.Contains(actionId))
+      {
+           ActionInFunctions.Add(new ActionInFunction(actionId, Id));
+            }
+        }
+    }
 }
 ```
 
 **Giải thích:**
 
-**CreateOrUpdate Pattern:**
-- `Id == null` → Create new function
-- `Id != null` → Update existing function
+**Properties:**
+- **Name:** Function name (unique identifier, e.g., "Users", "Products")
+- **ActionInFunctions:** Many-to-many relationship với Action entity
 
-**Validation:**
-- Name required
-- Max length 200 characters
-- Expression-bodied constructor
+**Methods:**
+- **AddAction:** Add một action to function
+- **UpdateActions:** Update actions (remove old + add new)
+
+**Tại sao domain methods:**
+- Encapsulate business logic trong entity
+- Ensure consistency (no orphan records)
+- Follow DDD principles
 
 ---
 
-## 2. IFunctionService Interface
+### Bước 3.2: Action Entity
 
-### Bước 2.1: Interface Definition
+**Làm gì:** Domain entity representing an operation.
 
-**Làm gì:** Define contract cho Function Service.
+**Tại sao:** Actions are domain concepts (operations).
+
+**File:** `src/Core/Domain/Identity/Action.cs`
+
+```csharp
+namespace ECO.WebApi.Domain.Identity;
+
+/// <summary>
+/// Action entity (represents an operation)
+/// Examples: View, Create, Update, Delete, Export, Import
+/// </summary>
+public class Action : BaseEntity
+{
+    /// <summary>
+    /// Action name (e.g., "View", "Create", "Update", "Delete")
+    /// </summary>
+    public string Name { get; set; } = default!;
+
+    /// <summary>
+    /// Functions that have this action (many-to-many relationship)
+    /// </summary>
+    public virtual ICollection<ActionInFunction> ActionInFunctions { get; set; } = default!;
+
+    public Action()
+    {
+    }
+
+    public Action(string name)
+    {
+        Name = name;
+    }
+}
+```
+
+**Giải thích:**
+- **Name:** Action name (e.g., "View", "Create")
+- **ActionInFunctions:** Many-to-many relationship với Function entity
+- Actions are seeded on app startup (View, Create, Update, Delete, Export, Import, etc.)
+
+---
+
+### Bước 3.3: ActionInFunction Entity (Many-to-Many)
+
+**Làm gì:** Junction table for Function-Action relationship.
+
+**Tại sao:** Many-to-many relationship requires junction table.
+
+**File:** `src/Core/Domain/Identity/ActionInFunction.cs`
+
+```csharp
+using Microsoft.EntityFrameworkCore;
+
+namespace ECO.WebApi.Domain.Identity;
+
+/// <summary>
+/// ActionInFunction entity (junction table for Function-Action many-to-many)
+/// Composite Primary Key: (ActionId, FunctionId)
+/// </summary>
+[PrimaryKey(nameof(ActionId), nameof(FunctionId))]
+public class ActionInFunction
+{
+    /// <summary>
+    /// Action ID (foreign key)
+    /// </summary>
+    public Guid ActionId { get; set; }
+
+    /// <summary>
+    /// Function ID (foreign key)
+    /// </summary>
+    public Guid FunctionId { get; set; }
+
+    /// <summary>
+    /// Navigation property to Action
+    /// </summary>
+    public virtual Action Action { get; set; } = default!;
+
+    /// <summary>
+/// Navigation property to Function
+    /// </summary>
+    public virtual Function Function { get; set; } = default!;
+
+    public ActionInFunction()
+    {
+    }
+
+    public ActionInFunction(Guid actionId, Guid functionId)
+    {
+   ActionId = actionId;
+        FunctionId = functionId;
+    }
+}
+```
+
+**Giải thích:**
+- **Composite Primary Key:** (ActionId, FunctionId) ensures uniqueness
+- **Navigation Properties:** Action và Function entities
+- Stores which Actions are assigned to which Functions
+
+**Example Data:**
+```
+ActionInFunction Table:
+┌────────────────────┬────────────────────┐
+│  ActionId (View)   │ FunctionId (Users) │
+├────────────────────┼────────────────────┤
+│  ActionId (Create) │ FunctionId (Users) │
+├────────────────────┼────────────────────┤
+│  ActionId (Update) │ FunctionId (Users) │
+├────────────────────┼────────────────────┤
+│  ActionId (View)   │ FunctionId (Prod)  │
+└────────────────────┴────────────────────┘
+```
+
+---
+
+## 4. Function Service
+
+### Bước 4.1: CreateOrUpdateFunctionRequest
+
+**Làm gì:** Request DTO để tạo hoặc update function.
+
+**Tại sao:** Single endpoint cho both create/update operations.
+
+**File:** `src/Core/Application/Identity/Roles/CreateOrUpdateFunctionRequest.cs`
+
+```csharp
+namespace ECO.WebApi.Application.Identity.Roles;
+
+/// <summary>
+/// Request để tạo hoặc update function
+/// </summary>
+public class CreateOrUpdateFunctionRequest
+{
+    /// <summary>
+    /// Function ID (null or Guid.Empty = create, not empty = update)
+    /// </summary>
+    public Guid? Id { get; set; }
+
+    /// <summary>
+    /// Function name (required, unique)
+    /// Examples: "Users", "Products", "Orders"
+    /// </summary>
+    public string Name { get; set; } = default!;
+
+ /// <summary>
+    /// List of Action IDs to assign to this function
+    /// Example: [ViewActionId, CreateActionId, UpdateActionId]
+    /// </summary>
+    public List<Guid>? ActionIds { get; set; }
+}
+```
+
+**Giải thích:**
+- **Id:** null hoặc Guid.Empty = create, otherwise = update
+- **Name:** Function name (unique identifier)
+- **ActionIds:** List of actions to assign to this function
+
+**Create vs Update:**
+- **Create:** Id = null or Guid.Empty
+- **Update:** Id != Guid.Empty
+
+---
+
+### Bước 4.2: IFunctionService Interface
+
+**Làm gì:** Define contract cho function operations.
+
+**Tại sao:** Abstraction, dễ test, dễ swap implementations.
 
 **File:** `src/Core/Application/Identity/Roles/IFunctionService.cs`
 
 ```csharp
 namespace ECO.WebApi.Application.Identity.Roles;
 
+/// <summary>
+/// Service xử lý function management operations
+/// </summary>
 public interface IFunctionService : ITransientService
 {
-    Task<List<FunctionDto>> GetListAsync(CancellationToken cancellationToken);
+    /// <summary>
+    /// Get list tất cả functions với actions
+    /// </summary>
+  Task<List<FunctionDto>> GetListAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Get function details by ID với actions
+    /// </summary>
     Task<FunctionDto> GetByIdAsync(Guid id);
+
+    /// <summary>
+    /// Create hoặc update function với action assignments
+    /// Returns function ID
+    /// </summary>
     Task<string> CreateOrUpdateAsync(CreateOrUpdateFunctionRequest request);
-    Task<string> DeleteAsync(Guid id);
+
+  /// <summary>
+    /// Delete function
+    /// Cannot delete functions being used in Permission table
+    /// </summary>
+Task<string> DeleteAsync(Guid id);
 }
 ```
 
 **Giải thích:**
-
-**4 Methods Total:**
-1. `GetListAsync` - List all functions with actions
-2. `GetByIdAsync` - Get single function by ID
-3. `CreateOrUpdateAsync` - Create or update function
-4. `DeleteAsync` - Delete function
-
-Simple CRUD - no complex logic.
+- **GetListAsync:** Get all functions với actions (for dropdown, list display)
+- **GetByIdAsync:** Get function details với actions
+- **CreateOrUpdateAsync:** Create/update function với action assignments
+- **DeleteAsync:** Delete function với validation
 
 ---
 
-## 3. FunctionService Implementation
+### Bước 4.3: FunctionService Implementation
 
-### Bước 3.1: Implementation
+**Làm gì:** Implement function management operations.
+
+**Tại sao:** Business logic cho function và action assignments.
 
 **File:** `src/Infrastructure/Infrastructure/Identity/FunctionService.cs`
 
 ```csharp
+using ECO.WebApi.Application.Common.Exceptions;
 using ECO.WebApi.Application.Identity.Roles;
 using ECO.WebApi.Domain.Identity;
+using ECO.WebApi.Infrastructure.Persistence.Context;
+using Mapster;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECO.WebApi.Infrastructure.Identity;
 
-internal class FunctionService : IFunctionService
+/// <summary>
+/// Service xử lý function management operations
+/// </summary>
+public class FunctionService : IFunctionService
 {
-    private readonly IRepository<Function> _repository;
+    private readonly ApplicationDbContext _db;
 
-    public FunctionService(IRepository<Function> repository)
+    public FunctionService(ApplicationDbContext db)
     {
-        _repository = repository;
+        _db = db;
     }
 
+    /// <summary>
+    /// Get list tất cả functions với actions
+    /// </summary>
     public async Task<List<FunctionDto>> GetListAsync(CancellationToken cancellationToken)
     {
-        var functions = await _repository.ListAsync(cancellationToken);
-        
-        return functions.Select(f => new FunctionDto
-        {
-            Id = f.Id,
-            Name = f.Name,
-            ActionDtos = f.Actions.Select(a => new ActionDto
-            {
-                Id = a.Id,
-                Name = a.Name,
-                Selected = false // Default - will be set by RoleService
-            }).ToList()
-        }).ToList();
+        var functions = await _db.Functions
+            .Include(f => f.ActionInFunctions)
+     .ThenInclude(aif => aif.Action)
+ .ToListAsync(cancellationToken);
+
+        return functions.Adapt<List<FunctionDto>>();
     }
 
+    /// <summary>
+    /// Get function details by ID với actions
+    /// </summary>
     public async Task<FunctionDto> GetByIdAsync(Guid id)
     {
-        var function = await _repository.GetByIdAsync(id);
+      var function = await _db.Functions
+            .Include(f => f.ActionInFunctions)
+   .ThenInclude(aif => aif.Action)
+    .FirstOrDefaultAsync(f => f.Id == id);
+
         if (function == null)
-        {
-            throw new NotFoundException("Function Not Found.");
+      {
+     throw new NotFoundException("Function not found");
         }
 
-        return new FunctionDto
-        {
-            Id = function.Id,
-            Name = function.Name,
-            ActionDtos = function.Actions.Select(a => new ActionDto
-            {
-                Id = a.Id,
-                Name = a.Name,
-                Selected = false
-            }).ToList()
-        };
+        return function.Adapt<FunctionDto>();
     }
 
+    /// <summary>
+    /// Create hoặc update function với action assignments
+    /// </summary>
     public async Task<string> CreateOrUpdateAsync(CreateOrUpdateFunctionRequest request)
     {
         if (request.Id == null || request.Id == Guid.Empty)
         {
-            // Create new function
-            var function = new Function(request.Name);
-            await _repository.AddAsync(function);
-            return "Function Created Successfully.";
-        }
-        else
-        {
-            // Update existing function
-            var function = await _repository.GetByIdAsync(request.Id.Value);
-            if (function == null)
-            {
-                throw new NotFoundException("Function Not Found.");
-            }
+        // Create new function
+   var function = new Function { Name = request.Name };
 
-            function.Update(request.Name);
-            await _repository.UpdateAsync(function);
-            return "Function Updated Successfully.";
+      // Add actions to function
+            if (request.ActionIds != null)
+  {
+    foreach (var actionId in request.ActionIds)
+           {
+         function.AddAction(actionId);
+           }
+}
+
+          _db.Functions.Add(function);
+ await _db.SaveChangesAsync();
+
+          return function.Id.ToString();
+      }
+ else
+        {
+   // Update existing function
+        var function = await _db.Functions
+ .Include(f => f.ActionInFunctions)
+            .FirstOrDefaultAsync(f => f.Id == request.Id);
+
+            if (function == null)
+    {
+       throw new NotFoundException("Function not found");
+ }
+
+        // Update name
+            function.Name = request.Name;
+
+     // Update actions (replace all)
+            function.UpdateActions(request.ActionIds);
+
+            await _db.SaveChangesAsync();
+
+ return function.Id.ToString();
         }
     }
 
+    /// <summary>
+    /// Delete function
+    /// Cannot delete functions being used in Permission table
+    /// </summary>
     public async Task<string> DeleteAsync(Guid id)
     {
-        var function = await _repository.GetByIdAsync(id);
-        if (function == null)
+        var function = await _db.Functions.FirstOrDefaultAsync(f => f.Id == id);
+
+  if (function == null)
         {
-            throw new NotFoundException("Function Not Found.");
+            throw new NotFoundException("Function not found");
+      }
+
+        // Check if function is being used in Permission table
+        var isUsedInPermissions = await _db.Permissions
+        .AnyAsync(p => p.FunctionId == id);
+
+   if (isUsedInPermissions)
+        {
+            throw new ConflictException(
+   $"Cannot delete function '{function.Name}' as it is being used in permissions.");
         }
 
-        await _repository.DeleteAsync(function);
-        return "Function Deleted Successfully.";
+        _db.Functions.Remove(function);
+     await _db.SaveChangesAsync();
+
+ return id.ToString();
     }
 }
 ```
 
 **Giải thích:**
 
-**Dependencies:**
-- `IRepository<Function>` - Generic repository for data access
-- NO UserManager, RoleManager (Functions are domain entities, not Identity)
+**GetListAsync:**
+- Include ActionInFunctions và Action entities (eager loading)
+- Adapt to FunctionDto (Mapster)
 
-**Implementation:**
-- Simple CRUD operations
-- Use Repository pattern
-- Map to DTOs
-- Standard error handling
+**GetByIdAsync:**
+- Include ActionInFunctions và Action entities
+- Adapt to FunctionDto
+- Throw NotFoundException nếu không tìm thấy
 
----
+**CreateOrUpdateAsync:**
+- **Create:** New Function entity, add actions, save to database
+- **Update:** Find existing function, update name, update actions (replace all)
+- Return function ID
 
-## 4. Function Domain Entity
+**DeleteAsync:**
+- Check if function is being used in Permission table
+- Cannot delete if used (data integrity)
+- Remove function and save changes
 
-### Bước 4.1: Function Entity (Reference)
-
-**File:** `src/Core/Domain/Identity/Function.cs` (from BUILD_03)
-
-```csharp
-namespace ECO.WebApi.Domain.Identity;
-
-public class Function : BaseEntity
-{
-    public string Name { get; private set; }
-    public ICollection<Action> Actions { get; private set; }
-
-    private Function() { } // EF Core
-
-    public Function(string name)
-    {
-        Name = name;
-        Actions = new List<Action>();
-    }
-
-    public void Update(string name)
-    {
-        Name = name;
-    }
-
-    public void AddAction(string actionName)
-    {
-        var action = new Action(actionName, this.Id);
-        Actions.Add(action);
-    }
-}
-```
-
-**Giải thích:**
-
-**Domain Entity:**
-- Encapsulated properties (private setters)
-- Constructor for creation
-- Methods for mutations (Update, AddAction)
-- Navigation property to Actions
-
-**Not Identity Framework:**
-- Custom entity (not from Microsoft.AspNetCore.Identity)
-- Stored in regular database table (not AspNetRoles)
+**Tại sao eager loading:**
+- Include ActionInFunctions và Action để avoid N+1 query problem
+- Load all related data in single query
+- Better performance
 
 ---
 
-### Bước 4.2: Action Entity (Reference)
+## 5. Summary
 
-**File:** `src/Core/Domain/Identity/Action.cs` (from BUILD_03)
+### ✅ Đã hoàn thành trong bước này:
 
-```csharp
-namespace ECO.WebApi.Domain.Identity;
+**Domain Entities:**
+- ✅ Function entity với domain methods
+- ✅ Action entity
+- ✅ ActionInFunction entity (many-to-many junction)
 
-public class Action : BaseEntity
-{
-    public string Name { get; private set; }
-    public Guid FunctionId { get; private set; }
-    public Function Function { get; private set; }
+**Function DTOs:**
+- ✅ FunctionDto với ActionDtos
+- ✅ ActionDto với Selected flag
+- ✅ CreateOrUpdateFunctionRequest
 
-    private Action() { } // EF Core
+**Function Service:**
+- ✅ IFunctionService interface
+- ✅ FunctionService implementation
+- ✅ GetListAsync, GetByIdAsync, CreateOrUpdateAsync, DeleteAsync
 
-    public Action(string name, Guid functionId)
-    {
-        Name = name;
-        FunctionId = functionId;
-    }
+**Controllers:**
+- ✅ RoleController với function endpoints (từ BUILD_16B)
 
-    public void Update(string name)
-    {
-        Name = name;
-    }
-}
+### 📊 Complete Permission System Architecture:
+
+```
+┌─────────────────────────────────────────────────┐
+│          PERMISSION SYSTEM OVERVIEW│
+└─────────────────────────────────────────────────┘
+
+1. DEFINE ACTIONS (Seeded on startup)
+   → View, Create, Update, Delete, Export, Import
+
+2. DEFINE FUNCTIONS (Seeded on startup)
+   → Users, Products, Orders, Categories
+
+3. ASSIGN ACTIONS TO FUNCTIONS (ActionInFunction table)
+   → Users has: View, Create, Update, Delete
+   → Products has: View, Create, Update, Delete, Export
+
+4. DEFINE ROLES (Seeded on startup)
+   → Admin, Manager, Basic
+
+5. ASSIGN FUNCTION+ACTION TO ROLES (Permission table)
+   → Manager role has:
+     - Users.View
+ - Users.Create
+     - Products.View
+     - Products.Create
+
+6. ASSIGN ROLES TO USERS (UserRoles table - Identity)
+   → User John has: Manager role
+
+7. AUTHORIZATION CHECK (on each API call)
+   → Check JWT claims for required permission
+   → Example: [MustHavePermission("Users.Create")]
 ```
 
-**Giải thích:**
-- Action belongs to Function (many-to-one)
-- Encapsulated domain entity
+### 📁 Complete File Structure:
 
----
-
-##  5. Key Patterns & Decisions
-
-### Pattern 1: Domain Entities (Not Identity Framework)
-
-**Why separate entities:**
 ```
-ASP.NET Core Identity:
-├─ ApplicationUser (Framework)
-└─ ApplicationRole (Framework)
-
-Custom Domain:
-├─ Function (Custom)
-└─ Action (Custom)
-```
-
-**Benefits:**
-- Control over schema
-- Domain logic in entities
-- Repository pattern works
-- Easier testing
-
----
-
-### Pattern 2: Repository Pattern
-
-**Usage:**
-```csharp
-private readonly IRepository<Function> _repository;
-
-// Simple CRUD
-await _repository.AddAsync(function);
-await _repository.UpdateAsync(function);
-await _repository.DeleteAsync(function);
-await _repository.GetByIdAsync(id);
-await _repository.ListAsync(cancellationToken);
-```
-
-**Benefits:**
-- Abstraction over data access
-- Easy to test (mock repository)
-- Consistent API
-
----
-
-### Pattern 3: Encapsulated Entities
-
-**Domain-Driven Design:**
-```csharp
-// ❌ BAD
-function.Name = "NewName"; // Direct property access
-
-// ✅ GOOD
-function.Update("NewName"); // Method expresses intent
-```
-
-**Benefits:**
-- Business rules in entity
-- Clear intent
-- Easier to maintain invariants
-
----
-
-## 6. How Functions/Actions Are Used
-
-### Usage Flow:
-
-**1. Admin creates Functions & Actions:**
-```
-POST /api/functions
-{
-    "name": "Users"
-}
-
-// Then add Actions to Function (separate API or seeding)
-```
-
-**2. Admin assigns Permissions to Roles:**
-```
-POST /api/roles/{roleId}/permissions
-{
-    "permissions": [
-        { "functionId": "...", "actionId": "..." }  // Users.Read
-        { "functionId": "...", "actionId": "..." }  // Users.Write
-    ]
-}
-```
-
-**3. System converts to permission string:**
-```csharp
-$"Permissions.{function.Name}.{action.Name}"
-// → "Permissions.Users.Read"
-// → "Permissions.Users.Write"
-```
-
-**4. Permission stored as Claim on Role:**
-```csharp
-await _roleManager.AddClaimAsync(role, 
-    new Claim(ECOClaims.Permission, "Permissions.Users.Write"));
-```
-
-**5. User gets permissions from their roles:**
-```csharp
-// User → Roles → Claims (Permissions)
-var permissions = await _userService.GetPermissionsAsync(userId);
-// Returns: ["Permissions.Users.Read", "Permissions.Users.Write", ...]
-```
-
-**6. Authorization checks permission:**
-```csharp
-[MustHavePermission("Permissions.Users.Write")]
-public async Task<IActionResult> UpdateUser(...)
+src/
+├── Core/
+│   ├── Domain/
+│   │   └── Identity/
+│   │       ├── Function.cs
+│   │ ├── Action.cs
+│   │       ├── ActionInFunction.cs
+│   │       ├── Permission.cs
+│   │     ├── ApplicationRole.cs
+│   │   └── ApplicationUser.cs
+│   └── Application/
+│       └── Identity/
+│        ├── Roles/
+│           │   ├── IRoleService.cs
+│           │   ├── IFunctionService.cs
+│       │   ├── RoleDto.cs
+│    │   ├── FunctionDto.cs
+│           │   ├── ActionDto.cs
+│   │   ├── CreateOrUpdateRoleRequest.cs
+│   │   ├── CreateOrUpdateFunctionRequest.cs
+│           │   └── UpdateRolePermissionsRequest.cs
+│           └── Users/
+│    ├── IUserService.cs
+│    ├── UserRolesRequest.cs
+│         └── UserRoleDto.cs
+├── Infrastructure/
+│   └── Infrastructure/
+│       └── Identity/
+│  ├── RoleService.cs
+│       ├── FunctionService.cs
+│           ├── UserService.cs
+│     └── UserService.Role.cs
+└── Host/
+    └── Host/
+     └── Controllers/
+   └── Identity/
+       ├── RoleController.cs
+                └── UsersController.cs
 ```
 
 ---
 
-## 7. Tổng kết BUILD_16C
+## 6. Next Steps
 
-**Đã xây dựng:**
+**Tiếp theo:** [BUILD_17 - Permission Authorization](BUILD_17_Permission_Authorization.md)
 
-✅ **Request:**
-- CreateOrUpdateFunctionRequest (with validator)
-
-✅ **IFunctionService Interface:**
-- 4 simple CRUD methods
-
-✅ **FunctionService Implementation:**
-- Repository pattern
-- Domain entity mapping
-- Standard error handling
-
-✅ **Domain Understanding:**
-- Function & Action entities
-- Link to permission system
-- Not part of Identity framework
+Trong bước tiếp theo, chúng ta sẽ implement permission-based authorization:
+1. ✅ PermissionRequirement (IAuthorizationRequirement)
+2. ✅ PermissionAuthorizationHandler (check permissions from JWT claims)
+3. ✅ PermissionPolicyProvider (dynamic policy creation)
+4. ✅ [MustHavePermission] attribute
+5. ✅ Permission seeding in ApplicationDbSeeder
+6. ✅ Add permissions to JWT claims
 
 ---
 
-## 8. Tổng kết toàn bộ BUILD_16 Series
-
-**BUILD_16A: User Service** (~900 lines)
-- 20 methods
-- Partial classes organization
-- Complex business logic
-
-**BUILD_16B: Role Service** (~350 lines)
-- 7 methods
-- Permission assignment
-- Claims-based permissions
-
-**BUILD_16C: Function Service** (~250 lines)
-- 4 methods
-- Domain entities
-- Repository pattern
-
-**Total:** ~1500 lines of comprehensive Identity Services documentation! ✅
-
-**Next in BUILD_INDEX:**
-
-➡️ **BUILD_17:** Permission Authorization (middleware, policy-based authorization)  
-➡️ **BUILD_18:** OAuth2 Integration (Google/Facebook login)
+**Quay lại:** [Mục lục](BUILD_INDEX.md)

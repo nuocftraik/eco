@@ -349,23 +349,23 @@ app.UseSwagger();
     app.UseSerilogRequestLogging(options =>
     {
         options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
- options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+        options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
         {
-    diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
-         diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
-   diagnosticContext.Set("UserAgent", httpContext.Request.Headers["User-Agent"].ToString());
+            diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+            diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
+            diagnosticContext.Set("UserAgent", httpContext.Request.Headers["User-Agent"].ToString());
         };
     });
 
-  // 11. Use Infrastructure middleware
+    // 11. Use Infrastructure middleware
     app.UseInfrastructure(builder.Configuration);
     
-// 12. Map endpoints
+    // 12. Map endpoints
     app.MapEndpoints();
 
     // 13. Run application
     Log.Information("Application Starting...");
-  Log.Information("Listening on: {Addresses}", string.Join(", ", app.Urls));
+    Log.Information("Listening on: {Addresses}", string.Join(", ", app.Urls));
     app.Run();
 }
 catch (Exception ex) when (!ex.GetType().Name.Equals("HostAbortedException", StringComparison.Ordinal))
@@ -456,19 +456,19 @@ public class UserService : IUserService
         // Push context property
         using (LogContext.PushProperty("UserId", userId))
         {
-      Log.Information("Fetching user details");
+            Log.Information("Fetching user details");
    
-    var user = await _db.Users.FindAsync(userId);
+            var user = await _db.Users.FindAsync(userId);
       
-    if (user == null)
+            if (user == null)
             {
-    Log.Warning("User not found");
-     throw new NotFoundException("User not found");
+                Log.Warning("User not found");
+                throw new NotFoundException("User not found");
 }
       
-       Log.Information("User details fetched successfully");
- return user.Adapt<UserDto>();
-  }
+            Log.Information("User details fetched successfully");
+            return user.Adapt<UserDto>();
+        }
     }
 }
 ```

@@ -1,153 +1,124 @@
-# BUILD_16B: Role Service
+﻿# Role Management Service - Role CRUD & Permission Management
 
-> 📘 **Mục đích:** Xây dựng Role Management Service - quản lý roles và assign permissions cho roles.
+> 📚 [Quay lại Mục lục](BUILD_INDEX.md)  
+> 📋 **Prerequisites:** Bước 16A (User Service) đã hoàn thành
 
-> [!NOTE]
-> **Part of BUILD_16 Identity Services Series**
-> 
-> - BUILD_16A: User Service
-> - **BUILD_16B (This file):** Role Service  
-> - BUILD_16C: Function Service
+Tài liệu này hướng dẫn xây dựng Role Management Service - Quản lý roles và permissions với table-based approach.
 
 ---
 
-## 🤖 AI Generation Metadata
+## 1. Overview
 
-```yaml
----
-ai_metadata:
-  generated_by: "ai_assisted"
-  reviewed_by: "vuongnv1206"
-  last_updated: "2026-01-28"
-  layer: "Application + Infrastructure"
-  patterns_used:
-    - "Service Layer Pattern"
-    - "FluentValidation"
-    - "DTO Pattern"
-  dependencies:
-    - "BUILD_01_Solution_Setup"
-    - "BUILD_03_Domain_Layer" 
-    - "BUILD_04_Application_Layer"
-    - "BUILD_07_Database_Initialization"
-    - "BUILD_16A_User_Service"
-  ai_instructions: |
-    When working with Role Service:
-    1. RoleService manages ASP.NET Core Identity Roles
-    2. Roles can have multiple Permissions (stored as Claims)
-    3. Role name must be unique
-    4. Return DTOs, not entities
-    5. CreateOrUpdate pattern (single method for both)
----
+**Làm gì:** Xây dựng Role Management Service để quản lý roles và permissions (Create, Read, Update, Delete, Assign Permissions).
+
+**Tại sao cần:**
+- **Role Management:** CRUD operations cho roles
+- **Permission Management:** Assign permissions to roles với table-based approach (Permission table)
+- **Flexible Authorization:** Dynamic permission assignment không cần code changes
+- **Security:** Protect default roles (Admin, Basic) khỏi modifications
+- **User Role Assignment:** Support UserService assign roles to users
+
+**Trong bước này chúng ta sẽ:**
+- ✅ Tạo IRoleService interface
+- ✅ Tạo Role DTOs (RoleDto, CreateOrUpdateRoleRequest, UpdateRolePermissionsRequest)
+- ✅ Implement RoleService với các operations:
+  - Get roles list
+  - Get role details với permissions
+  - Create/Update roles
+  - Update role permissions (table-based approach)
+  - Delete roles với validation
+- ✅ Tạo RoleController với RESTful endpoints
+- ✅ FluentValidation cho tất cả requests
+- ✅ Update UserService.Role.cs (assign roles to users)
+
+**Real-world example:**
+```csharp
+// Admin creates new role
+var createRequest = new CreateOrUpdateRoleRequest
+{
+    Name = "Manager",
+    Description = "Store Manager Role"
+};
+
+var message = await _roleService.CreateOrUpdateAsync(createRequest);
+// → Role Manager Created.
+
+// Admin assigns permissions to role
+var updatePermissionsRequest = new UpdateRolePermissionsRequest
+{
+    RoleId = roleId,
+    Permissions = new List<PermissionRequest>
+    {
+        new() { FunctionId = usersFunction, ActionId = viewAction },
+        new() { FunctionId = usersFunction, ActionId = createAction },
+        new() { FunctionId = productsFunction, ActionId = viewAction }
+    }
+};
+
+await _roleService.UpdatePermissionsAsync(updatePermissionsRequest, cancellationToken);
+// → Permissions Updated.
+
+// Get role with permissions
+var functionsWithPermissions = await _roleService.GetByIdWithPermissionsAsync(roleId, cancellationToken);
+// → Returns list of Functions with Actions marked as Selected or not
 ```
 
 ---
 
-## 📋 Tổng quan
+## 2. Role DTOs
 
-**Role Service** quản lý roles trong hệ thống và gán permissions cho roles.
+### Bước 2.1: RoleDto
 
-**Quan hệ:**
-```
-Role (Admin, Manager, User...)
-  ↓ has many
-Functions (UserManagement, ProductManagement...)
-  ↓ each has
-Actions (Read, Write, Delete...)
-```
+**Làm gì:** DTO để hiển thị thông tin role.
 
-**Example:**
-```
-Role: "Product Manager"
-├─ Function: "Products"
-│   ├─ Action: Read ✓
-│   ├─ Action: Write ✓
-│   └─ Action: Delete ✓
-└─ Function: "Categories"
-    ├─ Action: Read ✓
-    └─ Action: Write ✓
-```
-
----
-
-## 1. Role DTOs
-
-### Bước 1.1: RoleDto
-
-**Làm gì:** DTO để return role information.
+**Tại sao:** Không expose toàn bộ ApplicationRole entity, chỉ trả về fields cần thiết.
 
 **File:** `src/Core/Application/Identity/Roles/RoleDto.cs`
 
 ```csharp
 namespace ECO.WebApi.Application.Identity.Roles;
 
+/// <summary>
+/// Role detail DTO (dùng cho responses)
+/// </summary>
 public class RoleDto
 {
+    /// <summary>
+    /// Role ID (string - Identity framework)
+    /// </summary>
     public string Id { get; set; } = default!;
+
+    /// <summary>
+    /// Role name (unique)
+    /// </summary>
     public string Name { get; set; } = default!;
+
+    /// <summary>
+    /// Role description
+    /// </summary>
     public string? Description { get; set; }
+
+    /// <summary>
+    /// List of permission strings (optional, for quick display)
+/// Format: "Function.Action" (e.g., "Users.View", "Products.Create")
+    /// </summary>
     public List<string>? Permissions { get; set; }
 }
 ```
 
 **Giải thích:**
-- `Id` - Role ID (string in ASP.NET Core Identity)
-- `Name` - Role name (Admin, Manager, etc.)
-- `Description` - Optional description
-- `Permissions` - List of permission strings (optional - loaded when needed)
+- **Id:** Role ID dạng string (ASP.NET Core Identity convention)
+- **Name:** Role name (unique, e.g., "Admin", "Manager")
+- **Description:** Human-readable description
+- **Permissions:** Optional list of permission strings for quick display
 
 ---
 
-### Bước 1.2: FunctionDto
+### Bước 2.2: CreateOrUpdateRoleRequest
 
-**Làm gì:** DTO để return function (permission module) với actions.
+**Làm gì:** Request DTO để tạo hoặc update role.
 
-**File:** `src/Core/Application/Identity/Roles/FunctionDto.cs`
-
-```csharp
-namespace ECO.WebApi.Application.Identity.Roles;
-
-public class FunctionDto
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = default!;
-    public List<ActionDto> ActionDtos { get; set; } = new();
-}
-```
-
-**Giải thích:**
-- Function = Permission module (UserManagement, ProductManagement, etc.)
-- Each function has multiple actions
-
----
-
-### Bước 1.3: ActionDto
-
-**Làm gì:** DTO để return action (permission type).
-
-**File:** `src/Core/Application/Identity/Roles/ActionDto.cs`
-
-```csharp
-namespace ECO.WebApi.Application.Identity.Roles;
-
-public class ActionDto
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = default!;
-    public bool Selected { get; set; }
-}
-```
-
-**Giải thích:**
-- Action = Permission type (Read, Write, Delete, etc.)
-- `Selected` - is this action enabled for current role?
-
----
-
-## 2. Role Requests
-
-### Bước 2.1: CreateOrUpdateRoleRequest
-
-**Làm gì:** Request để create hoặc update role.
+**Tại sao:** Single endpoint cho both Create và Update operations.
 
 **File:** `src/Core/Application/Identity/Roles/CreateOrUpdateRoleRequest.cs`
 
@@ -156,39 +127,64 @@ using FluentValidation;
 
 namespace ECO.WebApi.Application.Identity.Roles;
 
+/// <summary>
+/// Request để tạo hoặc update role
+/// </summary>
 public class CreateOrUpdateRoleRequest
 {
+    /// <summary>
+    /// Role ID (null = create, not null = update)
+    /// </summary>
     public string? Id { get; set; }
+
+    /// <summary>
+    /// Role name (required, unique)
+    /// </summary>
     public string Name { get; set; } = default!;
+
+    /// <summary>
+    /// Role description (optional)
+    /// </summary>
     public string? Description { get; set; }
 }
 
+/// <summary>
+/// Validator cho CreateOrUpdateRoleRequest
+/// </summary>
 public class CreateOrUpdateRoleRequestValidator : AbstractValidator<CreateOrUpdateRoleRequest>
 {
-    public CreateOrUpdateRoleRequestValidator(IRoleService roleService) =>
-        RuleFor(r => r.Name)
-            .NotEmpty()
-            .MustAsync(async (role, name, _) => !await roleService.ExistsAsync(name, role.Id))
-                .WithMessage("Similar Role already exists.");
+    public CreateOrUpdateRoleRequestValidator(IRoleService roleService)
+    {
+    RuleFor(r => r.Name)
+   .NotEmpty()
+            .WithMessage("Role name is required.")
+       .MustAsync(async (role, name, _) => !await roleService.ExistsAsync(name, role.Id))
+        .WithMessage("Similar Role already exists.");
+    }
 }
 ```
 
 **Giải thích:**
 
-**Create vs Update:**
-- `Id == null` → Create new role
-- `Id != null` → Update existing role
+**Validation Rules:**
+- **Name:** Required, unique (exclude current role nếu update)
 
-**Validation:**
-- Role name must be unique
-- Check uniqueness except for current role (when updating)
-- Expression-bodied constructor
+**Create vs Update Logic:**
+- **Id == null:** Create new role
+- **Id != null:** Update existing role
+
+**Tại sao single endpoint:**
+- Simplified API (one endpoint cho both operations)
+- Frontend không cần biết create/update logic
+- RESTful pattern (POST /api/roles/create/update)
 
 ---
 
-### Bước 2.2: UpdateRolePermissionsRequest
+### Bước 2.3: UpdateRolePermissionsRequest
 
-**Làm gì:** Request để update permissions cho role.
+**Làm gì:** Request DTO để update permissions của role (table-based approach).
+
+**Tại sao:** Separate endpoint cho permission management (complex operation).
 
 **File:** `src/Core/Application/Identity/Roles/UpdateRolePermissionsRequest.cs`
 
@@ -197,373 +193,1009 @@ using FluentValidation;
 
 namespace ECO.WebApi.Application.Identity.Roles;
 
+/// <summary>
+/// Request để update permissions của role (table-based approach)
+/// </summary>
 public class UpdateRolePermissionsRequest
 {
+    /// <summary>
+    /// Role ID (required)
+    /// </summary>
     public string RoleId { get; set; } = default!;
+
+    /// <summary>
+    /// List of permissions (Function + Action combinations)
+    /// </summary>
     public List<PermissionRequest> Permissions { get; set; } = default!;
 }
 
+/// <summary>
+/// Permission request (Function + Action combination)
+/// Represents a row in Permission table
+/// </summary>
 public class PermissionRequest
 {
+    /// <summary>
+    /// Function ID (e.g., Users, Products, Orders)
+    /// </summary>
     public Guid FunctionId { get; set; } = default!;
+
+    /// <summary>
+    /// Action ID (e.g., View, Create, Update, Delete)
+    /// </summary>
     public Guid ActionId { get; set; } = default!;
 }
 
+/// <summary>
+/// Validator cho UpdateRolePermissionsRequest
+/// </summary>
 public class UpdateRolePermissionsRequestValidator : AbstractValidator<UpdateRolePermissionsRequest>
 {
     public UpdateRolePermissionsRequestValidator()
     {
         RuleFor(r => r.RoleId)
-            .NotEmpty();
+            .NotEmpty()
+      .WithMessage("Role ID is required.");
+
+        RuleFor(r => r.Permissions)
+       .NotNull()
+            .WithMessage("Permissions list is required.");
     }
 }
 ```
 
 **Giải thích:**
 
-**Permission Structure:**
-- Each permission = Function + Action combination
-- Example: `{FunctionId: "UserManagement", ActionId: "Write"}` → permission "Permissions.UserManagement.Write"
+**Table-Based Approach:**
+- **Permission Table:** Stores (RoleId, FunctionId, ActionId) combinations
+- **Flexible:** Add/remove permissions dynamically without code changes
+- **Database-driven:** Permissions stored in database, not hardcoded
 
-**Request:**
-- Send list of all enabled permissions
-- Service will replace all current permissions
+**UpdateRolePermissionsRequest:**
+- **RoleId:** Target role
+- **Permissions:** List of Function+Action combinations
+
+**PermissionRequest:**
+- Represents một permission entry trong Permission table
+- **FunctionId:** Module/Feature (e.g., Users, Products)
+- **ActionId:** Operation (e.g., View, Create, Update, Delete)
+
+**Update Flow:**
+1. Remove all current permissions for role
+2. Add new permissions từ request
+3. Return success message
 
 ---
 
-## 3. IRoleService Interface
+### Bước 2.4: FunctionDto và ActionDto
 
-### Bước 3.1: Interface Definition
+**Làm gì:** DTOs để hiển thị Functions với Actions (for permission UI).
 
-**Làm gì:** Define contract cho Role Service.
+**Tại sao:** Frontend cần biết available Functions và Actions để display checkboxes.
+
+**File:** `src/Core/Application/Identity/Roles/FunctionDto.cs`
+
+```csharp
+namespace ECO.WebApi.Application.Identity.Roles;
+
+/// <summary>
+/// Function DTO (represents a module/feature)
+/// </summary>
+public class FunctionDto
+{
+    /// <summary>
+    /// Function ID
+    /// </summary>
+    public Guid Id { get; set; }
+
+    /// <summary>
+    /// Function name (e.g., "Users", "Products", "Orders")
+    /// </summary>
+    public string Name { get; set; } = default!;
+
+    /// <summary>
+    /// List of actions available for this function
+    /// </summary>
+    public List<ActionDto> ActionDtos { get; set; } = default!;
+}
+```
+
+**File:** `src/Core/Application/Identity/Roles/ActionDto.cs`
+
+```csharp
+namespace ECO.WebApi.Application.Identity.Roles;
+
+/// <summary>
+/// Action DTO (represents an operation)
+/// </summary>
+public class ActionDto
+{
+  /// <summary>
+    /// Action ID
+    /// </summary>
+    public Guid Id { get; set; }
+
+    /// <summary>
+    /// Action name (e.g., "View", "Create", "Update", "Delete")
+    /// </summary>
+    public string Name { get; set; } = default!;
+
+    /// <summary>
+    /// Is this action selected for current role (checkbox state)
+    /// </summary>
+    public bool Selected { get; set; }
+}
+```
+
+**Giải thích:**
+
+**FunctionDto:**
+- Represents một module/feature trong system
+- **ActionDtos:** List các actions có thể thực hiện trên function này
+
+**ActionDto:**
+- Represents một operation (View, Create, Update, Delete...)
+- **Selected:** Checkbox state cho UI (true = role has this permission)
+
+**UI Example:**
+```
+Users Function
+  ☑ View
+  ☑ Create
+  ☐ Update
+  ☐ Delete
+
+Products Function
+  ☑ View
+  ☐ Create
+  ☐ Update
+  ☐ Delete
+```
+
+---
+
+## 3. Role Service Interface
+
+### Bước 3.1: IRoleService Interface
+
+**Làm gì:** Define contract cho role operations.
+
+**Tại sao:** Abstraction, dễ test, dễ swap implementations.
 
 **File:** `src/Core/Application/Identity/Roles/IRoleService.cs`
 
 ```csharp
 namespace ECO.WebApi.Application.Identity.Roles;
 
+/// <summary>
+/// Service xử lý role management operations
+/// </summary>
 public interface IRoleService : ITransientService
 {
-    // Role CRUD
+    /// <summary>
+    /// Get list tất cả roles
+    /// </summary>
     Task<List<RoleDto>> GetListAsync(CancellationToken cancellationToken);
-    Task<int> GetCountAsync(CancellationToken cancellationToken);
-    Task<RoleDto> GetByIdAsync(string id);
-    Task<string> CreateOrUpdateAsync(CreateOrUpdateRoleRequest request);
-    Task<string> DeleteAsync(string id);
-    
-    // Validation
+
+    /// <summary>
+    /// Get total role count
+    /// </summary>
+  Task<int> GetCountAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Check role name đã tồn tại chưa (exclude excludeId nếu có)
+ /// </summary>
     Task<bool> ExistsAsync(string roleName, string? excludeId);
-    
-    // Permissions
+
+    /// <summary>
+    /// Get role details by ID
+    /// </summary>
+    Task<RoleDto> GetByIdAsync(string id);
+
+    /// <summary>
+    /// Get role details với permissions (Functions + Actions)
+ /// Returns list of Functions with Actions marked as Selected or not
+    /// </summary>
     Task<List<FunctionDto>> GetByIdWithPermissionsAsync(string roleId, CancellationToken cancellationToken);
-    Task<string> UpdatePermissionsAsync(UpdateRolePermissionsRequest request, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Create hoặc update role
+    /// </summary>
+    Task<string> CreateOrUpdateAsync(CreateOrUpdateRoleRequest request);
+
+    /// <summary>
+    /// Update permissions của role (table-based approach)
+    /// Replaces all current permissions with new ones
+    /// </summary>
+    Task<string> UpdatePermissionsAsync(
+        UpdateRolePermissionsRequest request, 
+     CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Delete role với validation
+    /// Cannot delete default roles (Admin, Basic)
+    /// Cannot delete roles đang được users sử dụng
+    /// </summary>
+    Task<string> DeleteAsync(string id);
 }
 ```
 
 **Giải thích:**
 
-**Method Groups:**
+**Core Operations:**
+- **GetListAsync:** Get all roles (for dropdown, list display)
+- **GetCountAsync:** Total count
+- **ExistsAsync:** Check uniqueness (for validation)
+- **GetByIdAsync:** Get role details
+- **GetByIdWithPermissionsAsync:** Get role WITH permissions (for permission UI)
 
-**1. Role CRUD (5 methods):**
-- Standard CRUD operations
-- CreateOrUpdate pattern (single method)
+**Create & Update:**
+- **CreateOrUpdateAsync:** Single method cho both create/update
 
-**2. Validation (1 method):**
-- Check role name uniqueness
+**Permission Management:**
+- **UpdatePermissionsAsync:** Update permissions (replace all current permissions)
 
-**3. Permissions (2 methods):**
-- Get role with all functions/actions (selected flags set)
-- Update role permissions
+**Delete:**
+- **DeleteAsync:** Delete với validation rules
+
+**Tại sao ITransientService:**
+- Role operations không có state
+- Short-lived service per request
+- Thread-safe
 
 ---
 
-## 4. RoleService Implementation
+## 4. Role Service Implementation
 
-### Bước 4.1: Implementation Highlights
+### Bước 4.1: RoleService Implementation
+
+**Làm gì:** Implement role management operations.
+
+**Tại sao:** Business logic cho role và permission management.
 
 **File:** `src/Infrastructure/Infrastructure/Identity/RoleService.cs`
 
-> [!NOTE]
-> **Implementation Note**
-> 
-> RoleService là single file (KHÔNG dùng partial classes như UserService) vì chỉ có 7 methods.
-
 ```csharp
+using ECO.WebApi.Application.Common.Events;
+using ECO.WebApi.Application.Common.Exceptions;
+using ECO.WebApi.Application.Common.Interfaces;
 using ECO.WebApi.Application.Identity.Roles;
 using ECO.WebApi.Domain.Identity;
+using ECO.WebApi.Infrastructure.Persistence.Context;
 using ECO.WebApi.Shared.Authorization;
+using Mapster;
 using Microsoft.AspNetCore.Identity;
-using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECO.WebApi.Infrastructure.Identity;
 
+/// <summary>
+/// Service xử lý role management operations
+/// </summary>
 internal class RoleService : IRoleService
 {
     private readonly RoleManager<ApplicationRole> _roleManager;
-    private readonly IReadRepository<Function> _functionRepo;
-    private readonly IStringLocalizer _localizer;
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ApplicationDbContext _db;
+    private readonly ICurrentUser _currentUser;
+    private readonly IEventPublisher _events;
+    private readonly IFunctionService _functionService;
 
     public RoleService(
         RoleManager<ApplicationRole> roleManager,
-        IReadRepository<Function> functionRepo,
-        IStringLocalizer<RoleService> localizer)
+     UserManager<ApplicationUser> userManager,
+        ApplicationDbContext db,
+        ICurrentUser currentUser,
+        IEventPublisher events,
+        IFunctionService functionService)
     {
         _roleManager = roleManager;
-        _functionRepo = functionRepo;
-        _localizer = localizer;
+   _userManager = userManager;
+   _db = db;
+        _currentUser = currentUser;
+        _events = events;
+        _functionService = functionService;
     }
 
-    public async Task<string> CreateOrUpdateAsync(CreateOrUpdateRoleRequest request)
+    /// <summary>
+    /// Get list tất cả roles
+    /// </summary>
+    public async Task<List<RoleDto>> GetListAsync(CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(request.Id))
-        {
-            // Create new role
-            var role = new ApplicationRole
-            {
-                Name = request.Name,
-                Description = request.Description
-            };
-
-            var result = await _roleManager.CreateAsync(role);
-            if (!result.Succeeded)
-            {
-                throw new InternalServerException("Failed to create role.", result.GetErrors(_localizer));
-            }
-
-            return "Role Created Successfully.";
-        }
-        else
-        {
-            // Update existing role
-            var role = await _roleManager.FindByIdAsync(request.Id);
-            if (role == null)
-            {
-                throw new NotFoundException("Role Not Found.");
-            }
-
-            role.Name = request.Name;
-            role.Description = request.Description;
-            role.NormalizedName = request.Name.ToUpperInvariant();
-
-            var result = await _roleManager.UpdateAsync(role);
-            if (!result.Succeeded)
-            {
-                throw new InternalServerException("Failed to update role.", result.GetErrors(_localizer));
-            }
-
-            return "Role Updated Successfully.";
-        }
+        return (await _roleManager.Roles.ToListAsync(cancellationToken))
+  .Adapt<List<RoleDto>>();
     }
 
+    /// <summary>
+    /// Get total role count
+    /// </summary>
+    public async Task<int> GetCountAsync(CancellationToken cancellationToken)
+    {
+        return await _roleManager.Roles.CountAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Check role name đã tồn tại chưa (exclude excludeId nếu update)
+    /// </summary>
+    public async Task<bool> ExistsAsync(string roleName, string? excludeId)
+    {
+        return await _roleManager.FindByNameAsync(roleName)
+   is ApplicationRole existingRole
+   && existingRole.Id != excludeId;
+    }
+
+    /// <summary>
+    /// Get role details by ID
+    /// </summary>
+    public async Task<RoleDto> GetByIdAsync(string id)
+    {
+ return await _db.Roles.SingleOrDefaultAsync(x => x.Id == id) is { } role
+     ? role.Adapt<RoleDto>()
+     : throw new NotFoundException("Role Not Found");
+    }
+
+    /// <summary>
+    /// Get role details với permissions (Functions + Actions)
+    /// Returns list of Functions with Actions marked as Selected or not
+  /// </summary>
     public async Task<List<FunctionDto>> GetByIdWithPermissionsAsync(
         string roleId, 
-        CancellationToken cancellationToken)
+     CancellationToken cancellationToken)
     {
-        var role = await _roleManager.FindByIdAsync(roleId);
-        if (role == null)
+        // Get all functions với actions
+   var functions = await _db.Functions
+            .Include(f => f.ActionInFunctions)
+            .ThenInclude(x => x.Action)
+    .ToListAsync(cancellationToken);
+
+        // Get permissions cho role này (từ Permission table)
+        var permissions = await _db.Permissions
+       .Where(p => p.RoleId == roleId)
+         .ToListAsync(cancellationToken);
+
+        // Build FunctionDto list với Selected flags
+   var functionDtos = new List<FunctionDto>();
+
+     foreach (var function in functions)
         {
-            throw new NotFoundException("Role Not Found.");
-        }
-
-        // Get all role claims (permissions)
-        var roleClaims = await _roleManager.GetClaimsAsync(role);
-        var rolePermissions = roleClaims
-            .Where(c => c.Type == ECOClaims.Permission)
-            .Select(c => c.Value)
-            .ToList();
-
-        // Get all functions with actions
-        var functions = await _functionRepo.ListAsync(cancellationToken);
-
-        var functionDtos = functions.Select(f => new FunctionDto
-        {
-            Id = f.Id,
-            Name = f.Name,
-            ActionDtos = f.Actions.Select(a => new ActionDto
+   var functionDto = new FunctionDto
             {
-                Id = a.Id,
-                Name = a.Name,
-                Selected = rolePermissions.Contains($"Permissions.{f.Name}.{a.Name}")
-            }).ToList()
-        }).ToList();
+    Id = function.Id,
+        Name = function.Name,
+        ActionDtos = function.ActionInFunctions.Select(aif => new ActionDto
+         {
+   Id = aif.Action.Id,
+            Name = aif.Action.Name,
+  // Check nếu permission exists trong Permission table
+       Selected = permissions.Any(p => 
+   p.FunctionId == function.Id && 
+         p.ActionId == aif.Action.Id)
+        }).ToList()
+            };
 
-        return functionDtos;
+            functionDtos.Add(functionDto);
+  }
+
+return functionDtos;
     }
 
+    /// <summary>
+    /// Create hoặc update role
+    /// </summary>
+    public async Task<string> CreateOrUpdateAsync(CreateOrUpdateRoleRequest request)
+ {
+        if (string.IsNullOrEmpty(request.Id))
+        {
+    // Create new role
+  var role = new ApplicationRole(request.Name, request.Description);
+    var result = await _roleManager.CreateAsync(role);
+
+         if (!result.Succeeded)
+      {
+     throw new InternalServerException(
+          "Register role failed", 
+              result.Errors.Select(e => e.Description).ToList());
+            }
+
+       return $"Role {request.Name} Created.";
+        }
+      else
+     {
+            // Update existing role
+       var role = await _roleManager.FindByIdAsync(request.Id);
+
+            _ = role ?? throw new NotFoundException("Role Not Found");
+
+       // Cannot update default roles
+            if (ECORoles.IsDefault(role.Name!))
+            {
+   throw new ConflictException($"Not allowed to modify {role.Name} Role.");
+   }
+
+ role.Name = request.Name;
+         role.NormalizedName = request.Name.ToUpperInvariant();
+            role.Description = request.Description;
+
+            var result = await _roleManager.UpdateAsync(role);
+
+            if (!result.Succeeded)
+            {
+              throw new InternalServerException(
+  "Update role failed", 
+    result.Errors.Select(e => e.Description).ToList());
+            }
+
+          return $"Role {role.Name} Updated.";
+        }
+    }
+
+  /// <summary>
+    /// Update permissions của role (table-based approach)
+    /// Replaces all current permissions with new ones
+    /// </summary>
     public async Task<string> UpdatePermissionsAsync(
         UpdateRolePermissionsRequest request, 
         CancellationToken cancellationToken)
     {
-        var role = await _roleManager.FindByIdAsync(request.RoleId);
-        if (role == null)
+      var role = await _roleManager.FindByIdAsync(request.RoleId);
+      _ = role ?? throw new NotFoundException("Role Not Found");
+
+        // Cannot update Admin role permissions
+        if (role.Name == ECORoles.Admin)
         {
-            throw new NotFoundException("Role Not Found.");
+          throw new ConflictException("Not allowed to modify Permissions for this Role.");
         }
 
-        // Remove all current permission claims
-        var currentClaims = await _roleManager.GetClaimsAsync(role);
-        var permissionClaims = currentClaims.Where(c => c.Type == ECOClaims.Permission);
-        foreach (var claim in permissionClaims)
-        {
-            await _roleManager.RemoveClaimAsync(role, claim);
-        }
-
-        // Add new permission claims
-        var functions = await _functionRepo.ListAsync(cancellationToken);
-        foreach (var permission in request.Permissions)
-        {
-            var function = functions.FirstOrDefault(f => f.Id == permission.FunctionId);
-            var action = function?.Actions.FirstOrDefault(a => a.Id == permission.ActionId);
-
-            if (function != null && action != null)
-            {
-                var permissionValue = $"Permissions.{function.Name}.{action.Name}";
-                await _roleManager.AddClaimAsync(role, 
-                    new Claim(ECOClaims.Permission, permissionValue));
-            }
-        }
-
-        return "Role Permissions Updated Successfully.";
-    }
-
-    public async Task<bool> ExistsAsync(string roleName, string? excludeId)
-    {
-        var role = await _roleManager.FindByNameAsync(roleName);
-        return role != null && role.Id != excludeId;
-    }
-
-    public async Task<List<RoleDto>> GetListAsync(CancellationToken cancellationToken)
-    {
-        return await _roleManager.Roles
-            .Select(r => new RoleDto
-            {
-                Id = r.Id,
-                Name = r.Name!,
-                Description = r.Description
-            })
+  // Remove all current permissions
+        var currentPermissions = await _db.Permissions
+   .Where(p => p.RoleId == role.Id)
             .ToListAsync(cancellationToken);
-    }
 
-    public async Task<int> GetCountAsync(CancellationToken cancellationToken) =>
-        await _roleManager.Roles.CountAsync(cancellationToken);
+   _db.Permissions.RemoveRange(currentPermissions);
+        await _db.SaveChangesAsync(cancellationToken);
 
-    public async Task<RoleDto> GetByIdAsync(string id)
-    {
-        var role = await _roleManager.FindByIdAsync(id);
-        if (role == null)
+        // Add new permissions từ request
+    foreach (var permissionRequest in request.Permissions)
         {
-            throw new NotFoundException("Role Not Found.");
+       if (permissionRequest.FunctionId != Guid.Empty && 
+           permissionRequest.ActionId != Guid.Empty)
+    {
+      _db.Permissions.Add(new Permission(
+  role.Id, 
+   permissionRequest.FunctionId, 
+         permissionRequest.ActionId));
+        }
         }
 
-        return new RoleDto
-        {
-            Id = role.Id,
-            Name = role.Name!,
-            Description = role.Description
-        };
+   await _db.SaveChangesAsync(cancellationToken);
+
+        return "Permissions Updated.";
     }
 
+    /// <summary>
+    /// Delete role với validation
+    /// </summary>
     public async Task<string> DeleteAsync(string id)
     {
         var role = await _roleManager.FindByIdAsync(id);
-        if (role == null)
-        {
-            throw new NotFoundException("Role Not Found.");
-        }
 
-        // Check if role is assigned to any users
-        var usersInRole = await _roleManager.GetUsersInRoleAsync(role.Name!);
-        if (usersInRole.Any())
-        {
-            throw new ConflictException("Role is assigned to users. Cannot delete.");
-        }
+    _ = role ?? throw new NotFoundException("Role Not Found");
 
-        await _roleManager.DeleteAsync(role);
-        return "Role Deleted Successfully.";
+        // Cannot delete default roles
+        if (ECORoles.IsDefault(role.Name!))
+      {
+          throw new ConflictException($"Not allowed to delete {role.Name} Role.");
+}
+
+        // Cannot delete role đang được users sử dụng
+if ((await _userManager.GetUsersInRoleAsync(role.Name!)).Count > 0)
+        {
+  throw new ConflictException(
+   $"Not allowed to delete {role.Name} Role as it is being used.");
+  }
+
+      await _roleManager.DeleteAsync(role);
+
+   return $"Role {role.Name} Deleted.";
     }
 }
 ```
 
----
+**Giải thích:**
 
-## 5. Key Patterns & Decisions
+**Dependencies:**
+- **RoleManager:** ASP.NET Core Identity role management
+- **UserManager:** Check users in role
+- **ApplicationDbContext:** Direct database access cho Permission table
+- **IFunctionService:** Get functions list (sẽ implement trong BUILD_16C)
 
-### Pattern 1: Permissions as Claims
+**GetByIdWithPermissionsAsync:**
+1. Get all functions với actions (from Function + ActionInFunction tables)
+2. Get permissions for role (from Permission table)
+3. Build FunctionDto list với Selected flags
+4. Selected = true nếu permission exists trong Permission table
 
-**Implementation:**
-- Permissions stored as Claims on Role
-- Claim Type: `ECOClaims.Permission`
-- Claim Value: `Permissions.{FunctionName}.{ActionName}`
+**UpdatePermissionsAsync (Table-Based Approach):**
+1. Validate role exists và không phải Admin
+2. Remove ALL current permissions (clear Permission table entries)
+3. Add new permissions từ request (insert new rows vào Permission table)
+4. Return success message
 
-**Example:**
-```csharp
-new Claim(ECOClaims.Permission, "Permissions.Users.Write")
-new Claim(ECOClaims.Permission, "Permissions.Products.Delete")
-```
+**CreateOrUpdateAsync:**
+- **Create:** `_roleManager.CreateAsync()`
+- **Update:** Update Name, NormalizedName, Description
+- Protect default roles (Admin, Basic)
 
-**Benefits:**
-- ASP.NET Core Identity built-in
-- No additional tables needed
-- Queryable with standard Identity methods
+**DeleteAsync:**
+- Validate role exists
+- Cannot delete default roles
+- Cannot delete roles being used by users
+- `_roleManager.DeleteAsync()`
 
----
-
-### Pattern 2: CreateOrUpdate Single Method
-
-**Why:**
-```csharp
-// Single method handles both
-if (string.IsNullOrEmpty(request.Id))
-    // Create
-else
-    // Update
-```
-
-**Benefits:**
-- Less code duplication
-- Simpler API
-- Common pattern for admin UIs
+**Tại sao Table-Based Approach:**
+- **Flexible:** Add/remove permissions without code changes
+- **Dynamic:** Permissions stored in database
+- **UI-friendly:** Easy to display checkboxes
+- **Scalable:** Supports custom permissions per role
 
 ---
 
-### Pattern 3: Check Before Delete
+## 5. User Service - Role Operations
+
+### Bước 5.1: UserService.Role.cs (Partial Class)
+
+**Làm gì:** Implement user role operations (assign roles to users).
+
+**Tại sao:** Users cần roles để access resources.
+
+**File:** `src/Infrastructure/Infrastructure/Identity/UserService.Role.cs`
 
 ```csharp
-var usersInRole = await _roleManager.GetUsersInRoleAsync(role.Name!);
-if (usersInRole.Any())
+using ECO.WebApi.Application.Common.Exceptions;
+using ECO.WebApi.Application.Identity.Users;
+using ECO.WebApi.Shared.Authorization;
+using Microsoft.EntityFrameworkCore;
+
+namespace ECO.WebApi.Infrastructure.Identity;
+
+/// <summary>
+/// UserService - Role Operations (Partial Class)
+/// </summary>
+internal partial class UserService
 {
-    throw new ConflictException("Role is assigned to users. Cannot delete.");
+    /// <summary>
+    /// Get user's assigned roles
+    /// </summary>
+    public async Task<List<UserRoleDto>> GetRolesAsync(
+        string userId, 
+        CancellationToken cancellationToken)
+    {
+        var user = await _userManager.Users
+  .AsNoTracking()
+            .SingleOrDefaultAsync(u => u.Id == userId, cancellationToken);
+
+        _ = user ?? throw new NotFoundException("User Not Found.");
+
+        // Get user's roles
+var userRoles = await _userManager.GetRolesAsync(user);
+
+        // Get all available roles
+        var allRoles = await _roleManager.Roles.ToListAsync(cancellationToken);
+
+      var roleDtos = allRoles.Select(role => new UserRoleDto
+     {
+       RoleId = role.Id,
+  RoleName = role.Name!,
+          Description = role.Description,
+        Enabled = userRoles.Contains(role.Name!) // Check if user has this role
+        }).ToList();
+
+    return roleDtos;
+    }
+
+    /// <summary>
+    /// Assign roles to user
+    /// Replaces all current roles with new ones
+    /// </summary>
+    public async Task<string> AssignRolesAsync(
+        string userId, 
+        UserRolesRequest request, 
+        CancellationToken cancellationToken)
+  {
+   ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+    var user = await _userManager.Users
+ .Where(u => u.Id == userId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        _ = user ?? throw new NotFoundException("User Not Found.");
+
+        // Check if Admin role is being assigned/removed for current user
+        if (await _userManager.IsInRoleAsync(user, ECORoles.Admin)
+      && (request.UserRoles.FirstOrDefault(r => r.RoleName == ECORoles.Admin) is not { Enabled: true }))
+    {
+     throw new ConflictException("Admin users cannot remove their own Admin role.");
+     }
+
+        // Remove all current roles
+        var currentRoles = await _userManager.GetRolesAsync(user);
+  foreach (var role in currentRoles)
+    {
+  await _userManager.RemoveFromRoleAsync(user, role);
+     }
+
+        // Add new roles từ request (where Enabled = true)
+    foreach (var roleRequest in request.UserRoles.Where(r => r.Enabled))
+  {
+      var role = await _roleManager.FindByNameAsync(roleRequest.RoleName);
+if (role != null)
+     {
+                await _userManager.AddToRoleAsync(user, role.Name!);
+    }
+        }
+
+        return "User Roles Updated Successfully.";
+    }
 }
 ```
 
-**Why:**
-- Data integrity
-- Prevent orphaned references
-- User-friendly error message
+**Giải thích:**
+
+**GetRolesAsync:**
+1. Find user
+2. Get user's current roles (`_userManager.GetRolesAsync()`)
+3. Get all available roles
+4. Build UserRoleDto list với Enabled flags
+5. **Enabled = true** nếu user has role
+
+**AssignRolesAsync:**
+1. Validate user exists
+2. Check Admin protection (cannot remove own Admin role)
+3. Remove ALL current roles
+4. Add new roles where Enabled = true
+5. Return success message
+
+**Tại sao replace all roles:**
+- Simpler logic (clear + add)
+- No need to diff current vs new
+- Matches UI pattern (checkboxes)
 
 ---
 
-## 6. Tổng kết BUILD_16B
+### Bước 5.2: UserRolesRequest và UserRoleDto
 
-**Đã xây dựng:**
+**File:** `src/Core/Application/Identity/Users/UserRolesRequest.cs`
 
-✅ **DTOs:**
-- RoleDto, FunctionDto, ActionDto
+```csharp
+namespace ECO.WebApi.Application.Identity.Users;
 
-✅ **Requests:**
-- CreateOrUpdateRoleRequest (with validator)
-- UpdateRolePermissionsRequest (with validator)
-- PermissionRequest (nested)
+/// <summary>
+/// Request để assign roles to user
+/// </summary>
+public class UserRolesRequest
+{
+    /// <summary>
+    /// List of roles với Enabled flags
+    /// </summary>
+    public List<UserRoleDto> UserRoles { get; set; } = default!;
+}
+```
 
-✅ **IRoleService Interface:**
-- 7 methods for role and permission management
+**File:** `src/Core/Application/Identity/Users/UserRoleDto.cs`
 
-✅ **RoleService Implementation:**
-- Single file (not partial - simple enough)
-- Permissions as Claims pattern
-- CreateOrUpdate pattern
-- Safe delete with validation
+```csharp
+namespace ECO.WebApi.Application.Identity.Users;
 
-**Next:**
+/// <summary>
+/// User role DTO (for assign roles UI)
+/// </summary>
+public class UserRoleDto
+{
+    /// <summary>
+    /// Role ID
+    /// </summary>
+    public string RoleId { get; set; } = default!;
 
-➡️ **BUILD_16C:** Function Service (4 methods - simplest!)
+    /// <summary>
+    /// Role name
+    /// </summary>
+    public string RoleName { get; set; } = default!;
+
+    /// <summary>
+    /// Role description
+    /// </summary>
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// Is this role assigned to user (checkbox state)
+    /// </summary>
+    public bool Enabled { get; set; }
+}
+```
+
+**Giải thích:**
+- **UserRoleDto:** Represents một role với checkbox state
+- **Enabled:** true = user has this role, false = user doesn't have
+
+**UI Example:**
+```
+☑ Admin
+☐ Manager
+☑ Basic
+☐ Customer
+```
+
+---
+
+## 6. Role Controller
+
+### Bước 6.1: RoleController Implementation
+
+**Làm gì:** Expose role management APIs.
+
+**Tại sao:** RESTful endpoints cho role operations.
+
+**File:** `src/Host/Host/Controllers/Identity/RoleController.cs`
+
+```csharp
+using ECO.WebApi.Application.Identity.Roles;
+using NSwag.Annotations;
+
+namespace ECO.WebApi.Host.Controllers.Identity;
+
+/// <summary>
+/// Role management APIs
+/// </summary>
+public class RoleController : BaseApiController
+{
+    private readonly IRoleService _roleService;
+    private readonly IFunctionService _functionService;
+
+    public RoleController(IRoleService roleService, IFunctionService functionService)
+    {
+        _roleService = roleService;
+        _functionService = functionService;
+ }
+
+    /// <summary>
+    /// Get list of all roles
+    /// </summary>
+    [HttpGet]
+    [OpenApiOperation("Get a list of all roles.", "")]
+    public Task<List<RoleDto>> GetListAsync(CancellationToken cancellationToken)
+    {
+     return _roleService.GetListAsync(cancellationToken);
+    }
+
+    /// <summary>
+  /// Get role details by ID
+    /// </summary>
+    [HttpGet("{id}")]
+    [OpenApiOperation("Get role details.", "")]
+    public Task<RoleDto> GetByIdAsync(string id)
+    {
+   return _roleService.GetByIdAsync(id);
+    }
+
+    /// <summary>
+    /// Get role details với permissions (for permission UI)
+    /// Returns list of Functions with Actions marked as Selected or not
+    /// </summary>
+    [HttpGet("{id}/permissions")]
+    [OpenApiOperation("Get role details with its permissions.", "")]
+    public Task<List<FunctionDto>> GetByIdWithPermissionsAsync(
+        string id, 
+        CancellationToken cancellationToken)
+    {
+        return _roleService.GetByIdWithPermissionsAsync(id, cancellationToken);
+    }
+
+    /// <summary>
+    /// Update role's permissions (table-based approach)
+    /// </summary>
+    [HttpPut("{id}/permissions")]
+    [OpenApiOperation("Update a role's permissions.", "")]
+    public async Task<ActionResult> UpdatePermissionsAsync(
+        string id, 
+   UpdateRolePermissionsRequest request, 
+      CancellationToken cancellationToken)
+    {
+        if (id != request.RoleId)
+        {
+ return BadRequest();
+  }
+
+        var result = await _roleService.UpdatePermissionsAsync(request, cancellationToken);
+        return Ok(new { message = result });
+    }
+
+    /// <summary>
+    /// Create hoặc update role
+    /// </summary>
+    [HttpPost("create/update")]
+    [OpenApiOperation("Create or update a role.", "")]
+    public async Task<ActionResult> RegisterRoleAsync(CreateOrUpdateRoleRequest request)
+    {
+        var result = await _roleService.CreateOrUpdateAsync(request);
+        return Ok(new { message = result });
+    }
+
+    /// <summary>
+    /// Delete role
+    /// </summary>
+    [HttpDelete("{id}")]
+    [OpenApiOperation("Delete a role.", "")]
+public async Task<ActionResult> DeleteAsync(string id)
+    {
+        var result = await _roleService.DeleteAsync(id);
+        return Ok(new { message = result });
+    }
+
+    /// <summary>
+    /// Get list of all functions (for permission UI)
+    /// </summary>
+    [HttpGet("functions")]
+    [OpenApiOperation("Get a list of all functions.", "")]
+    public Task<List<FunctionDto>> GetFunctionListAsync(CancellationToken cancellationToken)
+  {
+        return _functionService.GetListAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Get function details by ID
+    /// </summary>
+    [HttpGet("function/{id}")]
+  [OpenApiOperation("Get function details.", "")]
+    public Task<FunctionDto> GetFunctionByIdAsync(Guid id)
+    {
+        return _functionService.GetByIdAsync(id);
+    }
+
+    /// <summary>
+    /// Create hoặc update function
+    /// </summary>
+    [HttpPost("function/create/update")]
+  [OpenApiOperation("Create or update a function.", "")]
+    public async Task<ActionResult> CreateUpdateFunctionAsync(CreateOrUpdateFunctionRequest request)
+    {
+      var result = await _functionService.CreateOrUpdateAsync(request);
+        return Ok(new { message = result });
+    }
+
+    /// <summary>
+    /// Delete function
+    /// </summary>
+    [HttpDelete("function/{id}")]
+    [OpenApiOperation("Delete a function.", "")]
+    public async Task<ActionResult> DeleteFunctionAsync(Guid id)
+    {
+        var result = await _functionService.DeleteAsync(id);
+     return Ok(new { message = result });
+    }
+}
+```
+
+**Giải thích:**
+
+**GET /api/role:**
+- Get all roles
+
+**GET /api/role/{id}:**
+- Get role details
+
+**GET /api/role/{id}/permissions:**
+- Get role WITH permissions (Functions + Actions với Selected flags)
+- Dùng cho permission UI
+
+**PUT /api/role/{id}/permissions:**
+- Update permissions
+- Check id match request.RoleId
+
+**POST /api/role/create/update:**
+- Single endpoint cho create/update
+
+**DELETE /api/role/{id}:**
+- Delete role với validation
+
+**Function Endpoints:**
+- Nested under /api/role/functions (for organization)
+- Sẽ implement trong BUILD_16C
+
+---
+
+## 7. Summary
+
+### ✅ Đã hoàn thành trong bước này:
+
+**Role DTOs:**
+- ✅ RoleDto (display role info)
+- ✅ CreateOrUpdateRoleRequest với FluentValidation
+- ✅ UpdateRolePermissionsRequest (table-based approach)
+- ✅ FunctionDto và ActionDto (for permission UI)
+
+**Role Service:**
+- ✅ IRoleService interface
+- ✅ RoleService implementation với table-based permission management
+
+**User Service - Role Operations:**
+- ✅ UserService.Role.cs (partial class)
+- ✅ GetRolesAsync, AssignRolesAsync
+- ✅ UserRolesRequest, UserRoleDto
+
+**Controllers:**
+- ✅ RoleController với RESTful endpoints
+
+### 📊 Permission Management Flow:
+
+```
+┌─────────────┐
+│   Admin     │
+└──────┬──────┘
+       │ GET /api/role/{id}/permissions
+       ▼
+┌──────────────┐
+│ RoleService  │
+└──────┬───────┘
+       │ Query Permission table
+       │ Build FunctionDto với Selected flags
+  ▼
+┌─────────────┐
+│  Frontend   │
+│  Checkboxes │
+└──────┬──────┘
+       │ PUT /api/role/{id}/permissions
+       ▼
+┌──────────────┐
+│ RoleService  │
+└──────┬───────┘
+    │ DELETE old permissions
+       │ INSERT new permissions
+       ▼
+┌─────────────┐
+│   Success   │
+└─────────────┘
+```
+
+### 📁 File Structure:
+
+```
+src/
+├── Core/
+│   └── Application/
+│       └── Identity/
+│           ├── Roles/
+│           │   ├── IRoleService.cs
+│         │   ├── RoleDto.cs
+│   │   ├── CreateOrUpdateRoleRequest.cs
+│           │   ├── UpdateRolePermissionsRequest.cs
+│       │   ├── FunctionDto.cs
+│        │   └── ActionDto.cs
+│    └── Users/
+│    ├── UserRolesRequest.cs
+│     └── UserRoleDto.cs
+├── Infrastructure/
+│   └── Infrastructure/
+│       └── Identity/
+│    ├── RoleService.cs
+│           └── UserService.Role.cs
+└── Host/
+    └── Host/
+        └── Controllers/
+            └── Identity/
+                └── RoleController.cs
+```
+
+---
+
+## 8. Next Steps
+
+**Tiếp theo:** [BUILD_16C - Function Service](BUILD_16C_Function_Service.md)
+
+Trong bước tiếp theo:
+1. ✅ Function CRUD operations
+2. ✅ Manage ActionInFunction relationships
+3. ✅ Complete Permission system
+
+---
+
+**Quay lại:** [Mục lục](BUILD_INDEX.md)
