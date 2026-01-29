@@ -38,7 +38,7 @@ var createRequest = new CreateOrUpdateFunctionRequest
     ActionIds = new List<Guid>
     {
         viewActionId,
-  createActionId,
+        createActionId,
         updateActionId,
         deleteActionId
     }
@@ -69,42 +69,42 @@ var function = await _functionService.GetByIdAsync(functionId);
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│              PERMISSION SYSTEM│
-│          (Table-Based Approach)   │
+│               PERMISSION SYSTEM                         │ 
+│            (Table-Based Approach)                       │
 └─────────────────────────────────────────────────────────┘
 
-┌───────────┐      ┌────────────┐     ┌──────────┐
-│  Action   │          │  Function  │          │   Role   │
+┌───────────┐          ┌────────────┐     ┌──────────┐
+│  Action   │          │  Function  │     │   Role   │
 │  (View,   │◄─────────│  (Users,   │     │ (Admin,  │
-│  Create,  │  N   N   │  Products, │          │ Manager) │
-│  Update,  │          │  Orders)   │ │          │
-│  Delete)  │          │            │   │          │
-└───────────┘        └────────────┘      └──────────┘
-      │              │            │
-      │      │          │
-      │        │    │
+│  Create,  │  N   N   │  Products, │     │ Manager) │
+│  Update,  │          │  Orders)   │     │          │
+│  Delete)  │          │            │     │          │
+└───────────┘          └────────────┘     └──────────┘
+      │                     │                       │
+      │                     │                       │
+      │                     │                       │
       │     ┌───────────────┴────────────────┐      │
-      │   │   ActionInFunction Table       │  │
+      │     │   ActionInFunction Table       │      │  
       └─────┤  (Function + Action mapping)   │      │
-     └────────────────────────────────┘      │
-         │  │
-   │               │
-            ┌────────┴──────────┐ │
-         │  Permission Table │◄────────────┘
+            └────────────────────────────────┘      │
+                     │                              │
+                     │                              │
+            ┌────────┴──────────┐                   │
+            │  Permission Table │◄──────────────────┘
             │ (Role + Function  │
-          │ + Action)    │
-       └───────────────────┘
-     │
-      │
-             ┌────────▼──────────┐
-     │  UserRoles Table  │
-          │  (User + Role)    │
-           └───────────────────┘
- │
-      │
-          ┌────────▼──────────┐
-  │   ApplicationUser │
-          └───────────────────┘
+            │ + Action)         │
+            └───────────────────┘
+                     │
+                     │
+            ┌────────▼──────────┐
+            │  UserRoles Table  │
+            │  (User + Role)    │
+            └───────────────────┘
+                     │
+                     │
+            ┌────────▼──────────┐
+            │   ApplicationUser │
+            └───────────────────┘
 ```
 
 **Tables Explained:**
@@ -253,7 +253,7 @@ public class Function : BaseEntity
     /// </summary>
     public void AddAction(Guid actionId)
     {
-  ActionInFunctions.Add(new ActionInFunction(actionId, Id));
+        ActionInFunctions.Add(new ActionInFunction(actionId, Id));
     }
 
     /// <summary>
@@ -270,13 +270,13 @@ public class Function : BaseEntity
         // Remove actions not in new list
         ActionInFunctions.RemoveAll(aif => !newActionIds.Contains(aif.ActionId));
 
-   // Add new actions not yet in function
+        // Add new actions not yet in function
         var existingActionIds = ActionInFunctions.Select(aif => aif.ActionId).ToHashSet();
         foreach (var actionId in newActionIds)
         {
             if (!existingActionIds.Contains(actionId))
-      {
-           ActionInFunctions.Add(new ActionInFunction(actionId, Id));
+            {
+                ActionInFunctions.Add(new ActionInFunction(actionId, Id));
             }
         }
     }
@@ -381,7 +381,7 @@ public class ActionInFunction
     public virtual Action Action { get; set; } = default!;
 
     /// <summary>
-/// Navigation property to Function
+    /// Navigation property to Function
     /// </summary>
     public virtual Function Function { get; set; } = default!;
 
@@ -391,7 +391,7 @@ public class ActionInFunction
 
     public ActionInFunction(Guid actionId, Guid functionId)
     {
-   ActionId = actionId;
+        ActionId = actionId;
         FunctionId = functionId;
     }
 }
@@ -447,7 +447,7 @@ public class CreateOrUpdateFunctionRequest
     /// </summary>
     public string Name { get; set; } = default!;
 
- /// <summary>
+    /// <summary>
     /// List of Action IDs to assign to this function
     /// Example: [ViewActionId, CreateActionId, UpdateActionId]
     /// </summary>
@@ -485,7 +485,7 @@ public interface IFunctionService : ITransientService
     /// <summary>
     /// Get list tất cả functions với actions
     /// </summary>
-  Task<List<FunctionDto>> GetListAsync(CancellationToken cancellationToken);
+    Task<List<FunctionDto>> GetListAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Get function details by ID với actions
@@ -498,11 +498,11 @@ public interface IFunctionService : ITransientService
     /// </summary>
     Task<string> CreateOrUpdateAsync(CreateOrUpdateFunctionRequest request);
 
-  /// <summary>
+    /// <summary>
     /// Delete function
     /// Cannot delete functions being used in Permission table
     /// </summary>
-Task<string> DeleteAsync(Guid id);
+    Task<string> DeleteAsync(Guid id);
 }
 ```
 
@@ -551,8 +551,8 @@ public class FunctionService : IFunctionService
     {
         var functions = await _db.Functions
             .Include(f => f.ActionInFunctions)
-     .ThenInclude(aif => aif.Action)
- .ToListAsync(cancellationToken);
+            .ThenInclude(aif => aif.Action)
+            .ToListAsync(cancellationToken);
 
         return functions.Adapt<List<FunctionDto>>();
     }
@@ -564,12 +564,12 @@ public class FunctionService : IFunctionService
     {
       var function = await _db.Functions
             .Include(f => f.ActionInFunctions)
-   .ThenInclude(aif => aif.Action)
-    .FirstOrDefaultAsync(f => f.Id == id);
+            .ThenInclude(aif => aif.Action)
+            .FirstOrDefaultAsync(f => f.Id == id);
 
         if (function == null)
-      {
-     throw new NotFoundException("Function not found");
+        {
+            throw new NotFoundException("Function not found");
         }
 
         return function.Adapt<FunctionDto>();

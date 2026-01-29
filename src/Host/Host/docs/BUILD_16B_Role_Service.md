@@ -100,7 +100,7 @@ public class RoleDto
 
     /// <summary>
     /// List of permission strings (optional, for quick display)
-/// Format: "Function.Action" (e.g., "Users.View", "Products.Create")
+    /// Format: "Function.Action" (e.g., "Users.View", "Products.Create")
     /// </summary>
     public List<string>? Permissions { get; set; }
 }
@@ -155,11 +155,11 @@ public class CreateOrUpdateRoleRequestValidator : AbstractValidator<CreateOrUpda
 {
     public CreateOrUpdateRoleRequestValidator(IRoleService roleService)
     {
-    RuleFor(r => r.Name)
-   .NotEmpty()
-            .WithMessage("Role name is required.")
-       .MustAsync(async (role, name, _) => !await roleService.ExistsAsync(name, role.Id))
-        .WithMessage("Similar Role already exists.");
+            RuleFor(r => r.Name)
+           .NotEmpty()
+           .WithMessage("Role name is required.")
+           .MustAsync(async (role, name, _) => !await roleService.ExistsAsync(name, role.Id))
+           .WithMessage("Similar Role already exists.");
     }
 }
 ```
@@ -233,12 +233,12 @@ public class UpdateRolePermissionsRequestValidator : AbstractValidator<UpdateRol
 {
     public UpdateRolePermissionsRequestValidator()
     {
-        RuleFor(r => r.RoleId)
+         RuleFor(r => r.RoleId)
             .NotEmpty()
-      .WithMessage("Role ID is required.");
+            .WithMessage("Role ID is required.");
 
         RuleFor(r => r.Permissions)
-       .NotNull()
+            .NotNull()
             .WithMessage("Permissions list is required.");
     }
 }
@@ -490,8 +490,8 @@ internal class RoleService : IRoleService
         IFunctionService functionService)
     {
         _roleManager = roleManager;
-   _userManager = userManager;
-   _db = db;
+       _userManager = userManager;
+       _db = db;
         _currentUser = currentUser;
         _events = events;
         _functionService = functionService;
@@ -503,7 +503,7 @@ internal class RoleService : IRoleService
     public async Task<List<RoleDto>> GetListAsync(CancellationToken cancellationToken)
     {
         return (await _roleManager.Roles.ToListAsync(cancellationToken))
-  .Adapt<List<RoleDto>>();
+            .Adapt<List<RoleDto>>();
     }
 
     /// <summary>
@@ -520,8 +520,8 @@ internal class RoleService : IRoleService
     public async Task<bool> ExistsAsync(string roleName, string? excludeId)
     {
         return await _roleManager.FindByNameAsync(roleName)
-   is ApplicationRole existingRole
-   && existingRole.Id != excludeId;
+               is ApplicationRole existingRole
+               && existingRole.Id != excludeId;
     }
 
     /// <summary>
@@ -529,107 +529,106 @@ internal class RoleService : IRoleService
     /// </summary>
     public async Task<RoleDto> GetByIdAsync(string id)
     {
- return await _db.Roles.SingleOrDefaultAsync(x => x.Id == id) is { } role
-     ? role.Adapt<RoleDto>()
-     : throw new NotFoundException("Role Not Found");
+        return await _db.Roles.SingleOrDefaultAsync(x => x.Id == id) is { } role
+         ? role.Adapt<RoleDto>()
+         : throw new NotFoundException("Role Not Found");
     }
 
     /// <summary>
     /// Get role details với permissions (Functions + Actions)
     /// Returns list of Functions with Actions marked as Selected or not
-  /// </summary>
+    /// </summary>
     public async Task<List<FunctionDto>> GetByIdWithPermissionsAsync(
         string roleId, 
      CancellationToken cancellationToken)
     {
         // Get all functions với actions
-   var functions = await _db.Functions
+        var functions = await _db.Functions
             .Include(f => f.ActionInFunctions)
             .ThenInclude(x => x.Action)
-    .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken);
 
         // Get permissions cho role này (từ Permission table)
         var permissions = await _db.Permissions
-       .Where(p => p.RoleId == roleId)
-         .ToListAsync(cancellationToken);
+            .Where(p => p.RoleId == roleId)
+            .ToListAsync(cancellationToken);
 
         // Build FunctionDto list với Selected flags
-   var functionDtos = new List<FunctionDto>();
+        var functionDtos = new List<FunctionDto>();
 
-     foreach (var function in functions)
+        foreach (var function in functions)
         {
-   var functionDto = new FunctionDto
+            var functionDto = new FunctionDto
             {
-    Id = function.Id,
-        Name = function.Name,
-        ActionDtos = function.ActionInFunctions.Select(aif => new ActionDto
-         {
-   Id = aif.Action.Id,
-            Name = aif.Action.Name,
-  // Check nếu permission exists trong Permission table
-       Selected = permissions.Any(p => 
-   p.FunctionId == function.Id && 
-         p.ActionId == aif.Action.Id)
-        }).ToList()
-            };
-
+                Id = function.Id,
+                Name = function.Name,
+                ActionDtos = function.ActionInFunctions.Select(aif => new ActionDto
+                    {
+                         Id = aif.Action.Id,
+                         Name = aif.Action.Name,
+                        // Check nếu permission exists trong Permission table
+                         Selected = permissions.Any(p => 
+                         p.FunctionId == function.Id && 
+                         p.ActionId == aif.Action.Id)
+                     }).ToList()
+             };
             functionDtos.Add(functionDto);
-  }
+         }
 
-return functionDtos;
+        return functionDtos;
     }
 
     /// <summary>
     /// Create hoặc update role
     /// </summary>
     public async Task<string> CreateOrUpdateAsync(CreateOrUpdateRoleRequest request)
- {
+    {
         if (string.IsNullOrEmpty(request.Id))
-        {
-    // Create new role
-  var role = new ApplicationRole(request.Name, request.Description);
-    var result = await _roleManager.CreateAsync(role);
+             {
+                // Create new role
+                var role = new ApplicationRole(request.Name, request.Description);
+                var result = await _roleManager.CreateAsync(role);
 
-         if (!result.Succeeded)
-      {
-     throw new InternalServerException(
-          "Register role failed", 
-              result.Errors.Select(e => e.Description).ToList());
-            }
+                if (!result.Succeeded)
+                {
+                    throw new InternalServerException(
+                        "Register role failed", 
+                        result.Errors.Select(e => e.Description).ToList());
+                 }
 
-       return $"Role {request.Name} Created.";
+        return $"Role {request.Name} Created.";
         }
-      else
-     {
+        else
+        {
             // Update existing role
-       var role = await _roleManager.FindByIdAsync(request.Id);
+            var role = await _roleManager.FindByIdAsync(request.Id);
 
             _ = role ?? throw new NotFoundException("Role Not Found");
 
-       // Cannot update default roles
+            // Cannot update default roles
             if (ECORoles.IsDefault(role.Name!))
             {
-   throw new ConflictException($"Not allowed to modify {role.Name} Role.");
-   }
+                throw new ConflictException($"Not allowed to modify {role.Name} Role.");
+            }
 
- role.Name = request.Name;
-         role.NormalizedName = request.Name.ToUpperInvariant();
+            role.Name = request.Name;
+            role.NormalizedName = request.Name.ToUpperInvariant();
             role.Description = request.Description;
 
             var result = await _roleManager.UpdateAsync(role);
 
             if (!result.Succeeded)
             {
-              throw new InternalServerException(
-  "Update role failed", 
-    result.Errors.Select(e => e.Description).ToList());
+                throw new InternalServerException(
+                "Update role failed", 
+                result.Errors.Select(e => e.Description).ToList());
             }
 
-          return $"Role {role.Name} Updated.";
+            return $"Role {role.Name} Updated.";
         }
     }
 
-  /// <summary>
+    /// <summary>
     /// Update permissions của role (table-based approach)
     /// Replaces all current permissions with new ones
     /// </summary>
@@ -648,27 +647,25 @@ return functionDtos;
 
   // Remove all current permissions
         var currentPermissions = await _db.Permissions
-   .Where(p => p.RoleId == role.Id)
-            .ToListAsync(cancellationToken);
+                                        .Where(p => p.RoleId == role.Id)
+                                        .ToListAsync(cancellationToken);
 
    _db.Permissions.RemoveRange(currentPermissions);
         await _db.SaveChangesAsync(cancellationToken);
 
         // Add new permissions từ request
-    foreach (var permissionRequest in request.Permissions)
+        foreach (var permissionRequest in request.Permissions)
         {
-       if (permissionRequest.FunctionId != Guid.Empty && 
-           permissionRequest.ActionId != Guid.Empty)
-    {
-      _db.Permissions.Add(new Permission(
-  role.Id, 
-   permissionRequest.FunctionId, 
-         permissionRequest.ActionId));
+             if (permissionRequest.FunctionId != Guid.Empty && 
+             permissionRequest.ActionId != Guid.Empty)
+             {
+                _db.Permissions.Add(new Permission(
+                                 role.Id, 
+                                 permissionRequest.FunctionId, 
+                                 permissionRequest.ActionId));
+             }
         }
-        }
-
-   await _db.SaveChangesAsync(cancellationToken);
-
+        await _db.SaveChangesAsync(cancellationToken);
         return "Permissions Updated.";
     }
 
@@ -679,24 +676,24 @@ return functionDtos;
     {
         var role = await _roleManager.FindByIdAsync(id);
 
-    _ = role ?? throw new NotFoundException("Role Not Found");
+         _ = role ?? throw new NotFoundException("Role Not Found");
 
         // Cannot delete default roles
         if (ECORoles.IsDefault(role.Name!))
-      {
-          throw new ConflictException($"Not allowed to delete {role.Name} Role.");
-}
+        {
+             throw new ConflictException($"Not allowed to delete {role.Name} Role.");
+        }
 
         // Cannot delete role đang được users sử dụng
-if ((await _userManager.GetUsersInRoleAsync(role.Name!)).Count > 0)
+        if ((await _userManager.GetUsersInRoleAsync(role.Name!)).Count > 0)
         {
-  throw new ConflictException(
-   $"Not allowed to delete {role.Name} Role as it is being used.");
-  }
+             throw new ConflictException(
+             $"Not allowed to delete {role.Name} Role as it is being used.");
+    }
 
       await _roleManager.DeleteAsync(role);
 
-   return $"Role {role.Name} Deleted.";
+      return $"Role {role.Name} Deleted.";
     }
 }
 ```
