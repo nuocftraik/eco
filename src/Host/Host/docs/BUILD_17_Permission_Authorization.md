@@ -71,7 +71,7 @@ public class UsersController : ControllerBase
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│        PERMISSION-BASED AUTHORIZATION FLOW       │
+│        PERMISSION-BASED AUTHORIZATION FLOW              │
 └─────────────────────────────────────────────────────────┘
 
 1. USER LOGIN
@@ -85,48 +85,48 @@ public class UsersController : ControllerBase
 └──────┬───────────┘
        │ 1. Validate credentials
        │ 2. Get user's roles (UserRoles table)
-   │ 3. Get permissions from Permission table
+       │ 3. Get permissions from Permission table
        │    Query: SELECT Function.Name + '.' + Action.Name
        │           FROM Permission P
        │           JOIN Function F ON P.FunctionId = F.Id
        │        JOIN Action A ON P.ActionId = A.Id
-│           WHERE P.RoleId IN (user's roles)
-  │ 4. Build JWT claims
-  ▼
+       │           WHERE P.RoleId IN (user's roles)
+       │ 4. Build JWT claims
+       ▼
 ┌──────────────────┐
 │   JWT Token      │
 │  with Claims:    │
 │  - NameIdentifier│
-│  - Email   │
-│  - Fullname    │
+│  - Email         │
+│  - Fullname      │
 │  - permission:   │
 │    "Users.View"  │
 │  - permission:   │
 │    "Users.Create"│
 │  - permission:   │
-│    "Products.View"│
+│   "Products.View"│
 └──────┬───────────┘
        │
-   ▼ (Client stores token)
+       ▼ (Client stores token)
 
 2. API CALL WITH AUTHORIZATION
 ┌──────────────────┐
 │ GET /api/users   │
 │ [MustHavePermission("View", "User")]
 └──────┬───────────┘
-    │ Authorization: Bearer {JWT}
-   ▼
+       │ Authorization: Bearer {JWT}
+       ▼
 ┌──────────────────────────┐
 │ ASP.NET Core Pipeline    │
 └──────┬───────────────────┘
        │ 1. Validate JWT signature
        │ 2. Extract claims from JWT
-     ▼
+       ▼
 ┌──────────────────────────┐
 │ PermissionPolicyProvider │
 └──────┬───────────────────┘
        │ 3. Create policy "Permissions.User.View"
-    │ 4. Add PermissionRequirement("Permissions.User.View")
+       │ 4. Add PermissionRequirement("Permissions.User.View")
        ▼
 ┌─────────────────────────────┐
 │ PermissionAuthorizationHandler│
@@ -271,7 +271,7 @@ public record ECOPermission(string action, string function)
 {
     /// <summary>
     /// Permission name (format: Permissions.Function.Action)
-  /// </summary>
+    /// </summary>
     public string Name => NameFor(action, function);
 
     /// <summary>
@@ -288,22 +288,22 @@ public record ECOPermission(string action, string function)
     public static List<string> GeneratePermissionsForFunction(string function)
     {
         // Get all action constants using reflection
-     var actions = typeof(ECOAction)
-            .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
-         .Where(field => field.IsLiteral && !field.IsInitOnly) // Only constants
-   .Select(field => field.GetValue(null)?.ToString())
-       .Where(value => value != null)
-            .ToList();
+        var actions = typeof(ECOAction)
+                 .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+                 .Where(field => field.IsLiteral && !field.IsInitOnly) // Only constants
+                 .Select(field => field.GetValue(null)?.ToString())
+                 .Where(value => value != null)
+                 .ToList();
 
         // Generate permission strings
         return actions
             .Select(action => $"Permissions.{function}.{action}")
-     .ToList();
+            .ToList();
     }
 
     /// <summary>
     /// Generate permissions for a function with specific actions
- /// Example: GeneratePermissionsForFunction("User", ["View", "Create"])
+    /// Example: GeneratePermissionsForFunction("User", ["View", "Create"])
     /// Returns: ["Permissions.User.View", "Permissions.User.Create"]
     /// </summary>
     public static List<string> GeneratePermissionsForFunction(string function, List<string> actions)
@@ -312,8 +312,8 @@ public record ECOPermission(string action, string function)
   throw new ArgumentException("Actions list cannot be null or empty", nameof(actions));
 
         return actions
-      .Select(action => $"Permissions.{function}.{action}")
-      .ToList();
+        .Select(action => $"Permissions.{function}.{action}")
+        .ToList();
     }
 }
 ```
@@ -369,7 +369,7 @@ public static class ECOClaims
     /// </summary>
     public const string Fullname = "fullName";
 
-  /// <summary>
+    /// <summary>
     /// Permission claim (multiple claims with this name)
     /// Format: "Permissions.Function.Action"
     /// Example: "Permissions.User.View"
@@ -383,7 +383,7 @@ public static class ECOClaims
 
     /// <summary>
     /// IP Address claim
-/// </summary>
+    /// </summary>
     public const string IpAddress = "ipAddress";
 
     /// <summary>
@@ -400,13 +400,13 @@ public static class ECOClaims
 
 ---
 
-## 4. Permission Authorization Components
+## 4. Permission Authorization Components (Các Thành phần Phân quyền)
 
-### Bước 4.1: PermissionRequirement
+### Bước 4.1: PermissionRequirement (Yêu cầu Quyền)
 
-**Làm gì:** Authorization requirement for permission checks.
+**Làm gì:** Authorization requirement để kiểm tra quyền.
 
-**Tại sao:** Represents a permission requirement in authorization pipeline.
+**Tại sao:** Đại diện cho một yêu cầu quyền trong authorization pipeline.
 
 **File:** `src/Infrastructure/Infrastructure/Auth/Permissions/PermissionRequirement.cs`
 
@@ -416,36 +416,36 @@ using Microsoft.AspNetCore.Authorization;
 namespace ECO.WebApi.Infrastructure.Auth.Permissions;
 
 /// <summary>
-/// Permission requirement (implements IAuthorizationRequirement)
-/// Represents a permission that must be checked
+/// Yêu cầu quyền (implements IAuthorizationRequirement)
+/// Đại diện cho một quyền cần được kiểm tra
 /// </summary>
 internal class PermissionRequirement : IAuthorizationRequirement
 {
-/// <summary>
-    /// Permission string (format: "Permissions.Function.Action")
-    /// Example: "Permissions.User.View"
+    /// <summary>
+    /// Chuỗi permission (định dạng: "Permissions.Function.Action")
+    /// Ví dụ: "Permissions.User.View"
     /// </summary>
     public string Permission { get; private set; }
 
     public PermissionRequirement(string permission)
-  {
-     Permission = permission;
+    {
+         Permission = permission;
     }
 }
 ```
 
 **Giải thích:**
 - Implements `IAuthorizationRequirement` (ASP.NET Core Authorization)
-- Stores permission string to be checked
-- Used by `PermissionAuthorizationHandler`
+- Lưu trữ chuỗi permission cần kiểm tra
+- Được sử dụng bởi `PermissionAuthorizationHandler`
 
 ---
 
-### Bước 4.2: PermissionAuthorizationHandler
+### Bước 4.2: PermissionAuthorizationHandler (Trình xử lý Phân quyền)
 
-**Làm gì:** Authorization handler to check permissions.
+**Làm gì:** Authorization handler để kiểm tra quyền.
 
-**Tại sao:** Evaluates permission requirements against user's claims.
+**Tại sao:** Đánh giá yêu cầu quyền dựa trên claims của user.
 
 **File:** `src/Infrastructure/Infrastructure/Auth/Permissions/PermissionAuthorizationHandler.cs`
 
@@ -457,8 +457,8 @@ using Microsoft.AspNetCore.Authorization;
 namespace ECO.WebApi.Infrastructure.Auth.Permissions;
 
 /// <summary>
-/// Authorization handler for permission requirements
-/// Checks if user has required permission in JWT claims
+/// Trình xử lý authorization cho yêu cầu quyền
+/// Kiểm tra xem user có quyền yêu cầu trong JWT claims không
 /// </summary>
 internal class PermissionAuthorizationHandler : AuthorizationHandler<PermissionRequirement>
 {
@@ -470,51 +470,51 @@ internal class PermissionAuthorizationHandler : AuthorizationHandler<PermissionR
     }
 
     /// <summary>
-    /// Handle permission requirement
-    /// Checks if user has required permission
+    /// Xử lý yêu cầu quyền
+    /// Kiểm tra xem user có quyền yêu cầu không
     /// </summary>
     protected override async Task HandleRequirementAsync(
-     AuthorizationHandlerContext context, 
+        AuthorizationHandlerContext context, 
         PermissionRequirement requirement)
     {
-     // Get user ID from JWT claims
+        // Lấy user ID từ JWT claims
         if (context.User?.GetUserId() is { } userId &&
-        // Check if user has permission (from JWT claims or database)
-         await _userService.HasPermissionAsync(userId, requirement.Permission))
+        // Kiểm tra xem user có quyền không (từ JWT claims hoặc database)
+        await _userService.HasPermissionAsync(userId, requirement.Permission))
         {
- // User has permission → Succeed
-    context.Succeed(requirement);
+            // User có quyền → Thành công
+            context.Succeed(requirement);
         }
 
-        // If not succeeded → Authorization fails (403 Forbidden)
+        // Nếu không thành công → Authorization thất bại (403 Forbidden)
     }
 }
 ```
 
 **Giải thích:**
 
-**HandleRequirementAsync Flow:**
-1. Get user ID from JWT claims (`context.User.GetUserId()`)
-2. Call `UserService.HasPermissionAsync()` to check permission
-3. If user has permission → `context.Succeed(requirement)`
-4. If not → Authorization fails (handler doesn't call Succeed)
+**Luồng HandleRequirementAsync:**
+1. Lấy user ID từ JWT claims (`context.User.GetUserId()`)
+2. Gọi `UserService.HasPermissionAsync()` để kiểm tra quyền
+3. Nếu user có quyền → `context.Succeed(requirement)`
+4. Nếu không → Authorization thất bại (handler không gọi Succeed)
 
-**Why call UserService.HasPermissionAsync():**
-- Permissions are stored in JWT claims (fast check)
-- Optional: Double-check from database (for revoked permissions)
-- Flexible: Can implement caching strategy
+**Tại sao gọi UserService.HasPermissionAsync():**
+- Quyền được lưu trong JWT claims (kiểm tra nhanh)
+- Tùy chọn: Kiểm tra lại từ database (cho quyền bị thu hồi)
+- Linh hoạt: Có thể implement caching strategy
 
-**Authorization Result:**
-- **Succeed:** User has permission → Request allowed (200 OK)
-- **Not Succeed:** User doesn't have permission → 403 Forbidden
+**Kết quả Authorization:**
+- **Succeed (Thành công):** User có quyền → Cho phép request (200 OK)
+- **Not Succeed (Không thành công):** User không có quyền → 403 Forbidden
 
 ---
 
-### Bước 4.3: PermissionPolicyProvider
+### Bước 4.3: PermissionPolicyProvider (Nhà cung cấp Chính sách)
 
-**Làm gì:** Dynamic policy provider for permission-based policies.
+**Làm gì:** Dynamic policy provider cho permission-based policies.
 
-**Tại sao:** Creates authorization policies on-the-fly based on permission strings.
+**Tại sao:** Tạo authorization policies tức thì dựa trên chuỗi permission.
 
 **File:** `src/Infrastructure/Infrastructure/Auth/Permissions/PermissionPolicyProvider.cs`
 
@@ -526,49 +526,49 @@ using Microsoft.Extensions.Options;
 namespace ECO.WebApi.Infrastructure.Auth.Permissions;
 
 /// <summary>
-/// Permission policy provider (dynamic policy creation)
-/// Creates authorization policies based on permission strings
+/// Nhà cung cấp chính sách quyền (tạo policy động)
+/// Tạo authorization policies dựa trên chuỗi permission
 /// </summary>
 internal class PermissionPolicyProvider : IAuthorizationPolicyProvider
 {
     /// <summary>
-    /// Fallback policy provider (for non-permission policies)
+    /// Nhà cung cấp policy dự phòng (cho các policy không phải permission)
     /// </summary>
     public DefaultAuthorizationPolicyProvider FallbackPolicyProvider { get; }
 
     public PermissionPolicyProvider(IOptions<AuthorizationOptions> options)
     {
-     FallbackPolicyProvider = new DefaultAuthorizationPolicyProvider(options);
+        FallbackPolicyProvider = new DefaultAuthorizationPolicyProvider(options);
     }
 
     /// <summary>
-    /// Get default policy (not used for permissions)
+    /// Lấy default policy (không dùng cho permissions)
     /// </summary>
     public Task<AuthorizationPolicy> GetDefaultPolicyAsync() => 
         FallbackPolicyProvider.GetDefaultPolicyAsync();
 
-  /// <summary>
-    /// Get policy by name
-    /// If policy name starts with "Permissions", create permission policy
-    /// Otherwise, use fallback provider
+    /// <summary>
+    /// Lấy policy theo tên
+    /// Nếu tên policy bắt đầu bằng "Permissions", tạo permission policy
+    /// Ngược lại, dùng fallback provider
     /// </summary>
     public Task<AuthorizationPolicy?> GetPolicyAsync(string policyName)
     {
-        // Check if policy is a permission policy
+        // Kiểm tra xem policy có phải là permission policy không
         if (policyName.StartsWith(ECOClaims.Permission, StringComparison.OrdinalIgnoreCase))
         {
-     // Create permission policy dynamically
-            var policy = new AuthorizationPolicyBuilder();
-      policy.AddRequirements(new PermissionRequirement(policyName));
+            // Tạo permission policy động
+             var policy = new AuthorizationPolicyBuilder();
+            policy.AddRequirements(new PermissionRequirement(policyName));
             return Task.FromResult<AuthorizationPolicy?>(policy.Build());
         }
 
-      // Use fallback for non-permission policies
+        // Dùng fallback cho các policy không phải permission
         return FallbackPolicyProvider.GetPolicyAsync(policyName);
     }
 
     /// <summary>
-/// Get fallback policy (not used for permissions)
+    /// Lấy fallback policy (không dùng cho permissions)
     /// </summary>
     public Task<AuthorizationPolicy?> GetFallbackPolicyAsync() => 
         Task.FromResult<AuthorizationPolicy?>(null);
@@ -577,36 +577,36 @@ internal class PermissionPolicyProvider : IAuthorizationPolicyProvider
 
 **Giải thích:**
 
-**GetPolicyAsync Flow:**
-1. Check if policy name starts with "Permissions" (e.g., "Permissions.User.View")
-2. If yes → Create `AuthorizationPolicy` với `PermissionRequirement`
-3. If no → Use fallback provider (for other policies như Roles)
+**Luồng GetPolicyAsync:**
+1. Kiểm tra xem tên policy có bắt đầu bằng "Permissions" không (VD: "Permissions.User.View")
+2. Nếu có → Tạo `AuthorizationPolicy` với `PermissionRequirement`
+3. Nếu không → Dùng fallback provider (cho các policy khác như Roles)
 
-**Why Dynamic Policy Creation:**
-- Không cần register từng permission policy
-- Policies được tạo on-the-fly based on permission string
-- Scalable: Support unlimited permissions
+**Tại sao Tạo Policy Động:**
+- Không cần đăng ký từng permission policy
+- Policies được tạo tức thì dựa trên chuỗi permission
+- Có thể mở rộng: Hỗ trợ không giới hạn permissions
 
-**Example:**
+**Ví dụ:**
 ```csharp
-// Attribute on controller:
+// Attribute trên controller:
 [MustHavePermission(ECOAction.View, ECOFunction.User)]
-// → Policy name: "Permissions.User.View"
+// → Tên policy: "Permissions.User.View"
 
-// PermissionPolicyProvider creates:
-// AuthorizationPolicy with PermissionRequirement("Permissions.User.View")
+// PermissionPolicyProvider tạo:
+// AuthorizationPolicy với PermissionRequirement("Permissions.User.View")
 
-// PermissionAuthorizationHandler checks:
-// Does user have permission "Permissions.User.View"?
+// PermissionAuthorizationHandler kiểm tra:
+// User có quyền "Permissions.User.View" không?
 ```
 
 ---
 
-### Bước 4.4: MustHavePermissionAttribute
+### Bước 4.4: MustHavePermissionAttribute (Thuộc tính Phải có Quyền)
 
-**Làm gì:** Declarative attribute for permission-based authorization.
+**Làm gì:** Thuộc tính khai báo cho permission-based authorization.
 
-**Tại sao:** Easy-to-use attribute for controllers/actions.
+**Tại sao:** Thuộc tính dễ sử dụng cho controllers/actions.
 
 **File:** `src/Infrastructure/Infrastructure/Auth/Permissions/MustHavePermissionAttribute.cs`
 
@@ -617,20 +617,20 @@ using Microsoft.AspNetCore.Authorization;
 namespace ECO.WebApi.Infrastructure.Auth.Permissions;
 
 /// <summary>
-/// MustHavePermission attribute (declarative authorization)
-/// Usage: [MustHavePermission(ECOAction.View, ECOFunction.User)]
-/// Generates policy: "Permissions.User.View"
+/// Thuộc tính MustHavePermission (authorization khai báo)
+/// Cách dùng: [MustHavePermission(ECOAction.View, ECOFunction.User)]
+/// Tạo policy: "Permissions.User.View"
 /// </summary>
 public class MustHavePermissionAttribute : AuthorizeAttribute
 {
     /// <summary>
-    /// Constructor with action and function parameters
+    /// Constructor với tham số action và function
     /// </summary>
-    /// <param name="action">Action (e.g., ECOAction.View)</param>
-    /// <param name="function">Function (e.g., ECOFunction.User)</param>
+    /// <param name="action">Action (VD: ECOAction.View)</param>
+    /// <param name="function">Function (VD: ECOFunction.User)</param>
     public MustHavePermissionAttribute(string action, string function)
     {
-        // Generate policy name: "Permissions.{Function}.{Action}"
+        // Tạo tên policy: "Permissions.{Function}.{Action}"
         Policy = ECOPermission.NameFor(action, function);
     }
 }
@@ -638,25 +638,25 @@ public class MustHavePermissionAttribute : AuthorizeAttribute
 
 **Giải thích:**
 
-**How It Works:**
-1. Attribute sets `Policy` property (từ `AuthorizeAttribute`)
-2. Policy name format: `Permissions.{Function}.{Action}`
-3. ASP.NET Core Authorization pipeline calls `PermissionPolicyProvider.GetPolicyAsync(policyName)`
-4. Policy provider creates policy với `PermissionRequirement`
-5. `PermissionAuthorizationHandler` evaluates requirement
+**Cách hoạt động:**
+1. Attribute đặt thuộc tính `Policy` (từ `AuthorizeAttribute`)
+2. Định dạng tên policy: `Permissions.{Function}.{Action}`
+3. ASP.NET Core Authorization pipeline gọi `PermissionPolicyProvider.GetPolicyAsync(policyName)`
+4. Policy provider tạo policy với `PermissionRequirement`
+5. `PermissionAuthorizationHandler` đánh giá requirement
 
-**Usage Examples:**
+**Ví dụ sử dụng:**
 ```csharp
-// Controller-level permission
+// Permission ở cấp Controller
 [ApiController]
 [Route("api/users")]
-[MustHavePermission(ECOAction.View, ECOFunction.User)] // All actions require Users.View
+[MustHavePermission(ECOAction.View, ECOFunction.User)] // Tất cả actions yêu cầu Users.View
 public class UsersController : ControllerBase
 {
-    // ...
+  // ...
 }
 
-// Action-level permission
+// Permission ở cấp Action
 [ApiController]
 [Route("api/users")]
 public class UsersController : ControllerBase
@@ -665,34 +665,34 @@ public class UsersController : ControllerBase
     [MustHavePermission(ECOAction.View, ECOFunction.User)]
     public Task<List<UserDto>> GetAllAsync()
     {
-      // Only users với "Permissions.User.View" permission
+        // Chỉ users có quyền "Permissions.User.View"
     }
 
     [HttpPost]
     [MustHavePermission(ECOAction.Create, ECOFunction.User)]
- public Task<string> CreateAsync(CreateUserRequest request)
+    public Task<string> CreateAsync(CreateUserRequest request)
     {
-        // Only users với "Permissions.User.Create" permission
+        // Chỉ users có quyền "Permissions.User.Create"
     }
 
     [HttpDelete("{id}")]
-    [MustHavePermission(ECOAction.Delete, ECOFunction.User)]
+  [MustHavePermission(ECOAction.Delete, ECOFunction.User)]
     public Task DeleteAsync(string id)
     {
-        // Only users với "Permissions.User.Delete" permission
+        // Chỉ users có quyền "Permissions.User.Delete"
     }
 }
 ```
 
 ---
 
-## 5. UserService - Permission Operations
+## 5. UserService - Permission Operations (UserService - Các Thao tác Quyền)
 
-### Bước 5.1: UserService.Permission.cs (Partial Class)
+### Bước 5.1: UserService.Permission.cs (Partial Class - Lớp Một phần)
 
-**Làm gì:** Implement permission query operations.
+**Làm gì:** Implement các thao tác truy vấn quyền.
 
-**Tại sao:** Get user's permissions from database và check permissions.
+**Tại sao:** Lấy danh sách quyền của user từ database và kiểm tra quyền.
 
 **File:** `src/Infrastructure/Infrastructure/Identity/UserService.Permission.cs`
 
@@ -704,62 +704,62 @@ using Microsoft.EntityFrameworkCore;
 namespace ECO.WebApi.Infrastructure.Identity;
 
 /// <summary>
-/// UserService - Permission Operations (Partial Class)
+/// UserService - Các Thao tác Quyền (Partial Class)
 /// </summary>
 internal partial class UserService
 {
-    /// <summary>
-    /// Get user's permissions from database
- /// Returns list of permission strings (Format: "Function.Action")
-    /// Note: Stored in Permission table as (RoleId, FunctionId, ActionId)
+  /// <summary>
+    /// Lấy danh sách quyền của user từ database
+    /// Trả về danh sách chuỗi permission (Định dạng: "Function.Action")
+    /// Lưu ý: Lưu trong bảng Permission dưới dạng (RoleId, FunctionId, ActionId)
     /// </summary>
     public async Task<List<string>> GetPermissionsAsync(
-        string userId, 
-        CancellationToken cancellationToken)
+         string userId, 
+         CancellationToken cancellationToken)
     {
-        // Find user
-  var user = await _userManager.FindByIdAsync(userId);
+        // Tìm user
+        var user = await _userManager.FindByIdAsync(userId);
 
         if (user == null)
         {
-    throw new UnauthorizedException("Authentication Failed.");
+            throw new UnauthorizedException("Xác thực thất bại.");
         }
 
-        // Get user's roles (from UserRoles table - Identity)
-        var userRoles = await _userManager.GetRolesAsync(user);
+    // Lấy các roles của user (từ bảng UserRoles - Identity)
+    var userRoles = await _userManager.GetRolesAsync(user);
 
-        // Query permissions from Permission table
+     // Truy vấn permissions từ bảng Permission
         // JOIN: Permission → Role → Function → Action
-        var permissions = await _db.Permissions
+      var permissions = await _db.Permissions
             .Include(p => p.Role)
             .Include(p => p.Function)
-       .Include(p => p.Action)
-      .Where(p => userRoles.Contains(p.Role.Name!)) // Filter by user's roles
-       .Select(p => $"{p.Function.Name}.{p.Action.Name}") // Format: "Function.Action"
-      .Distinct()
-       .ToListAsync(cancellationToken);
+            .Include(p => p.Action)
+            .Where(p => userRoles.Contains(p.Role.Name!)) // Lọc theo roles của user
+            .Select(p => $"{p.Function.Name}.{p.Action.Name}") // Định dạng: "Function.Action"
+            .Distinct()
+            .ToListAsync(cancellationToken);
 
         return permissions;
     }
 
     /// <summary>
-    /// Check if user has specific permission
-    /// Used by PermissionAuthorizationHandler
+    /// Kiểm tra xem user có quyền cụ thể hay không
+    /// Được sử dụng bởi PermissionAuthorizationHandler
     /// </summary>
     public async Task<bool> HasPermissionAsync(
-  string userId, 
-        string permission, 
-        CancellationToken cancellationToken = default)
+        string userId, 
+  string permission, 
+  CancellationToken cancellationToken = default)
     {
-        // Get user's permissions
- var permissions = await GetPermissionsAsync(userId, cancellationToken);
+        // Lấy danh sách quyền của user
+        var permissions = await GetPermissionsAsync(userId, cancellationToken);
 
-   // Check if permission exists in list
-     // Permission format: "Permissions.Function.Action" (from JWT claims)
-        // OR "Function.Action" (from database)
-        // So we need to normalize comparison
+       // Kiểm tra xem permission có tồn tại trong danh sách không
+      // Định dạng permission: "Permissions.Function.Action" (từ JWT claims)
+     // HOẶC "Function.Action" (từ database)
+    // Vì vậy cần chuẩn hóa để so sánh
         var normalizedPermission = permission
-   .Replace("Permissions.", "", StringComparison.OrdinalIgnoreCase);
+        .Replace("Permissions.", "", StringComparison.OrdinalIgnoreCase);
 
         return permissions?.Contains(normalizedPermission) ?? false;
     }
@@ -768,39 +768,39 @@ internal partial class UserService
 
 **Giải thích:**
 
-**GetPermissionsAsync Flow:**
-1. Find user by ID
-2. Get user's roles (`_userManager.GetRolesAsync()`)
-3. Query Permission table:
+**Luồng GetPermissionsAsync:**
+1. Tìm user theo ID
+2. Lấy các roles của user (`_userManager.GetRolesAsync()`)
+3. Truy vấn bảng Permission:
    - JOIN với Role, Function, Action
-   - WHERE Role.Name IN (user's roles)
+   - WHERE Role.Name IN (các roles của user)
    - SELECT Function.Name + '.' + Action.Name
-4. Return distinct permissions
+4. Trả về các permissions duy nhất (distinct)
 
 **HasPermissionAsync:**
-- Called by `PermissionAuthorizationHandler`
-- Checks if user has specific permission
-- Normalizes permission string (remove "Permissions." prefix if present)
+- Được gọi bởi `PermissionAuthorizationHandler`
+- Kiểm tra xem user có quyền cụ thể không
+- Chuẩn hóa chuỗi permission (xóa tiền tố "Permissions." nếu có)
 
-**Permission Format:**
-- **In Database:** `"Users.View"` (Function.Action)
-- **In JWT Claims:** `"Permissions.Users.View"` (with prefix)
-- **Comparison:** Normalize to `"Users.View"` format
+**Định dạng Permission:**
+- **Trong Database:** `"Users.View"` (Function.Action)
+- **Trong JWT Claims:** `"Permissions.Users.View"` (có tiền tố)
+- **So sánh:** Chuẩn hóa về định dạng `"Users.View"`
 
-**Why Include Relations:**
-- Eager loading: Load Role, Function, Action in single query
-- Avoid N+1 query problem
-- Better performance
+**Tại sao Include Relations (Eager Loading):**
+- Tải trước: Load Role, Function, Action trong một query duy nhất
+- Tránh vấn đề N+1 query
+- Hiệu suất tốt hơn
 
 ---
 
-## 6. TokenService - Add Permissions to JWT
+## 6. TokenService - Add Permissions to JWT (TokenService - Thêm Quyền vào JWT)
 
-### Bước 6.1: Update TokenService.GetClaims()
+### Bước 6.1: Update TokenService.GetClaims() (Cập nhật phương thức GetClaims)
 
-**Làm gì:** Add permissions to JWT claims during login.
+**Làm gì:** Thêm permissions vào JWT claims khi đăng nhập.
 
-**Tại sao:** Permissions stored in JWT for fast authorization checks.
+**Tại sao:** Permissions được lưu trong JWT để kiểm tra authorization nhanh.
 
 **File:** `src/Infrastructure/Infrastructure/Identity/TokenService.cs` (partial - update existing method)
 
@@ -831,53 +831,53 @@ internal class TokenService : ITokenService
 
     public TokenService(
         UserManager<ApplicationUser> userManager,
-    IUserService userService,
-  IOptions<JwtSettings> jwtSettings,
-        IOptions<SecuritySettings> securitySettings)
+        IUserService userService,
+        IOptions<JwtSettings> jwtSettings,
+         IOptions<SecuritySettings> securitySettings)
     {
-        _userManager = userManager;
-    _userService = userService;
-     _jwtSettings = jwtSettings.Value;
-        _securitySettings = securitySettings.Value;
-  }
+         _userManager = userManager;
+         _userService = userService;
+         _jwtSettings = jwtSettings.Value;
+         _securitySettings = securitySettings.Value;
+    }
 
-    // ... existing methods ...
+    // ... các methods hiện có ...
 
     /// <summary>
     /// Generate JWT token with claims
     /// </summary>
     private string GenerateJwt(ApplicationUser user, string ipAddress) =>
-        GenerateEncryptedToken(GetSigningCredentials(), GetClaims(user, ipAddress));
+    GenerateEncryptedToken(GetSigningCredentials(), GetClaims(user, ipAddress));
 
     /// <summary>
-    /// Get claims for JWT token
-    /// Includes permissions from database
+    /// Lấy claims cho JWT token
+    /// Bao gồm permissions từ database
     /// </summary>
-  private async Task<IEnumerable<Claim>> GetClaimsAsync(ApplicationUser user, string ipAddress)
+    private async Task<IEnumerable<Claim>> GetClaimsAsync(ApplicationUser user, string ipAddress)
     {
-      // Standard claims
+        // Standard claims
         var claims = new List<Claim>
-  {
+        {
             new(ClaimTypes.NameIdentifier, user.Id),
-   new(ClaimTypes.Email, user.Email!),
-      new(ECOClaims.Fullname, $"{user.FirstName} {user.LastName}"),
+            new(ClaimTypes.Email, user.Email!),
+            new(ECOClaims.Fullname, $"{user.FirstName} {user.LastName}"),
             new(ClaimTypes.Name, user.FirstName ?? string.Empty),
-          new(ClaimTypes.Surname, user.LastName ?? string.Empty),
+            new(ClaimTypes.Surname, user.LastName ?? string.Empty),
             new(ECOClaims.IpAddress, ipAddress),
             new(ECOClaims.ImageUrl, user.ImageUrl ?? string.Empty),
-      new(ClaimTypes.MobilePhone, user.PhoneNumber ?? string.Empty)
+            new(ClaimTypes.MobilePhone, user.PhoneNumber ?? string.Empty)
         };
 
-        // Add permissions to claims
-        // Query permissions from database
+        // Thêm permissions vào claims
+        // Truy vấn permissions từ database
         var permissions = await _userService.GetPermissionsAsync(user.Id, CancellationToken.None);
 
-        // Add each permission as a separate claim
-        // Multiple claims with same name (ECOClaims.Permission)
+        // Thêm mỗi permission thành một claim riêng biệt
+        // Nhiều claims có cùng tên (ECOClaims.Permission)
         foreach (var permission in permissions)
         {
-          // Add with "Permissions." prefix for consistency
-      claims.Add(new Claim(ECOClaims.Permission, $"Permissions.{permission}"));
+            // Thêm với tiền tố "Permissions." để đồng nhất
+            claims.Add(new Claim(ECOClaims.Permission, $"Permissions.{permission}"));
         }
 
         return claims;
@@ -889,9 +889,9 @@ internal class TokenService : ITokenService
     private string GenerateEncryptedToken(SigningCredentials signingCredentials, IEnumerable<Claim> claims)
     {
         var token = new JwtSecurityToken(
-     claims: claims,
+            claims: claims,
             expires: DateTime.UtcNow.AddMinutes(_jwtSettings.TokenExpirationInMinutes),
-     signingCredentials: signingCredentials);
+            signingCredentials: signingCredentials);
 
         var tokenHandler = new JwtSecurityTokenHandler();
         return tokenHandler.WriteToken(token);
@@ -902,44 +902,43 @@ internal class TokenService : ITokenService
 ```
 
 **Giải thích:**
+- **Thay đổi trong GetClaimsAsync:**
+  - Đổi từ synchronous `GetClaims()` sang async `GetClaimsAsync()`
+  - Truy vấn permissions từ database: `_userService.GetPermissionsAsync()`
+  - Thêm mỗi permission thành một claim riêng biệt
+  - Định dạng: `new Claim(ECOClaims.Permission, "Permissions.Function.Action")`
 
-**GetClaimsAsync Changes:**
-- Changed from synchronous `GetClaims()` to async `GetClaimsAsync()`
-- Query permissions from database: `_userService.GetPermissionsAsync()`
-- Add each permission as separate claim
-- Format: `new Claim(ECOClaims.Permission, "Permissions.Function.Action")`
+- **Nhiều Claims có Cùng Tên:**
+  - JWT hỗ trợ nhiều claims có cùng tên
+  - Ví dụ JWT payload:
+  ```json
+  {
+    "nameid": "user-id",
+    "email": "user@example.com",
+    "permission": "Permissions.Users.View",
+    "permission": "Permissions.Users.Create",
+    "permission": "Permissions.Products.View"
+  }
+  ```
 
-**Multiple Claims với Same Name:**
-- JWT supports multiple claims với cùng tên
-- Example JWT payload:
-```json
-{
-  "nameid": "user-id",
-  "email": "user@example.com",
-  "permission": "Permissions.Users.View",
-  "permission": "Permissions.Users.Create",
-  "permission": "Permissions.Products.View"
-}
-```
+- **Tại sao Thêm Permissions vào JWT:**
+  - **Authorization Nhanh:** Không cần query database mỗi request
+  - **Stateless (Không trạng thái):** Tất cả thông tin trong JWT token
+  - **Có thể mở rộng:** Không cần lưu session
 
-**Why Add Permissions to JWT:**
-- **Fast Authorization:** No database query per request
-- **Stateless:** All info in JWT token
-- **Scalable:** No session storage needed
-
-**⚠️ Important Note:**
-- Need to update `GenerateJwt()` to call async `GetClaimsAsync()`
-- Update all method signatures to async if needed
+- **⚠️ Lưu ý Quan trọng:**
+  - Cần cập nhật `GenerateJwt()` để gọi async `GetClaimsAsync()`
+  - Cập nhật tất cả method signatures sang async nếu cần
 
 ---
 
-## 7. Register Authorization Services
+## 7. Register Authorization Services (Đăng ký Dịch vụ Authorization)
 
-### Bước 7.1: Auth Startup Configuration
+### Bước 7.1: Auth Startup Configuration (Cấu hình Startup Auth)
 
-**Làm gì:** Register authorization services trong dependency injection.
+**Làm gì:** Đăng ký authorization services trong dependency injection.
 
-**Tại sao:** Configure ASP.NET Core Authorization với custom components.
+**Tại sao:** Cấu hình ASP.NET Core Authorization với các components tùy chỉnh.
 
 **File:** `src/Infrastructure/Infrastructure/Auth/Startup.cs`
 
@@ -959,100 +958,100 @@ namespace ECO.WebApi.Infrastructure.Auth;
 internal static class Startup
 {
     /// <summary>
-    /// Add authentication and authorization services
+    /// Thêm authentication và authorization services
     /// </summary>
     internal static IServiceCollection AddAuth(this IServiceCollection services, IConfiguration config)
     {
         services
-            .AddCurrentUser()
-            .AddPermissions() // ← Add permission services
-            // Must add identity before adding auth!
-            .AddIdentity();
+        .AddCurrentUser()
+        .AddPermissions() // ← Thêm permission services
+        // Phải thêm identity trước khi thêm auth!
+       .AddIdentity();
 
-      services.Configure<SecuritySettings>(config.GetSection(nameof(SecuritySettings)));
+        services.Configure<SecuritySettings>(config.GetSection(nameof(SecuritySettings)));
         services.AddO2Authentication(config);
         return services.AddJwtAuth();
     }
 
     /// <summary>
-    /// Use current user middleware
+    /// Sử dụng current user middleware
     /// </summary>
     internal static IApplicationBuilder UseCurrentUser(this IApplicationBuilder app) =>
-      app.UseMiddleware<CurrentUserMiddleware>();
+  app.UseMiddleware<CurrentUserMiddleware>();
 
     /// <summary>
-    /// Add current user services
+    /// Thêm current user services
     /// </summary>
     private static IServiceCollection AddCurrentUser(this IServiceCollection services) =>
         services
-   .AddScoped<CurrentUserMiddleware>()
+            .AddScoped<CurrentUserMiddleware>()
             .AddScoped<ICurrentUser, CurrentUser>()
             .AddScoped(sp => (ICurrentUserInitializer)sp.GetRequiredService<ICurrentUser>());
 
     /// <summary>
-    /// Add permission-based authorization services
+    /// Thêm permission-based authorization services
     /// </summary>
     private static IServiceCollection AddPermissions(this IServiceCollection services) =>
         services
-  // Register PermissionPolicyProvider as Singleton
-            // Singleton: Policy provider doesn't have state, safe to share
- .AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>()
-   // Register PermissionAuthorizationHandler as Scoped
-            // Scoped: Handler needs UserService (scoped), so handler must be scoped too
+             // Đăng ký PermissionPolicyProvider như Singleton
+             // Singleton: Policy provider không có state, an toàn khi chia sẻ
+            .AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>()
+            // Đăng ký PermissionAuthorizationHandler như Scoped
+            // Scoped: Handler cần UserService (scoped), nên handler cũng phải scoped
             .AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 }
 ```
 
 **Giải thích:**
+- **Phương thức AddPermissions():**
+  - **PermissionPolicyProvider:** Đăng ký như Singleton
+    - Policy provider không có state
+  - An toàn khi chia sẻ giữa các requests
+    - Hiệu suất tốt hơn
 
-**AddPermissions() Method:**
-- **PermissionPolicyProvider:** Registered as Singleton
-  - Policy provider doesn't have state
-  - Safe to share across requests
-  - Better performance
+  - **PermissionAuthorizationHandler:** Đăng ký như Scoped
+    - Handler phụ thuộc vào `IUserService` (scoped service)
+    - Phải khớp với service lifetime
+    - Instance mới cho mỗi request
 
-- **PermissionAuthorizationHandler:** Registered as Scoped
-  - Handler depends on `IUserService` (scoped service)
-  - Must match service lifetime
-  - New instance per request
-
-**Service Lifetimes:**
+- **Service Lifetimes (Vòng đời Service):**
 ```
-Singleton← PermissionPolicyProvider
+Singleton ← PermissionPolicyProvider
     │
-    ├─ Same instance for all requests
-    └─ No state, thread-safe
+    ├─ Instance giống nhau cho tất cả requests
+    └─ Không có state, thread-safe
 
 Scoped  ← PermissionAuthorizationHandler
     │
-    ├─ New instance per request
-    ├─ Can depend on other scoped services (UserService)
-    └─ Disposed at end of request
+    ├─ Instance mới cho mỗi request
+    ├─ Có thể phụ thuộc vào scoped services khác (UserService)
+    └─ Được dispose khi kết thúc request
 
 Transient
     │
-    ├─ New instance every time injected
-    └─ Short-lived services
+    ├─ Instance mới mỗi lần inject
+    └─ Services ngắn hạn
 ```
 
-**Registration Order:**
-1. `AddCurrentUser()` - Register current user services
-2. `AddPermissions()` - Register authorization services
-3. `AddIdentity()` - Register ASP.NET Core Identity
-4. `AddJwtAuth()` - Register JWT authentication
+- **Thứ tự Đăng ký:**
+1. `AddCurrentUser()` - Đăng ký current user services
+2. `AddPermissions()` - Đăng ký authorization services
+3. `AddIdentity()` - Đăng ký ASP.NET Core Identity
+4. `AddJwtAuth()` - Đăng ký JWT authentication
 
 ---
 
-## 8. Testing Permission Authorization
+## 8. Testing Permission Authorization (Kiểm thử Phân quyền)
 
-### Bước 8.1: Test Setup - Create Test User with Permissions
+### Bước 8.1: Test Setup - Create Test User with Permissions (Thiết lập Test - Tạo User Test với Quyền)
 
-**Step 1: Create Manager Role (already done in BUILD_16B)**
+**Step 1: Create Manager Role (Tạo Role Manager - đã làm trong BUILD_16B)**
+
 ```csharp
 // Manager role đã được tạo trong RoleService tests
 ```
 
-**Step 2: Assign Permissions to Manager Role**
+**Step 2: Assign Permissions to Manager Role (Gán Quyền cho Role Manager)**
 
 **API Call:**
 ```bash
@@ -1062,30 +1061,30 @@ curl -X PUT https://localhost:7001/api/role/{managerRoleId}/permissions \
   -d '{
     "roleId": "{managerRoleId}",
     "permissions": [
-    {
+      {
         "functionId": "{usersFunction}",
         "actionId": "{viewAction}"
+   },
+      {
+   "functionId": "{usersFunction}",
+        "actionId": "{createAction}"
       },
       {
-     "functionId": "{usersFunction}",
- "actionId": "{createAction}"
- },
-      {
         "functionId": "{productsFunction}",
-        "actionId": "{viewAction}"
+     "actionId": "{viewAction}"
       }
     ]
   }'
 ```
 
-**Expected Response:**
+**Expected Response (Kết quả mong đợi):**
 ```json
 {
-  "message": "Permissions Updated."
+  "message": "Permissions Updated." // Đã cập nhật quyền
 }
 ```
 
-**Step 3: Assign Manager Role to Test User**
+**Step 3: Assign Manager Role to Test User (Gán Role Manager cho User Test)**
 
 **API Call:**
 ```bash
@@ -1094,10 +1093,10 @@ curl -X POST https://localhost:7001/api/users/{userId}/roles \
   -H "Authorization: Bearer {adminToken}" \
   -d '{
     "userRoles": [
-      {
+{
         "roleId": "{managerRoleId}",
         "roleName": "Manager",
-     "enabled": true
+        "enabled": true
       }
     ]
   }'
@@ -1105,19 +1104,19 @@ curl -X POST https://localhost:7001/api/users/{userId}/roles \
 
 ---
 
-### Bước 8.2: Test Login and JWT Claims
+### Bước 8.2: Test Login and JWT Claims (Test Đăng nhập và JWT Claims)
 
 **API Call:**
 ```bash
 curl -X POST https://localhost:7001/api/tokens \
   -H "Content-Type: application/json" \
   -d '{
-  "email": "manager@example.com",
+    "email": "manager@example.com",
     "password": "SecurePass123!"
   }'
 ```
 
-**Expected Response:**
+**Expected Response (Kết quả mong đợi):**
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -1126,7 +1125,7 @@ curl -X POST https://localhost:7001/api/tokens \
 }
 ```
 
-**Verify JWT Claims (Decode JWT on jwt.io):**
+**Verify JWT Claims (Xác minh JWT Claims - Giải mã JWT trên jwt.io):**
 ```json
 {
   "nameid": "user-id",
@@ -1141,13 +1140,13 @@ curl -X POST https://localhost:7001/api/tokens \
 }
 ```
 
-✅ **Verify:** JWT contains multiple `permission` claims
+✅ **Verify (Xác minh):** JWT chứa nhiều `permission` claims
 
 ---
 
-### Bước 8.3: Test Protected Endpoint - Success Case
+### Bước 8.3: Test Protected Endpoint - Success Case (Test Endpoint được Bảo vệ - Trường hợp Thành công)
 
-**Scenario:** Manager user calls `GET /api/users` (requires "Users.View" permission)
+**Scenario (Tình huống):** Manager user gọi `GET /api/users` (yêu cầu quyền "Users.View")
 
 **API Call:**
 ```bash
@@ -1155,7 +1154,7 @@ curl -X GET https://localhost:7001/api/users \
   -H "Authorization: Bearer {managerToken}"
 ```
 
-**Expected Response:**
+**Expected Response (Kết quả mong đợi):**
 ```json
 [
   {
@@ -1168,22 +1167,22 @@ curl -X GET https://localhost:7001/api/users \
   },
   {
     "id": "user-2",
-    "userName": "manager",
-    "firstName": "Manager",
-    "lastName": "User",
+  "userName": "manager",
+  "firstName": "Manager",
+ "lastName": "User",
     "email": "manager@example.com",
     "isActive": true
   }
 ]
 ```
 
-**✅ Success:** Manager has "Users.View" permission → Request allowed
+**✅ Success (Thành công):** Manager có quyền "Users.View" → Cho phép request
 
 ---
 
-### Bước 8.4: Test Protected Endpoint - Forbidden Case
+### Bước 8.4: Test Protected Endpoint - Forbidden Case (Test Endpoint được Bảo vệ - Trường hợp Bị Cấm)
 
-**Scenario:** Manager user calls `DELETE /api/users/{id}` (requires "Users.Delete" permission)
+**Scenario (Tình huống):** Manager user gọi `DELETE /api/users/{id}` (yêu cầu quyền "Users.Delete")
 
 **API Call:**
 ```bash
@@ -1191,43 +1190,45 @@ curl -X DELETE https://localhost:7001/api/users/{userId} \
   -H "Authorization: Bearer {managerToken}"
 ```
 
-**Expected Response:**
+**Expected Response (Kết quả mong đợi):**
 ```json
 {
   "statusCode": 403,
   "message": "You do not have permission to access this resource."
+  // Bạn không có quyền truy cập tài nguyên này
 }
 ```
 
-**❌ Forbidden:** Manager doesn't have "Users.Delete" permission → 403 Forbidden
+**❌ Forbidden (Bị cấm):** Manager không có quyền "Users.Delete" → 403 Forbidden
 
 ---
 
-### Bước 8.5: Test Without Authentication
+### Bước 8.5: Test Without Authentication (Test Không có Xác thực)
 
-**Scenario:** Anonymous user calls protected endpoint
+**Scenario (Tình huống):** Anonymous user (user ẩn danh) gọi protected endpoint
 
 **API Call:**
 ```bash
 curl -X GET https://localhost:7001/api/users
-# No Authorization header
+# Không có Authorization header
 ```
 
-**Expected Response:**
+**Expected Response (Kết quả mong đợi):**
 ```json
 {
   "statusCode": 401,
-  "message": "Unauthorized. Please authenticate."
+"message": "Unauthorized. Please authenticate."
+  // Chưa xác thực. Vui lòng đăng nhập
 }
 ```
 
-**❌ Unauthorized:** No JWT token → 401 Unauthorized
+**❌ Unauthorized (Chưa xác thực):** Không có JWT token → 401 Unauthorized
 
 ---
 
-## 9. Example: Protected Controller
+## 9. Example: Protected Controller (Ví dụ: Controller được Bảo vệ)
 
-### Bước 9.1: UsersController with Permission Protection
+### Bước 9.1: UsersController with Permission Protection (UsersController với Bảo vệ Quyền)
 
 **File:** `src/Host/Host/Controllers/Identity/UsersController.cs` (update existing)
 
@@ -1240,7 +1241,7 @@ using NSwag.Annotations;
 namespace ECO.WebApi.Host.Controllers.Identity;
 
 /// <summary>
-/// User management APIs (with permission protection)
+/// APIs quản lý User (có bảo vệ quyền)
 /// </summary>
 public class UsersController : BaseApiController
 {
@@ -1248,109 +1249,107 @@ public class UsersController : BaseApiController
 
     public UsersController(IUserService userService)
     {
-      _userService = userService;
+     _userService = userService;
     }
 
     /// <summary>
-    /// Get list of all users
-    /// Requires: Users.View permission
+    /// Lấy danh sách tất cả users
+  /// Yêu cầu: Quyền Users.View
     /// </summary>
     [HttpGet("list")]
     [MustHavePermission(ECOAction.View, ECOFunction.User)]
-    [OpenApiOperation("Get list of all users.", "")]
+    [OpenApiOperation("Lấy danh sách tất cả users.", "")]
     public Task<List<UserDetailDto>> GetListAsync(CancellationToken cancellationToken)
     {
-return _userService.GetListAsync(cancellationToken);
+        return _userService.GetListAsync(cancellationToken);
     }
 
     /// <summary>
-    /// Get user details by ID
-    /// Requires: Users.View permission
+    /// Lấy chi tiết user theo ID
+    /// Yêu cầu: Quyền Users.View
     /// </summary>
     [HttpGet("{id}")]
-    [MustHavePermission(ECOAction.View, ECOFunction.User)]
-    [OpenApiOperation("Get a user's details.", "")]
- public Task<UserDetailDto> GetByIdAsync(string id, CancellationToken cancellationToken)
+ [MustHavePermission(ECOAction.View, ECOFunction.User)]
+    [OpenApiOperation("Lấy chi tiết một user.", "")]
+public Task<UserDetailDto> GetByIdAsync(string id, CancellationToken cancellationToken)
     {
         return _userService.GetAsync(id, cancellationToken);
     }
 
     /// <summary>
-    /// Create new user (Admin only)
-    /// Requires: Users.Create permission
-    /// </summary>
-    [HttpPost("create")]
+    /// Tạo user mới (chỉ Admin)
+  /// Yêu cầu: Quyền Users.Create
+/// </summary>
+[HttpPost("create")]
     [MustHavePermission(ECOAction.Create, ECOFunction.User)]
-    [OpenApiOperation("Creates a new user.", "")]
- public Task<string> CreateAsync(CreateUserRequest request)
-  {
+    [OpenApiOperation("Tạo một user mới.", "")]
+    public Task<string> CreateAsync(CreateUserRequest request)
+    {
         return _userService.CreateAsync(request, GetOriginFromRequest());
     }
 
     /// <summary>
-    /// Update user profile
-    /// Requires: Users.Update permission
- /// </summary>
+    /// Cập nhật thông tin user
+    /// Yêu cầu: Quyền Users.Update
+    /// </summary>
     [HttpPut("{id}")]
     [MustHavePermission(ECOAction.Update, ECOFunction.User)]
-    [OpenApiOperation("Update user profile.", "")]
+    [OpenApiOperation("Cập nhật thông tin user.", "")]
     public async Task<ActionResult> UpdateAsync(string id, UpdateUserRequest request)
     {
-    if (id != request.Id)
-        {
-            return BadRequest();
- }
+        if (id != request.Id)
+    {
+         return BadRequest();
+        }
 
-        await _userService.UpdateAsync(request, id);
-      return Ok();
+ await _userService.UpdateAsync(request, id);
+     return Ok();
     }
 
-/// <summary>
-    /// Delete user
-    /// Requires: Users.Delete permission
+    /// <summary>
+ /// Xóa user
+    /// Yêu cầu: Quyền Users.Delete
     /// </summary>
     [HttpDelete("{id}")]
     [MustHavePermission(ECOAction.Delete, ECOFunction.User)]
-    [OpenApiOperation("Delete a user.", "")]
-public async Task<ActionResult> DeleteAsync(string id)
+    [OpenApiOperation("Xóa một user.", "")]
+    public async Task<ActionResult> DeleteAsync(string id)
     {
-        // Implementation (not in UserService yet)
-        return NoContent();
+        // Implementation (chưa có trong UserService)
+      return NoContent();
     }
 
     /// <summary>
-    /// Self-register (Anonymous - no permission required)
+    /// Tự đăng ký (Anonymous - không cần quyền)
     /// </summary>
     [HttpPost("self-register")]
     [AllowAnonymous]
-    [OpenApiOperation("Anonymous user creates a user.", "")]
-    public Task<string> SelfRegisterAsync(CreateUserRequest request)
+  [OpenApiOperation("User tự tạo tài khoản.", "")]
+public Task<string> SelfRegisterAsync(CreateUserRequest request)
     {
         return _userService.CreateAsync(request, GetOriginFromRequest());
     }
 
-  private string GetOriginFromRequest() =>
-        $"{Request.Scheme}://{Request.Host.Value}{Request.PathBase.Value}";
+    private string GetOriginFromRequest() =>
+     $"{Request.Scheme}://{Request.Host.Value}{Request.PathBase.Value}";
 }
 ```
 
 **Giải thích:**
 
-**Permission Attributes:**
+**Permission Attributes (Thuộc tính Quyền):**
 - `[MustHavePermission(ECOAction.View, ECOFunction.User)]`
-  - Generates policy: "Permissions.User.View"
-  - Only users với "Users.View" permission can access
+  - Tạo policy: "Permissions.User.View"
+  - Chỉ users có quyền "Users.View" mới có thể truy cập
 
-**AllowAnonymous:**
-- `/self-register` endpoint không cần authentication
-- Anyone can register
+**AllowAnonymous (Cho phép Ẩn danh):**
+- Endpoint `/self-register` không cần authentication
+- Bất kỳ ai cũng có thể đăng ký
 
-**Authorization Flow:**
+**Authorization Flow (Luồng Phân quyền):**
 ```
 Request → JWT Authentication → Permission Check → Controller Action
-    │    │              │
-    │ │                    └─ PermissionAuthorizationHandler
-    │         │      checks JWT claims
+    │     │              │
     │    │
     │              └─ JwtBearerHandler validates JWT
     │
@@ -1359,163 +1358,163 @@ Request → JWT Authentication → Permission Check → Controller Action
 
 ---
 
-## 10. Summary
+## 10. Summary (Tổng kết)
 
 ### ✅ Đã hoàn thành trong bước này:
 
-**Authorization Components:**
-- ✅ PermissionRequirement (IAuthorizationRequirement)
-- ✅ PermissionAuthorizationHandler (check permissions)
-- ✅ PermissionPolicyProvider (dynamic policy creation)
-- ✅ MustHavePermissionAttribute (declarative attribute)
+**Authorization Components (Các Thành phần Phân quyền):**
+- ✅ PermissionRequirement (Yêu cầu Quyền - IAuthorizationRequirement)
+- ✅ PermissionAuthorizationHandler (Trình xử lý Phân quyền - kiểm tra quyền)
+- ✅ PermissionPolicyProvider (Nhà cung cấp Chính sách - tạo policy động)
+- ✅ MustHavePermissionAttribute (Thuộc tính khai báo)
 
-**Permission Constants:**
-- ✅ ECOAction (View, Create, Update, Delete, etc.)
-- ✅ ECOFunction (User, Role, Product, etc.)
+**Permission Constants (Hằng số Quyền):**
+- ✅ ECOAction (View, Create, Update, Delete, v.v.)
+- ✅ ECOFunction (User, Role, Product, v.v.)
 - ✅ ECOPermission (helper record)
-- ✅ ECOClaims (Permission claim name)
+- ✅ ECOClaims (Tên Permission claim)
 
-**UserService - Permission Operations:**
-- ✅ GetPermissionsAsync (query from database)
-- ✅ HasPermissionAsync (check specific permission)
+**UserService - Permission Operations (UserService - Các Thao tác Quyền):**
+- ✅ GetPermissionsAsync (truy vấn từ database)
+- ✅ HasPermissionAsync (kiểm tra quyền cụ thể)
 
 **TokenService - JWT Claims:**
-- ✅ Add permissions to JWT claims during login
-- ✅ Multiple permission claims in JWT
+- ✅ Thêm permissions vào JWT claims khi đăng nhập
+- ✅ Nhiều permission claims trong JWT
 
-**Startup Configuration:**
-- ✅ Register authorization services
+**Startup Configuration (Cấu hình Startup):**
+- ✅ Đăng ký authorization services
 - ✅ PermissionPolicyProvider (Singleton)
 - ✅ PermissionAuthorizationHandler (Scoped)
 
-**Testing:**
+**Testing (Kiểm thử):**
 - ✅ Protected endpoints với MustHavePermission
-- ✅ Success case (has permission)
-- ✅ Forbidden case (no permission)
-- ✅ Unauthorized case (no authentication)
+- ✅ Success case (có quyền)
+- ✅ Forbidden case (không có quyền)
+- ✅ Unauthorized case (không có authentication)
 
-### 📊 Complete Authorization Flow:
+### 📊 Complete Authorization Flow (Luồng Phân quyền Hoàn chỉnh):
 
 ```
 ┌─────────────────────────────────────────────────┐
-│   COMPLETE PERMISSION AUTHORIZATION FLOW        │
+│   LUỒNG PHÂN QUYỀN DỰA TRÊN PERMISSION   │
 └─────────────────────────────────────────────────┘
 
-1. USER REGISTRATION & ROLE ASSIGNMENT
-   User creates account → Admin assigns Manager role
-→ Manager role has permissions: Users.View, Users.Create
+1. ĐĂNG KÝ USER & GÁN ROLE
+   User tạo tài khoản → Admin gán role Manager
+   → Role Manager có quyền: Users.View, Users.Create
 
-2. LOGIN & JWT GENERATION
+2. ĐĂNG NHẬP & TẠO JWT
    POST /tokens
    → TokenService.GetTokenAsync()
    → UserService.GetPermissionsAsync()
    Query: SELECT Function.Name + '.' + Action.Name
-   FROM Permission P
-        WHERE P.RoleId IN (user's roles)
-   → Add permissions to JWT claims
-   → Return JWT token
+ FROM Permission P
+ WHERE P.RoleId IN (các roles của user)
+ → Thêm permissions vào JWT claims
+   → Trả về JWT token
 
-3. API CALL WITH JWT
- GET /api/users
+3. GỌI API VỚI JWT
+   GET /api/users
    Authorization: Bearer {JWT}
-   [MustHavePermission(ECOAction.View, ECOFunction.User)]
+ [MustHavePermission(ECOAction.View, ECOFunction.User)]
    → JWT middleware validates token
-   → Extract claims from JWT
+   → Trích xuất claims từ JWT
 
-4. AUTHORIZATION CHECK
+4. KIỂM TRA AUTHORIZATION
    → PermissionPolicyProvider.GetPolicyAsync("Permissions.User.View")
-   → Create policy với PermissionRequirement
+   → Tạo policy với PermissionRequirement
    → PermissionAuthorizationHandler.HandleRequirementAsync()
- → Check JWT claims: Has "permission" = "Permissions.User.View"?
-   → UserService.HasPermissionAsync() (optional double-check)
+   → Kiểm tra JWT claims: Có "permission" = "Permissions.User.View"?
+   → UserService.HasPermissionAsync() (tùy chọn kiểm tra lại)
 
-5. RESULT
-   ✅ Has Permission → 200 OK với data
-   ❌ No Permission → 403 Forbidden
-   ❌ No Auth → 401 Unauthorized
+5. KỐT QUẢ
+ ✅ Có quyền → 200 OK với data
+   ❌ Không có quyền → 403 Forbidden
+   ❌ Chưa xác thực → 401 Unauthorized
 ```
 
-### 📌 Key Concepts:
+### 📌 Key Concepts (Khái niệm Chính):
 
-**Permission Format:**
-- **Database:** `"Users.View"` (Function.Action)
-- **JWT Claims:** `"Permissions.Users.View"` (with prefix)
-- **Attribute:** `[MustHavePermission(ECOAction.View, ECOFunction.User)]`
-- **Policy:** `"Permissions.User.View"`
+**Permission Format (Định dạng Quyền):**
+- **Database (Cơ sở dữ liệu):** `"Users.View"` (Function.Action)
+- **JWT Claims:** `"Permissions.Users.View"` (có tiền tố)
+- **Attribute (Thuộc tính):** `[MustHavePermission(ECOAction.View, ECOFunction.User)]`
+- **Policy (Chính sách):** `"Permissions.User.View"`
 
-**Components Interaction:**
-1. **MustHavePermissionAttribute:** Sets policy name
-2. **PermissionPolicyProvider:** Creates policy with PermissionRequirement
-3. **PermissionAuthorizationHandler:** Evaluates requirement against JWT claims
-4. **UserService:** Queries permissions from database (for JWT generation)
-5. **TokenService:** Adds permissions to JWT claims
+**Components Interaction (Tương tác giữa các Thành phần):**
+1. **MustHavePermissionAttribute:** Đặt tên policy
+2. **PermissionPolicyProvider:** Tạo policy với PermissionRequirement
+3. **PermissionAuthorizationHandler:** Đánh giá requirement dựa trên JWT claims
+4. **UserService:** Truy vấn permissions từ database (để tạo JWT)
+5. **TokenService:** Thêm permissions vào JWT claims
 
-**Benefits:**
-- ✅ Dynamic authorization (no hardcoded permissions)
-- ✅ Fast checks (permissions in JWT claims)
-- ✅ Fine-grained access control (per-function, per-action)
-- ✅ Declarative security (attributes on controllers)
-- ✅ Scalable (support unlimited permissions)
+**Benefits (Lợi ích):**
+- ✅ Dynamic authorization (Phân quyền động - từ database)
+- ✅ Fast checks (Kiểm tra nhanh - quyền trong JWT claims)
+- ✅ Fine-grained access control (Kiểm soát truy cập chi tiết - theo function, action)
+- ✅ Declarative security (Bảo mật khai báo - dùng attributes)
+- ✅ Scalable (Có thể mở rộng - hỗ trợ không giới hạn quyền)
 
-**Security Considerations:**
-- Permissions loaded from database on login
-- Stored in JWT for fast authorization
-- If permission changed, user must re-login
-- Optional: Implement permission cache invalidation
+**Security Considerations (Cân nhắc Bảo mật):**
+- Quyền được load từ database khi đăng nhập
+- Lưu trong JWT để authorization nhanh
+- Nếu quyền thay đổi, user phải đăng nhập lại
+- Tùy chọn: Implement permission cache invalidation (vô hiệu hóa cache quyền)
 
-### 📁 Complete File Structure:
+### 📁 Complete File Structure (Cấu trúc File Hoàn chỉnh):
 
 ```
 src/
 ├── Core/
 │   ├── Shared/
 │   │   └── Authorization/
-│   │    ├── ECOPermissions.cs (ECOAction, ECOFunction, ECOPermission)
+│   │       ├── ECOPermissions.cs (ECOAction, ECOFunction, ECOPermission)
 │   │       ├── ECOClaims.cs
 │   │       └── ECORoles.cs
 │   ├── Domain/
 │   │   └── Identity/
-│   │       ├── Permission.cs (entity)
+│   │  ├── Permission.cs (entity)
 │   │       ├── Function.cs
 │   │       └── Action.cs
 │   └── Application/
-│  └── Identity/
+│ └── Identity/
 │           ├── Users/
-│      │   └── IUserService.cs (GetPermissionsAsync, HasPermissionAsync)
+│           │   └── IUserService.cs (GetPermissionsAsync, HasPermissionAsync)
 │           └── Tokens/
-│    └── ITokenService.cs
+│      └── ITokenService.cs
 ├── Infrastructure/
 │   └── Infrastructure/
 │       ├── Auth/
-│   │ ├── Startup.cs (AddPermissions)
+│ │   ├── Startup.cs (AddPermissions)
 │       │   └── Permissions/
-│       │   ├── PermissionRequirement.cs
+│       │       ├── PermissionRequirement.cs
 │       │       ├── PermissionAuthorizationHandler.cs
-│       │       ├── PermissionPolicyProvider.cs
+│       │ ├── PermissionPolicyProvider.cs
 │       │       └── MustHavePermissionAttribute.cs
-│       └── Identity/
-│        ├── TokenService.cs (GetClaimsAsync - add permissions)
-│           └── UserService.Permission.cs (GetPermissionsAsync, HasPermissionAsync)
+│   └── Identity/
+│           ├── TokenService.cs (GetClaimsAsync - thêm permissions)
+│     └── UserService.Permission.cs (GetPermissionsAsync, HasPermissionAsync)
 └── Host/
     └── Host/
         └── Controllers/
-         └── Identity/
-            └── UsersController.cs (with [MustHavePermission] attributes)
+            └── Identity/
+     └── UsersController.cs (với [MustHavePermission] attributes)
 ```
 
 ---
 
-## 11. Next Steps
+## 11. Next Steps (Các Bước Tiếp theo)
 
 **Tiếp theo:** [BUILD_18 - OAuth2 Integration](BUILD_18_OAuth2_Integration.md)
 
 Trong bước tiếp theo, chúng ta sẽ implement OAuth2 authentication:
-1. ✅ Google OAuth2 setup
-2. ✅ Facebook OAuth2 setup
-3. ✅ IAuthenticationService interface
-4. ✅ AuthenticationService implementation
-5. ✅ OAuth2 middleware configuration
-6. ✅ Social login flows
+1. ✅ Google OAuth2 setup (Thiết lập Google OAuth2)
+2. ✅ Facebook OAuth2 setup (Thiết lập Facebook OAuth2)
+3. ✅ IAuthenticationService interface (Interface Dịch vụ Xác thực)
+4. ✅ AuthenticationService implementation (Triển khai Dịch vụ Xác thực)
+5. ✅ OAuth2 middleware configuration (Cấu hình middleware OAuth2)
+6. ✅ Social login flows (Luồng đăng nhập mạng xã hội)
 
 ---
 

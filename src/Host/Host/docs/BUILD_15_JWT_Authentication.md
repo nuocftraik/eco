@@ -20,6 +20,7 @@ Tài liệu này hướng dẫn xây dựng JWT Authentication - Hệ thống x�
 
 **Trong bước này chúng ta sẽ:**
 - ✅ Tạo JwtSettings configuration
+
 - ✅ Tạo SecuritySettings configuration
 - ✅ Tạo Token DTOs (TokenRequest, TokenResponse, RefreshTokenRequest)
 - ✅ Tạo ITokenService interface

@@ -9,14 +9,12 @@ Tài liệu này hướng dẫn xây dựng User Management Service - Quản lý
 
 ## 1. Overview
 
-**Làm gì:** Xây dựng User Management Service để quản lý người dùng (Create, Read, Update, Toggle Status, Email Confirmation).
+**Làm gì:** Xây dựng User Management Service để quản lý người dùng (Create, Read, Update, Toggle Status).
 
 **Tại sao cần:**
 - **User Management:** CRUD operations cho user accounts
 - **Self-Registration:** Cho phép users tự đăng ký tài khoản
-- **Email Confirmation:** Xác thực email trước khi active account
 - **Profile Management:** Users có thể update thông tin cá nhân
-- **Image Upload:** Upload và quản lý avatar
 - **Status Management:** Admin có thể active/deactive users
 
 **Trong bước này chúng ta sẽ:**
@@ -26,12 +24,17 @@ Tài liệu này hướng dẫn xây dựng User Management Service - Quản lý
   - Search users với pagination
   - Get user details
   - Create user (admin) & Self-register (anonymous)
-  - Update user profile với image upload
+  - Update user profile (basic info only)
   - Toggle user status (active/inactive)
-  - Email confirmation
-- ✅ Tạo UserController với RESTful endpoints
+- ✅ Tạo UsersController với RESTful endpoints
 - ✅ FluentValidation cho tất cả requests
-- ✅ Email templates cho registration confirmation
+
+**⚠️ Lưu ý về Timeline:**
+- ✅ **Email Confirmation:** Interface đã có, implementation sẽ hoàn thiện trong BUILD_23 (Email Service)
+- ✅ **Image Upload:** Interface đã có, implementation sẽ hoàn thiện trong BUILD_20 (File Storage)
+- ✅ **Background Jobs:** Implementation sẽ hoàn thiện trong BUILD_24 (Hangfire)
+- ✅ **Password Operations:** Implementation sẽ hoàn thiện sau khi có Email Service
+- ✅ **Permission Operations:** Implementation sẽ hoàn thiện sau khi có Cache Service (BUILD_19)
 
 **Real-world example:**
 ```csharp
@@ -48,24 +51,19 @@ var createRequest = new CreateUserRequest
 };
 
 var message = await _userService.CreateAsync(createRequest, origin);
-// → User registered. Email confirmation sent to john@example.com
+// → User johndoe Registered.
 
-// User confirms email
-await _userService.ConfirmEmailAsync(userId, code, cancellationToken);
-// → Email confirmed successfully!
-
-// User updates profile
+// User updates profile (basic info only)
 var updateRequest = new UpdateUserRequest
 {
     Id = userId,
     FirstName = "John",
     LastName = "Smith",
-    PhoneNumber = "+84987654322",
-    Image = new FileUploadRequest { ... }
+    PhoneNumber = "+84987654322"
 };
 
 await _userService.UpdateAsync(updateRequest, userId);
-// → Profile updated with new avatar
+// → Profile updated successfully
 
 // Admin toggles user status
 await _userService.ToggleStatusAsync(new ToggleUserStatusRequest 
@@ -608,11 +606,11 @@ public interface IUserService : ITransientService
     #endregion
 
     #region Password Operations (sẽ implement chi tiết)
-    
+ 
     /// <summary>
     /// Send forgot password email
     /// </summary>
-    Task<string> ForgotPasswordAsync(ForgotPasswordRequest request, string origin);
+ Task<string> ForgotPasswordAsync(ForgotPasswordRequest request, string origin);
 
     /// <summary>
     /// Reset password với reset token
@@ -621,7 +619,7 @@ public interface IUserService : ITransientService
 
     /// <summary>
     /// Change password (user đã login)
-  /// </summary>
+    /// </summary>
     Task ChangePasswordAsync(ChangePasswordRequest request, string userId);
 
     #endregion
@@ -672,13 +670,9 @@ public interface IUserService : ITransientService
 **File:** `src/Infrastructure/Infrastructure/Identity/UserService.cs`
 
 ```csharp
-using Ardalis.Specification;
 using Ardalis.Specification.EntityFrameworkCore;
-using ECO.WebApi.Application.Common.Caching;
 using ECO.WebApi.Application.Common.Events;
 using ECO.WebApi.Application.Common.Exceptions;
-using ECO.WebApi.Application.Common.FileStorage;
-using ECO.WebApi.Application.Common.Mailing;
 using ECO.WebApi.Application.Common.Models;
 using ECO.WebApi.Application.Common.Specification;
 using ECO.WebApi.Application.Identity.Users;
@@ -701,94 +695,79 @@ internal partial class UserService : IUserService
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
-  private readonly RoleManager<ApplicationRole> _roleManager;
+    private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly ApplicationDbContext _db;
-    private readonly IJobService _jobService;
-    private readonly IMailService _mailService;
     private readonly SecuritySettings _securitySettings;
-    private readonly IEmailTemplateService _templateService;
-    private readonly IFileStorageService _fileStorage;
     private readonly IEventPublisher _events;
-    private readonly ICacheService _cache;
 
     public UserService(
-   SignInManager<ApplicationUser> signInManager,
+        SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
-        RoleManager<ApplicationRole> roleManager,
-     ApplicationDbContext db,
-        IJobService jobService,
-        IMailService mailService,
+     RoleManager<ApplicationRole> roleManager,
+  ApplicationDbContext db,
         IOptions<SecuritySettings> securitySettings,
-        IEmailTemplateService templateService,
-        IFileStorageService fileStorage,
-        IEventPublisher events,
-        ICacheService cache)
+        IEventPublisher events)
     {
-    _signInManager = signInManager;
- _userManager = userManager;
-        _roleManager = roleManager;
-     _db = db;
-        _jobService = jobService;
-        _mailService = mailService;
+        _signInManager = signInManager;
+        _userManager = userManager;
+    _roleManager = roleManager;
+        _db = db;
         _securitySettings = securitySettings.Value;
-        _templateService = templateService;
-        _fileStorage = fileStorage;
         _events = events;
-        _cache = cache;
     }
 
     #region Default Operations
 
     /// <summary>
-/// Search users với pagination và filters
+    /// Search users với pagination và filters
     /// </summary>
     public async Task<PaginationResponse<UserDetailDto>> SearchAsync(
-  UserParameterFilter filter, 
-        CancellationToken cancellationToken)
+        UserParameterFilter filter, 
+     CancellationToken cancellationToken)
     {
-        // Build specification từ filter
-var spec = new EntitiesByPaginationFilterSpec<ApplicationUser>(filter);
+ // Build specification từ filter
+ var spec = new EntitiesByPaginationFilterSpec<ApplicationUser>(filter);
 
         // Query với specification và project to DTO (efficient query)
-        var users = await _userManager.Users
+     var users = await _userManager.Users
             .WithSpecification(spec)
-        .ProjectToType<UserDetailDto>() // Mapster projection (chỉ select cần thiết)
-       .ToListAsync(cancellationToken);
+            .ProjectToType<UserDetailDto>() // Mapster projection (chỉ select cần thiết)
+  .ToListAsync(cancellationToken);
 
         // Get total count
         int count = await _userManager.Users.CountAsync(cancellationToken);
 
-        return new PaginationResponse<UserDetailDto>(
-         users, 
-  count, 
-    filter.PageNumber, 
- filter.PageSize);
-    }
-
-/// <summary>
-    /// Check username đã tồn tại chưa
-    /// </summary>
-    public async Task<bool> ExistsWithNameAsync(string name)
-  {
-        return await _userManager.FindByNameAsync(name) is not null;
+      return new PaginationResponse<UserDetailDto>(
+        users, 
+   count, 
+          filter.PageNumber, 
+            filter.PageSize);
     }
 
     /// <summary>
+    /// Check username đã tồn tại chưa
+    /// </summary>
+    public async Task<bool> ExistsWithNameAsync(string name)
+    {
+   return await _userManager.FindByNameAsync(name) is not null;
+    }
+
+  /// <summary>
     /// Check email đã tồn tại chưa (exclude exceptId nếu có)
     /// </summary>
     public async Task<bool> ExistsWithEmailAsync(string email, string? exceptId = null)
     {
         return await _userManager.FindByEmailAsync(email.Normalize()) is ApplicationUser user 
-&& user.Id != exceptId;
+     && user.Id != exceptId;
     }
 
     /// <summary>
     /// Check phone number đã tồn tại chưa (exclude exceptId nếu có)
     /// </summary>
-    public async Task<bool> ExistsWithPhoneNumberAsync(string phoneNumber, string? exceptId = null)
+  public async Task<bool> ExistsWithPhoneNumberAsync(string phoneNumber, string? exceptId = null)
     {
-  return await _userManager.Users
-            .FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber) is ApplicationUser user 
+        return await _userManager.Users
+    .FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber) is ApplicationUser user 
             && user.Id != exceptId;
     }
 
@@ -806,25 +785,25 @@ var spec = new EntitiesByPaginationFilterSpec<ApplicationUser>(filter);
     /// </summary>
     public async Task<List<UserDetailDto>> GetListAsync(CancellationToken cancellationToken) =>
         (await _userManager.Users
-            .AsNoTracking()
-         .ToListAsync(cancellationToken))
-        .Adapt<List<UserDetailDto>>();
+.AsNoTracking()
+            .ToListAsync(cancellationToken))
+.Adapt<List<UserDetailDto>>();
 
     /// <summary>
     /// Get total user count
     /// </summary>
     public Task<int> GetCountAsync(CancellationToken cancellationToken) =>
-     _userManager.Users.AsNoTracking().CountAsync(cancellationToken);
+      _userManager.Users.AsNoTracking().CountAsync(cancellationToken);
 
     /// <summary>
     /// Get user details by ID
     /// </summary>
     public async Task<UserDetailDto> GetAsync(string userId, CancellationToken cancellationToken)
     {
-      var user = await _userManager.Users
-   .AsNoTracking()
-            .Where(u => u.Id == userId)
-     .FirstOrDefaultAsync(cancellationToken);
+        var user = await _userManager.Users
+         .AsNoTracking()
+       .Where(u => u.Id == userId)
+            .FirstOrDefaultAsync(cancellationToken);
 
     _ = user ?? throw new NotFoundException("User Not Found.");
 
@@ -838,17 +817,17 @@ var spec = new EntitiesByPaginationFilterSpec<ApplicationUser>(filter);
         ToggleUserStatusRequest request, 
         CancellationToken cancellationToken)
     {
-        var user = await _userManager.Users
-            .Where(u => u.Id == request.UserId)
-            .FirstOrDefaultAsync(cancellationToken);
+ var user = await _userManager.Users
+ .Where(u => u.Id == request.UserId)
+  .FirstOrDefaultAsync(cancellationToken);
 
-        _ = user ?? throw new NotFoundException("User Not Found.");
+ _ = user ?? throw new NotFoundException("User Not Found.");
 
    // Không cho phép deactivate admin
-    bool isAdmin = await _userManager.IsInRoleAsync(user, ECORoles.Admin);
+        bool isAdmin = await _userManager.IsInRoleAsync(user, ECORoles.Admin);
         if (isAdmin)
-      {
-            throw new ConflictException("Administrators Profile's Status cannot be toggled");
+        {
+ throw new ConflictException("Administrators Profile's Status cannot be toggled");
         }
 
         user.IsActive = request.ActivateUser;
@@ -862,17 +841,19 @@ var spec = new EntitiesByPaginationFilterSpec<ApplicationUser>(filter);
 
 **Giải thích:**
 
-**Dependencies:**
-- **UserManager:** ASP.NET Core Identity user management
-- **SignInManager:** Sign in/out operations
-- **RoleManager:** Role management
-- **ApplicationDbContext:** Direct database access nếu cần
-- **IJobService:** Background jobs (email sending)
-- **IMailService:** Email service
-- **IEmailTemplateService:** Email templates
-- **IFileStorageService:** File upload/download
-- **IEventPublisher:** Domain events
-- **ICacheService:** Caching
+**Dependencies (Chỉ những gì đã có tại BUILD_16A):**
+- **UserManager:** ASP.NET Core Identity user management (BUILD_15)
+- **SignInManager:** Sign in/out operations (BUILD_15)
+- **RoleManager:** Role management (BUILD_15)
+- **ApplicationDbContext:** Direct database access (BUILD_11)
+- **SecuritySettings:** JWT settings (BUILD_15)
+- **IEventPublisher:** Domain events (BUILD_12)
+
+**⚠️ Dependencies sẽ thêm sau:**
+- **IJobService:** BUILD_24 (Background Jobs)
+- **IMailService, IEmailTemplateService:** BUILD_23 (Email Service)
+- **IFileStorageService:** BUILD_20 (File Storage)
+- **ICacheService:** BUILD_19 (Caching)
 
 **SearchAsync:**
 - Use `EntitiesByPaginationFilterSpec` (from BUILD_11)
@@ -891,10 +872,8 @@ var spec = new EntitiesByPaginationFilterSpec<ApplicationUser>(filter);
 
 **Tại sao partial class:**
 - UserService có nhiều methods (20+ methods)
-- Chia thành nhiều files: UserService.cs, UserService.CreateUpdate.cs, UserService.Password.cs, UserService.Role.cs, UserService.Permission.cs, UserService.Confirm.cs
+- Chia thành nhiều files: UserService.cs, UserService.CreateUpdate.cs, UserService.Password.cs (sau), UserService.Role.cs, UserService.Permission.cs (sau), UserService.Confirm.cs (sau)
 - Dễ maintain và navigate
-
----
 
 ### Bước 4.2: UserService - Create & Update Operations
 
@@ -906,9 +885,7 @@ var spec = new EntitiesByPaginationFilterSpec<ApplicationUser>(filter);
 
 ```csharp
 using ECO.WebApi.Application.Common.Exceptions;
-using ECO.WebApi.Application.Common.Mailing;
 using ECO.WebApi.Application.Identity.Users;
-using ECO.WebApi.Domain.Common;
 using ECO.WebApi.Domain.Identity;
 using ECO.WebApi.Shared.Authorization;
 
@@ -927,106 +904,81 @@ internal partial class UserService
         // Create ApplicationUser entity
         var user = new ApplicationUser
         {
-Email = request.Email,
-      FirstName = request.FirstName,
-          LastName = request.LastName,
-    UserName = request.UserName,
-    PhoneNumber = request.PhoneNumber,
-  IsActive = true
-   };
+        Email = request.Email,
+     FirstName = request.FirstName,
+    LastName = request.LastName,
+     UserName = request.UserName,
+       PhoneNumber = request.PhoneNumber,
+            IsActive = true
+        };
 
-        // Create user với password (ASP.NET Core Identity)
+      // Create user với password (ASP.NET Core Identity)
         var result = await _userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
         {
             throw new InternalServerException(
-  "Validation Errors Occurred.", 
-    result.GetErrors());
+"Validation Errors Occurred.", 
+                result.GetErrors());
         }
 
         // Assign "Basic" role by default
         await _userManager.AddToRoleAsync(user, ECORoles.Basic);
 
-        var messages = new List<string> 
-        { 
-            $"User {user.UserName} Registered." 
-        };
+        var message = $"User {user.UserName} Registered.";
 
-        // Send email confirmation nếu RequireConfirmedAccount = true
-   if (_securitySettings.RequireConfirmedAccount && !string.IsNullOrEmpty(user.Email))
-        {
-      // Generate email verification URI
-      string emailVerificationUri = await GetEmailVerificationUriAsync(user, origin);
-      
-            // Create email model
-    RegisterUserEmailModel emailModel = new RegisterUserEmailModel()
-          {
-     Email = user.Email,
-     UserName = user.UserName,
-     Url = emailVerificationUri
-       };
+     // TODO: Email confirmation sẽ implement trong BUILD_23 (Email Service)
+        // if (_securitySettings.RequireConfirmedAccount && !string.IsNullOrEmpty(user.Email))
+        // {
+    //     string emailVerificationUri = await GetEmailVerificationUriAsync(user, origin);
+        //     var emailModel = new RegisterUserEmailModel { ... };
+    //     var mailRequest = new MailRequest(...);
+        //  _jobService.Enqueue(() => _mailService.SendAsync(mailRequest, CancellationToken.None));
+        //     message += $"\nPlease check {user.Email} to verify your account!";
+        // }
 
-    // Generate email từ template
-   var mailRequest = new MailRequest(
-      new List<string> { user.Email },
-           "Confirm Registration",
-          _templateService.GenerateEmailTemplate("email-confirmation", emailModel));
-
-       // Send email bằng background job (không block request)
-            _jobService.Enqueue(() => _mailService.SendAsync(mailRequest, CancellationToken.None));
-
-          messages.Add($"Please check {user.Email} to verify your account!");
+        return message;
     }
 
-     return string.Join(Environment.NewLine, messages);
-  }
-
     /// <summary>
-    /// Update user profile (với image upload)
+    /// Update user profile (basic info only - no image upload yet)
     /// </summary>
     public async Task UpdateAsync(UpdateUserRequest request, string userId)
     {
-        var user = await _userManager.FindByIdAsync(userId);
+      var user = await _userManager.FindByIdAsync(userId);
 
         _ = user ?? throw new NotFoundException("User Not Found.");
 
-      // Handle image upload/delete
-        string currentImage = user.ImageUrl ?? string.Empty;
-    if (request.Image != null || request.DeleteCurrentImage)
-        {
-         // Upload new image
-            user.ImageUrl = await _fileStorage.UploadAsync<ApplicationUser>(
-        request.Image, 
-    FileType.Image);
+        // TODO: Image upload sẽ implement trong BUILD_20 (File Storage)
+   // if (request.Image != null || request.DeleteCurrentImage)
+        // {
+      //     user.ImageUrl = await _fileStorage.UploadAsync<ApplicationUser>(request.Image, FileType.Image);
+        //     if (request.DeleteCurrentImage && !string.IsNullOrEmpty(currentImage))
+        //     {
+        //         _fileStorage.Remove(Path.Combine(root, currentImage));
+        //     }
+        // }
 
-       // Delete old image nếu có
-   if (request.DeleteCurrentImage && !string.IsNullOrEmpty(currentImage))
-        {
-    string root = Directory.GetCurrentDirectory();
-        _fileStorage.Remove(Path.Combine(root, currentImage));
-     }
-        }
-
-    // Update basic info
+        // Update basic info
         user.FirstName = request.FirstName;
-        user.LastName = request.LastName;
-      user.PhoneNumber = request.PhoneNumber;
+  user.LastName = request.LastName;
+        user.PhoneNumber = request.PhoneNumber;
+        user.Email = request.Email;
 
-      // Update phone number nếu changed
-        string? phoneNumber = await _userManager.GetPhoneNumberAsync(user);
+        // Update phone number nếu changed
+    string? phoneNumber = await _userManager.GetPhoneNumberAsync(user);
         if (request.PhoneNumber != phoneNumber)
-      {
- await _userManager.SetPhoneNumberAsync(user, request.PhoneNumber);
-        }
+     {
+     await _userManager.SetPhoneNumberAsync(user, request.PhoneNumber);
+    }
 
         // Update user trong database
         var result = await _userManager.UpdateAsync(user);
 
-  // Refresh sign in (update claims)
- await _signInManager.RefreshSignInAsync(user);
+        // Refresh sign in (update claims)
+        await _signInManager.RefreshSignInAsync(user);
 
-        if (!result.Succeeded)
-        {
+     if (!result.Succeeded)
+  {
             throw new InternalServerException("Update profile failed", result.GetErrors());
         }
     }
@@ -1035,55 +987,32 @@ Email = request.Email,
 
 **Giải thích:**
 
-**CreateAsync:**
+**CreateAsync (Simplified):**
 1. Create `ApplicationUser` entity từ request
 2. `_userManager.CreateAsync(user, password)`: Create user với password hashing (Identity)
 3. Assign "Basic" role by default
-4. Nếu `RequireConfirmedAccount = true`:
-   - Generate email verification URI
-   - Create email model với template data
-   - Send email bằng background job (Hangfire)
-5. Return success messages
+4. Return success message
+5. **TODO:** Email confirmation sẽ implement khi có IMailService, IJobService, IEmailTemplateService (BUILD_23, BUILD_24)
 
-**UpdateAsync:**
+**UpdateAsync (Simplified):**
 1. Find user by ID
-2. Handle image upload:
-   - Upload new image nếu có
- - Delete old image nếu `DeleteCurrentImage = true`
-3. Update basic info (FirstName, LastName, PhoneNumber)
+2. **TODO:** Image upload sẽ implement khi có IFileStorageService (BUILD_20)
+3. Update basic info (FirstName, LastName, PhoneNumber, Email)
 4. `SetPhoneNumberAsync`: Update phone number (Identity method)
 5. `RefreshSignInAsync`: Update claims trong current session
 6. Return errors nếu update failed
 
-**Tại sao background job cho email:**
-- Không block HTTP request
-- Retry tự động nếu email fail
-- Better user experience (fast response)
+**Tại sao simplified:**
+- Email và Background Jobs chưa có (BUILD_23, BUILD_24)
+- File Storage chưa có (BUILD_20)
+- Giữ code clean, không inject dependencies chưa tồn tại
+- Dễ extend sau khi các services available
 
-**Image Upload Flow:**
-```
-User uploads avatar
-    ↓
-UploadAsync<ApplicationUser>(request.Image, FileType.Image)
-    ↓
-Generate unique filename (Guid)
-    ↓
-Save to wwwroot/Files/Images/ApplicationUser/
-    ↓
-Return relative path
-    ↓
-Update user.ImageUrl
-    ↓
-Delete old image if DeleteCurrentImage = true
-```
+### Bước 4.3: Email Confirmation Operations (Placeholder)
 
----
+**Làm gì:** Define email confirmation interface (implementation sau).
 
-### Bước 4.3: Email Confirmation Helper Method
-
-**Làm gì:** Helper method để generate email verification URI.
-
-**Tại sao:** Reusable logic cho email confirmation.
+**Tại sao:** Prepare interface cho BUILD_23 (Email Service).
 
 **File:** `src/Infrastructure/Infrastructure/Identity/UserService.Confirm.cs`
 
@@ -1091,7 +1020,6 @@ Delete old image if DeleteCurrentImage = true
 using ECO.WebApi.Application.Common.Exceptions;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Text;
-using System.Text.Encodings.Web;
 
 namespace ECO.WebApi.Infrastructure.Identity;
 
@@ -1102,485 +1030,246 @@ internal partial class UserService
 {
     /// <summary>
     /// Confirm email với verification code
+    /// TODO: Full implementation trong BUILD_23 (Email Service)
     /// </summary>
-    public async Task<string> ConfirmEmailAsync(
-        string userId, 
+  public async Task<string> ConfirmEmailAsync(
+  string userId, 
         string code, 
-      CancellationToken cancellationToken)
+        CancellationToken cancellationToken)
     {
-        var user = await _userManager.FindByIdAsync(userId);
-
-    _ = user ?? throw new NotFoundException("User Not Found.");
-
- // Decode code từ query string
-        code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
-
-        // Confirm email với Identity
-    var result = await _userManager.ConfirmEmailAsync(user, code);
-
-      if (result.Succeeded)
-        {
-      return "Email confirmed successfully!";
-        }
-
-        throw new InternalServerException("An error occurred while confirming email.");
-    }
-
-    /// <summary>
-    /// Confirm phone number với verification code
-    /// </summary>
-    public async Task<string> ConfirmPhoneNumberAsync(string userId, string code)
-    {
-        var user = await _userManager.FindByIdAsync(userId);
+    var user = await _userManager.FindByIdAsync(userId);
 
         _ = user ?? throw new NotFoundException("User Not Found.");
 
-        // Confirm phone với Identity
-        var result = await _userManager.ChangePhoneNumberAsync(user, user.PhoneNumber!, code);
+     // Decode code từ query string
+   code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
+
+        // Confirm email với Identity
+ var result = await _userManager.ConfirmEmailAsync(user, code);
 
         if (result.Succeeded)
-    {
-    return "Phone number confirmed successfully!";
-        }
+   {
+return "Email confirmed successfully!";
+   }
 
-     throw new InternalServerException("An error occurred while confirming phone number.");
+      throw new InternalServerException("An error occurred while confirming email.");
     }
 
     /// <summary>
-    /// Generate email verification URI (helper method)
+ /// Confirm phone number với verification code
+    /// TODO: Full implementation trong BUILD_23 (Email Service)
     /// </summary>
-    private async Task<string> GetEmailVerificationUriAsync(
-        ApplicationUser user, 
-        string origin)
+    public async Task<string> ConfirmPhoneNumberAsync(string userId, string code)
     {
- // Generate email confirmation token (Identity)
-        string code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+   var user = await _userManager.FindByIdAsync(userId);
 
-     // Encode token for URL
-        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+        _ = user ?? throw new NotFoundException("User Not Found.");
 
-        // Build verification URI
-        const string route = "api/users/confirm-email";
-    var endpointUri = new Uri(string.Concat($"{origin}/", route));
+      // Confirm phone với Identity
+        var result = await _userManager.ChangePhoneNumberAsync(user, user.PhoneNumber!, code);
 
-        string verificationUri = QueryHelpers.AddQueryString(
-       endpointUri.ToString(),
-          new Dictionary<string, string>
-       {
-      ["userId"] = user.Id,
-    ["code"] = code
- });
+        if (result.Succeeded)
+        {
+return "Phone number confirmed successfully!";
+}
 
-        return verificationUri;
+        throw new InternalServerException("An error occurred while confirming phone number.");
     }
+
+    // TODO: GetEmailVerificationUriAsync sẽ implement trong BUILD_23
+    // private async Task<string> GetEmailVerificationUriAsync(ApplicationUser user, string origin)
+    // {
+    //  string code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+    //   code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+    //  const string route = "api/users/confirm-email";
+    //     var endpointUri = new Uri(string.Concat($"{origin}/", route));
+    //     string verificationUri = QueryHelpers.AddQueryString(endpointUri.ToString(), ...);
+    //     return verificationUri;
+    // }
 }
 ```
 
 **Giải thích:**
 
 **ConfirmEmailAsync:**
-1. Find user by ID
-2. Decode code từ Base64Url (query string encoding)
-3. `_userManager.ConfirmEmailAsync(user, code)`: Confirm email với Identity
-4. Return success message hoặc throw exception
+- Core logic đã có (using Identity)
+- Decode code từ Base64Url
+- `_userManager.ConfirmEmailAsync(user, code)`: Confirm email
+- **TODO:** Email sending logic trong BUILD_23
 
 **ConfirmPhoneNumberAsync:**
 - Tương tự ConfirmEmailAsync
 - Use `ChangePhoneNumberAsync` với verification code
 
-**GetEmailVerificationUriAsync (Helper):**
-1. Generate email confirmation token (Identity)
-2. Encode token thành Base64Url (safe for URL)
-3. Build verification URI: `https://localhost:7001/api/users/confirm-email?userId=xxx&code=yyy`
-4. Return URI để gửi trong email
+**GetEmailVerificationUriAsync (Commented):**
+- Helper method để generate verification URI
+- Sẽ implement trong BUILD_23 khi có Email Service
 
-**Email Confirmation Flow:**
-```
-User registers
-    ↓
-GenerateEmailConfirmationTokenAsync (Identity)
-    ↓
-Encode token to Base64Url
-    ↓
-Build verification URI
-    ↓
-Send email với link
-  ↓
-User clicks link
-    ↓
-GET /api/users/confirm-email?userId=xxx&code=yyy
-    ↓
-Decode code
-    ↓
-ConfirmEmailAsync (Identity)
-↓
-Email confirmed!
-```
+**Tại sao placeholder:**
+- Interface đã define (IUserService)
+- Core confirmation logic works (Identity)
+- Email sending sẽ thêm sau (BUILD_23)
+- Clean separation of concerns
 
 ---
 
-## 5. Email Templates
+## 5. User Controller
 
-### Bước 5.1: RegisterUserEmailModel
+### Bước 5.1: UsersController Implementation
 
-**Làm gì:** Model cho email registration template.
+**Làm gì:** Tạo UsersController để xử lý HTTP requests cho user management.
 
-**Tại sao:** Type-safe data cho email template rendering.
-
-**File:** `src/Core/Application/Identity/Users/RegisterUserEmailModel.cs`
-
-```csharp
-namespace ECO.WebApi.Application.Identity.Users;
-
-/// <summary>
-/// Model cho email registration confirmation
-/// </summary>
-public class RegisterUserEmailModel
-{
-    /// <summary>
-    /// User email
-    /// </summary>
-    public string Email { get; set; } = default!;
-
-    /// <summary>
-    /// Username
-    /// </summary>
-    public string UserName { get; set; } = default!;
-
-    /// <summary>
-    /// Email verification URL
-    /// </summary>
-    public string Url { get; set; } = default!;
-}
-```
-
-**Giải thích:**
-- **Email:** Recipient email
-- **UserName:** Display trong email
-- **Url:** Verification link (GET /api/users/confirm-email?...)
-
----
-
-### Bước 5.2: Email Confirmation Template
-
-**Làm gì:** Razor template cho email confirmation.
-
-**Tại sao:** Professional email với branding.
-
-**File:** `src/Infrastructure/Infrastructure/Mailing/EmailTemplates/email-confirmation.cshtml`
-
-```cshtml
-@model ECO.WebApi.Application.Identity.Users.RegisterUserEmailModel
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confirm Your Email</title>
-    <style>
-  body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-        padding: 0;
-        }
-  .container {
-            max-width: 600px;
-            margin: 50px auto;
-        background-color: #ffffff;
-         padding: 20px;
-        border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-     color: #333333;
-        }
- p {
-      color: #555555;
-         line-height: 1.6;
-        }
-        .button {
-   display: inline-block;
-            padding: 10px 20px;
-        margin: 20px 0;
-  background-color: #007bff;
-        color: #ffffff;
-   text-decoration: none;
-            border-radius: 5px;
-        }
-    .button:hover {
-    background-color: #0056b3;
-    }
-        .footer {
-  margin-top: 20px;
-         font-size: 12px;
-            color: #999999;
-        text-align: center;
-  }
-    </style>
-</head>
-<body>
-  <div class="container">
-        <h1>Welcome to ECO.WebApi, @Model.UserName!</h1>
-        <p>Thank you for registering. Please confirm your email address by clicking the button below:</p>
-        <a href="@Model.Url" class="button">Confirm Email</a>
-        <p>If the button doesn't work, copy and paste this link into your browser:</p>
-    <p><a href="@Model.Url">@Model.Url</a></p>
-        <p>If you did not create an account, please ignore this email.</p>
-    <div class="footer">
-            <p>&copy; 2024 ECO.WebApi. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>
-```
-
-**Giải thích:**
-- Razor template với `@model RegisterUserEmailModel`
-- Professional HTML email với CSS styling
-- Button link đến verification URL
-- Fallback text link nếu button không hoạt động
-- Footer với copyright
-
-**Template Rendering:**
-```csharp
-var mailRequest = new MailRequest(
-    new List<string> { user.Email },
-    "Confirm Registration",
-    _templateService.GenerateEmailTemplate("email-confirmation", emailModel));
-```
-
----
-
-## 6. User Controller
-
-### Bước 6.1: UsersController Implementation
-
-**Làm gì:** Expose user management APIs.
-
-**Tại sao:** RESTful endpoints cho user operations.
+**Tại sao:** RESTful API cho client ứng dụng.
 
 **File:** `src/Host/Host/Controllers/Identity/UsersController.cs`
 
 ```csharp
 using ECO.WebApi.Application.Identity.Users;
-using ECO.WebApi.Application.Identity.Users.Password;
-using NSwag.Annotations;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace ECO.WebApi.Host.Controllers.Identity;
 
 /// <summary>
-/// User management APIs
+/// Controller cho user management
 /// </summary>
-public class UsersController : BaseApiController
+[ApiController]
+[Route("api/[controller]")]
+public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
 
-    public UsersController(IUserService userService) => _userService = userService;
+    public UsersController(IUserService userService)
+    {
+        _userService = userService;
+    }
 
     /// <summary>
-    /// Get list of all users
+    /// Tìm kiếm users với pagination
     /// </summary>
-    [HttpGet("list")]
-    [OpenApiOperation("Get list of all users.", "")]
-    public Task<List<UserDetailDto>> GetListAsync(CancellationToken cancellationToken)
+    [HttpGet("search")]
+    [Authorize(Policy = "admin")]
+    public async Task<IActionResult> SearchUsers(
+        [FromQuery] UserParameterFilter filter,
+        CancellationToken cancellationToken)
     {
-        return _userService.GetListAsync(cancellationToken);
+        var result = await _userService.SearchAsync(filter, cancellationToken);
+        return Ok(result);
     }
 
     /// <summary>
     /// Get user details by ID
     /// </summary>
     [HttpGet("{id}")]
-    [OpenApiOperation("Get a user's details.", "")]
- public Task<UserDetailDto> GetByIdAsync(string id, CancellationToken cancellationToken)
+    [Authorize(Policy = "admin")]
+    public async Task<IActionResult> GetUserById(string id, CancellationToken cancellationToken)
     {
-        return _userService.GetAsync(id, cancellationToken);
+        var result = await _userService.GetAsync(id, cancellationToken);
+        return Ok(result);
     }
 
     /// <summary>
-    /// Get user's assigned roles
-    /// </summary>
-    [HttpGet("{id}/roles")]
-    [OpenApiOperation("Get a user's roles.", "")]
-public Task<List<UserRoleDto>> GetRolesAsync(string id, CancellationToken cancellationToken)
-    {
-        return _userService.GetRolesAsync(id, cancellationToken);
-    }
-
- /// <summary>
-  /// Assign roles to user
-    /// </summary>
-    [HttpPost("{id}/roles")]
-    [OpenApiOperation("Update a user's assigned roles.", "")]
-    public Task<string> AssignRolesAsync(
-  string id, 
-        UserRolesRequest request, 
- CancellationToken cancellationToken)
- {
-        return _userService.AssignRolesAsync(id, request, cancellationToken);
-    }
-
-    /// <summary>
-    /// Create new user (Admin only)
+    /// Admin tạo user mới
     /// </summary>
     [HttpPost("create")]
-    [OpenApiOperation("Creates a new user.", "")]
-    public Task<string> CreateAsync(CreateUserRequest request)
+    [Authorize(Policy = "admin")]
+    public async Task<IActionResult> CreateUser(
+        [FromBody] CreateUserRequest request, 
+        CancellationToken cancellationToken)
     {
-     // TODO: Add [MustHavePermission("Users.Create")] trong BUILD_17
-        return _userService.CreateAsync(request, GetOriginFromRequest());
+        var message = await _userService.CreateAsync(request, Request.GetOrigin());
+        return Ok(message);
     }
 
     /// <summary>
-    /// Self-register (Anonymous - anyone can register)
+    /// Self-register tài khoản mới
     /// </summary>
     [HttpPost("self-register")]
-    [AllowAnonymous]
-    [OpenApiOperation("Anonymous user creates a user.", "")]
-    public Task<string> SelfRegisterAsync(CreateUserRequest request)
+    public async Task<IActionResult> SelfRegister(
+        [FromBody] CreateUserRequest request, 
+        CancellationToken cancellationToken)
     {
-        // TODO: Add captcha validation để prevent spam
-  // TODO: Add rate limiting
-      return _userService.CreateAsync(request, GetOriginFromRequest());
+        var message = await _userService.CreateAsync(request, Request.GetOrigin());
+        return Ok(message);
     }
 
     /// <summary>
-    /// Toggle user active status (Admin only)
+    /// Cập nhật user profile (basic info)
     /// </summary>
-    [HttpPost("{id}/toggle-status")]
-    [OpenApiOperation("Toggle a user's active status.", "")]
-    public async Task<ActionResult> ToggleStatusAsync(
+    [HttpPut("update/{id}")]
+    public async Task<IActionResult> UpdateUser(
         string id, 
-        ToggleUserStatusRequest request, 
-   CancellationToken cancellationToken)
-  {
-        if (id != request.UserId)
-        {
-       return BadRequest();
-        }
+        [FromBody] UpdateUserRequest request, 
+        CancellationToken cancellationToken)
+    {
+        await _userService.UpdateAsync(request, id);
+        return Ok();
+    }
 
+    /// <summary>
+    /// Admin kích hoạt/deactivate user
+    /// </summary>
+    [HttpPost("toggle-status")]
+    [Authorize(Policy = "admin")]
+    public async Task<IActionResult> ToggleUserStatus(
+        [FromBody] ToggleUserStatusRequest request, 
+        CancellationToken cancellationToken)
+    {
         await _userService.ToggleStatusAsync(request, cancellationToken);
         return Ok();
     }
 
     /// <summary>
-    /// Confirm email address (GET from email link)
+    /// Xác nhận email
+    /// TODO: Implement in BUILD_23
     /// </summary>
-    [HttpGet("confirm-email")]
-    [AllowAnonymous]
-    [OpenApiOperation("Confirm email address for a user.", "")]
-    public Task<string> ConfirmEmailAsync(
-  [FromQuery] string userId, 
-        [FromQuery] string code, 
-    CancellationToken cancellationToken)
+    [HttpPost("confirm-email")]
+    public async Task<IActionResult> ConfirmEmail(
+        [FromBody] ConfirmEmailRequest request,
+        CancellationToken cancellationToken)
     {
-        return _userService.ConfirmEmailAsync(userId, code, cancellationToken);
+    // Placeholder - реализация будет в BUILD_23
+        return Ok("Email confirmation logic будет реализована в BUILD_23.");
     }
 
     /// <summary>
-    /// Confirm phone number (GET from SMS link)
-    /// </summary>
-    [HttpGet("confirm-phone-number")]
-    [AllowAnonymous]
-    [OpenApiOperation("Confirm phone number for a user.", "")]
-  public Task<string> ConfirmPhoneNumberAsync(
-        [FromQuery] string userId, 
-        [FromQuery] string code)
-    {
-        return _userService.ConfirmPhoneNumberAsync(userId, code);
-    }
-
-    /// <summary>
-    /// Request password reset email
+    /// Quên mật khẩu - gửi email xác nhận
+    /// TODO: Implement in BUILD_23
     /// </summary>
     [HttpPost("forgot-password")]
-  [AllowAnonymous]
-    [OpenApiOperation("Request a password reset email for a user.", "")]
-    public Task<string> ForgotPasswordAsync(ForgotPasswordRequest request)
+    public async Task<IActionResult> ForgotPassword(
+        [FromBody] ForgotPasswordRequest request,
+        CancellationToken cancellationToken)
     {
-        return _userService.ForgotPasswordAsync(request, GetOriginFromRequest());
-}
-
-    /// <summary>
-    /// Reset password với reset token
-    /// </summary>
-    [HttpPost("reset-password")]
-    [OpenApiOperation("Reset a user's password.", "")]
-    public Task<string> ResetPasswordAsync(ResetPasswordRequest request)
-    {
-        return _userService.ResetPasswordAsync(request);
+    // Placeholder - реализacija будет в BUILD_23
+        return Ok("Forgot password logic будет реализована в BUILD_23.");
     }
-
-    /// <summary>
-    /// Get origin URL from request (for email links)
-    /// </summary>
-    private string GetOriginFromRequest() => 
-        $"{Request.Scheme}://{Request.Host.Value}{Request.PathBase.Value}";
 }
 ```
 
 **Giải thích:**
 
-**GET /api/users/list:**
-- Get all users (no pagination)
-- Requires authentication
+**Endpoints:**
+- `GET /search`: Tìm kiếm users (admin chỉ)
+- `GET /{id}`: Lấy thông tin user theo ID (admin chỉ)
+- `POST /create`: Admin tạo user mới
+- `POST /self-register`: Cho phép user tự đăng ký tài khoản
+- `PUT /update/{id}`: Cập nhật thông tin user (self-service)
+- `POST /toggle-status`: Admin kích hoạt/deactivate user
+- `POST /confirm-email`: Xác nhận email (chưa thực hiện)
+- `POST /forgot-password`: Quên mật khẩu - gửi email xác nhận (chưa thực hiện)
 
-**GET /api/users/{id}:**
-- Get user details by ID
-- Requires authentication
+**Authorization:**
+- Sử dụng policy "admin" cho các hành động nhạy cảm (tìm kiếm, tạo, cập nhật, kích hoạt/deactivate user)
 
-**GET /api/users/{id}/roles:**
-- Get user's assigned roles
-- Sẽ implement trong BUILD_16B
-
-**POST /api/users/{id}/roles:**
-- Assign roles to user
-- Sẽ implement trong BUILD_16B
-
-**POST /api/users/create:**
-- Admin creates user
-- TODO: Add `[MustHavePermission("Users.Create")]` trong BUILD_17
-
-**POST /api/users/self-register:**
-- Anonymous user registration
-- `[AllowAnonymous]` - không cần authentication
-- TODO: Add captcha và rate limiting
-
-**POST /api/users/{id}/toggle-status:**
-- Toggle user active status
-- Admin only
-- Check `id == request.UserId` (route parameter match request body)
-
-**GET /api/users/confirm-email:**
-- Email confirmation endpoint
-- `[AllowAnonymous]` - user chưa login
-- Query parameters: userId, code
-
-**GET /api/users/confirm-phone-number:**
-- Phone confirmation endpoint
-- Tương tự confirm-email
-
-**POST /api/users/forgot-password:**
-- Request password reset
-- `[AllowAnonymous]`
-- Sẽ implement trong phần Password Operations
-
-**POST /api/users/reset-password:**
-- Reset password với token
-- Sẽ implement trong phần Password Operations
-
-**GetOriginFromRequest():**
-- Helper method để get origin URL
-- Dùng để build email verification links
-- Ví dụ: `https://localhost:7001`
+**Placeholder actions:**
+- Một số actions như xác nhận email và quên mật khẩu chưa được implement chi tiết trong bước này. Chúng sẽ được hoàn thiện trong các BUILD sau.
 
 ---
 
-## 7. Testing User Service
+## 6. Testing User Service
 
-### Bước 7.1: Test Self-Register API
+### Bước 6.1: Test Self-Register API
 
 **API Call:**
 ```bash
@@ -1592,7 +1281,7 @@ curl -X POST https://localhost:7001/api/users/self-register \
     "email": "john.doe@example.com",
     "userName": "johndoe",
     "password": "SecurePass123!",
-    "confirmPassword": "SecurePass123!",
+  "confirmPassword": "SecurePass123!",
     "phoneNumber": "+84987654321"
   }'
 ```
@@ -1600,54 +1289,24 @@ curl -X POST https://localhost:7001/api/users/self-register \
 **Expected Response:**
 ```text
 User johndoe Registered.
-Please check john.doe@example.com to verify your account!
 ```
+
+**⚠️ Note:** Email confirmation sẽ có sau BUILD_23 (Email Service).
 
 ---
 
-### Bước 7.2: Test Email Confirmation
-
-**Step 1: Check email inbox (hoặc MailHog/Papercut)**
-
-**Email Content:**
-```html
-Subject: Confirm Registration
-
-Welcome to ECO.WebApi, johndoe!
-
-Thank you for registering. Please confirm your email address by clicking the button below:
-
-[Confirm Email Button]
-
-Link: https://localhost:7001/api/users/confirm-email?userId=xxx&code=yyy
-```
-
-**Step 2: Click confirmation link**
-
-**GET Request:**
-```bash
-curl -X GET "https://localhost:7001/api/users/confirm-email?userId=xxx&code=yyy"
-```
-
-**Expected Response:**
-```text
-Email confirmed successfully!
-```
-
----
-
-### Bước 7.3: Test Get User Details
+### Bước 6.2: Test Get User Details
 
 **API Call:**
 ```bash
-curl -X GET https://localhost:7001/api/users/{userId} \
-  -H "Authorization: Bearer {accessToken}"
+curl -X GET https://localhost:7001/api/users/<user_id> \
+  -H "Authorization: Bearer <your_jwt_token>"
 ```
 
 **Expected Response:**
 ```json
 {
-  "id": "3fa85f64-5717-4eb2-b25f-58616aa2ffcc",
+  "id": "<user_id>",
   "userName": "johndoe",
   "firstName": "John",
   "lastName": "Doe",
@@ -1659,162 +1318,56 @@ curl -X GET https://localhost:7001/api/users/{userId} \
 }
 ```
 
+**Giải thích:**
+- Thay thế `<user_id>` bằng ID thực tế của user trong database.
+- Thay thế `<your_jwt_token>` bằng token hợp lệ của admin.
+- Kiểm tra thông tin trả về trong response body.
+
 ---
 
-### Bước 7.4: Test Error Cases
+### Bước 6.3: Test Admin Toggle User Status
 
-**Case 1: Duplicate Email**
+**API Call:**
 ```bash
-curl -X POST https://localhost:7001/api/users/self-register \
+curl -X POST https://localhost:7001/api/users/toggle-status \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your_jwt_token>" \
   -d '{
-    "firstName": "Jane",
-    "lastName": "Doe",
-    "email": "john.doe@example.com",
-    "userName": "janedoe",
-    "password": "SecurePass123!",
-    "confirmPassword": "SecurePass123!"
+    "userId": "<user_id>",
+    "activateUser": false
   }'
 ```
 
-**Response:**
-```json
-{
-  "statusCode": 400,
-  "message": "Validation failed",
-  "errors": {
-    "Email": ["Email john.doe@example.com is already registered."]
-  }
-}
+**Expected Response:**
+```text
+User deactivated.
 ```
+
+**Giải thích:**
+- Thay thế `<user_id>` bằng ID thực tế của user cần deactivate.
+- Thay thế `<your_jwt_token>` bằng token hợp lệ của admin.
+- Kiểm tra trạng thái user trong database sau khi thực hiện request.
 
 ---
 
-**Case 2: Duplicate Username**
-```json
-{
-  "statusCode": 400,
-  "message": "Validation failed",
-  "errors": {
-    "UserName": ["Username johndoe is already taken."]
-  }
-}
-```
+## 7. Summary
+
+Trong tài liệu này, chúng ta đã tìm hiểu về User Management Service với các chức năng CRUD cơ bản cho người dùng. Chúng ta đã định nghĩa các DTOs cần thiết, tạo ra IUserService interface cho các operation liên quan đến người dùng, và implement UserService với các phương thức tìm kiếm, tạo, cập nhật và kích hoạt/deactivate người dùng. Cuối cùng, chúng ta đã xây dựng UsersController để xử lý các HTTP requests liên quan đến quản lý người dùng.
+
+Tài liệu này sẽ được cập nhật trong các BUILD sau để hoàn thiện các chức năng còn thiếu như xác nhận email, quên mật khẩu, và phân quyền người dùng.
 
 ---
 
-**Case 3: Password Mismatch**
-```json
-{
-  "statusCode": 400,
-  "message": "Validation failed",
-  "errors": {
-    "ConfirmPassword": ["Password and Confirm Password must match."]
-  }
-}
-```
+## 8. Next Steps
 
----
+Trong các bước tiếp theo, chúng ta sẽ tập trung vào việc hoàn thiện các chức năng còn thiếu của User Management Service, bao gồm:
 
-## 8. Summary
+- Xác nhận email người dùng sau khi đăng ký (hoàn thiện trong BUILD_23)
+- Quên mật khẩu và đặt lại mật khẩu thông qua email (hoàn thiện trong BUILD_23)
+- Tích hợp dịch vụ lưu trữ file cho avatar người dùng (hoàn thiện trong BUILD_20)
+- Tích hợp dịch vụ cache để tăng tốc độ truy xuất dữ liệu (hoàn thiện trong BUILD_19)
+- Phân quyền người dùng và các quyền hạn tương ứng (hoàn thiện trong BUILD_16B và BUILD_16C)
 
-### ✅ Đã hoàn thành trong bước này:
+Chúng ta cũng sẽ viết test tự động cho các chức năng mới được thêm vào, đảm bảo rằng tất cả các tính năng hoạt động đúng như mong đợi và không gây ra lỗi trong quá trình phát triển tiếp theo.
 
-**User DTOs:**
-- ✅ UserDetailDto (display user info)
-- ✅ CreateUserRequest với FluentValidation
-- ✅ UpdateUserRequest với image upload
-- ✅ ToggleUserStatusRequest
-- ✅ UserParameterFilter (search với pagination)
-
-**User Service Interface:**
-- ✅ IUserService với partial methods
-  - Default operations (Search, Get, Exists checks)
-  - Create & Update operations
-  - Email confirmation
-  - Toggle status
-
-**User Service Implementation:**
-- ✅ UserService.cs (main class với dependencies)
-- ✅ UserService.CreateUpdate.cs (Create & Update operations)
-- ✅ UserService.Confirm.cs (Email confirmation)
-
-**Email Templates:**
-- ✅ RegisterUserEmailModel
-- ✅ email-confirmation.cshtml (Razor template)
-
-**Controllers:**
-- ✅ UsersController với RESTful endpoints
-
-### 📊 User Registration Flow:
-
-```
-┌─────────────┐
-│   Client    │
-└──────┬──────┘
-       │ 1. POST /api/users/self-register
-       ▼
-┌──────────────┐
-│ UserService  │
-└──────┬───────┘
-       │ 2. Create user + Assign role
-       │ 3. Send confirmation email
-    ▼
-┌─────────────┐
-│   Email│
-└──────┬──────┘
-       │ 4. User clicks link
-       │ 5. GET /api/users/confirm-email
-       ▼
-┌─────────────┐
-│   Success   │
-└─────────────┘
-```
-
-### 📁 File Structure:
-
-```
-src/
-├── Core/
-│   └── Application/
-│       └── Identity/
-│      └── Users/
-│       ├── IUserService.cs
-│    ├── UserDetailDto.cs
-│           ├── CreateUserRequest.cs
-│               ├── UpdateUserRequest.cs
-│   ├── ToggleUserStatusRequest.cs
-│     ├── UserParameterFilter.cs
-│ └── RegisterUserEmailModel.cs
-├── Infrastructure/
-│   └── Infrastructure/
-│       ├── Identity/
-│       │   ├── UserService.cs
-│       │   ├── UserService.CreateUpdate.cs
-│       │   └── UserService.Confirm.cs
-│       └── Mailing/
-│       └── EmailTemplates/
-│               └── email-confirmation.cshtml
-└── Host/
-    └── Host/
-        └── Controllers/
-└── Identity/
-         └── UsersController.cs
-```
-
----
-
-## 9. Next Steps
-
-**Tiếp theo:** [BUILD_16B - Role Service](BUILD_16B_Role_Service.md)
-
-Trong bước tiếp theo, chúng ta sẽ xây dựng Role Management Service:
-1. ✅ Role CRUD operations
-2. ✅ Assign permissions to roles
-3. ✅ Role DTOs và validation
-4. ✅ RoleController với RESTful endpoints
-5. ✅ Update UserService.Role.cs (assign roles to users)
-
----
-
-**Quay lại:** [Mục lục](BUILD_INDEX.md)
+Hẹn gặp lại trong các BUILD tiếp theo!

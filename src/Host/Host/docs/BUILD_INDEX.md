@@ -1,4 +1,4 @@
-# ECO.WebApi - Hướng dẫn Xây dựng Solution từ đầu
+﻿# ECO.WebApi - Hướng dẫn Xây dựng Solution từ đầu
 
 > 📘 **Mục đích:** Tài liệu này hướng dẫn **từng bước chi tiết** để xây dựng một Clean Architecture solution từ đầu.  
 > Mỗi bước giải thích **làm gì**, **tại sao**, **thứ tự thực hiện**, và **code cụ thể**.
@@ -11,27 +11,27 @@ ECO.WebApi được xây dựng theo **Clean Architecture** với 5 layers:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│        Host Layer         │
-│   ASP.NET Core API, Controllers, Program.cs      │
+│                     Host Layer                          │
+│   ASP.NET Core API, Controllers, Program.cs             │
 └────────────────────┬────────────────────────────────────┘
                ↓ depends on
 ┌────────────────────┴────────────────────────────────────┐
-│          Infrastructure Layer           │
+│                   Infrastructure Layer                  │
 │ EF Core, Identity, Caching, Mailing, External Services  │
 └────────────────────┬────────────────────────────────────┘
-       ↓ depends on
+                ↓ depends on
 ┌────────────────────┴────────────────────────────────────┐
-│   Application Layer            │
+│           Application Layer                             │
 │         Use Cases, DTOs, Interfaces, Validators         │
 └────────────────────┬────────────────────────────────────┘
-          ↓ depends on
+                ↓ depends on
 ┌────────────────────┴────────────────────────────────────┐
-│         Domain Layer        │
+│               Domain Layer                              │
 │        Entities, Value Objects, Domain Events, Enums    │
 └────────────────────┬────────────────────────────────────┘
-          ↓ depends on
+                ↓ depends on
 ┌────────────────────┴────────────────────────────────────┐
-│  Shared Layer        │
+│                Shared Layer                             │
 │          Common Contracts, Authorization Constants      │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -100,7 +100,8 @@ Xây dựng hệ thống authentication và authorization.
 | 16A | [BUILD_16A](BUILD_16A_User_Service.md) | User management service | Bước 15 |
 | 16B | [BUILD_16B](BUILD_16B_Role_Service.md) | Role management service | Bước 16A |
 | 16C | [BUILD_16C](BUILD_16C_Function_Service.md) | Function (Permission) management service | Bước 16B |
-| 17 | [BUILD_17](BUILD_17_Permission_Authorization.md) | Permission-based authorization | Bước 16C |
+| 16D | [BUILD_16D](BUILD_16D_Identity_Controllers.md) | Identity Controllers (User, Role, Token, Personal) | Bước 16C |
+| 17 | [BUILD_17](BUILD_17_Permission_Authorization.md) | Permission-based authorization | Bước 16D |
 | 18 | [BUILD_18](BUILD_18_OAuth2_Integration.md) | Google/Facebook OAuth2 login | Bước 17 |
 
 **Kết quả Phase 4:** Authentication & Authorization hoàn chỉnh (JWT, Permissions, OAuth2).
@@ -381,16 +382,64 @@ await app.Services...InitializeDatabasesAsync();
 ---
 
 #### **Bước 16: Identity Services** ⭐⭐⭐
-**File:** [BUILD_16_Identity_Services.md](BUILD_16_Identity_Services.md)
+
+**Bước 16 bao gồm 4 phần:**
+
+##### **Bước 16A: User Service (Complete)** ⭐⭐⭐
+**File:** [BUILD_16A_User_Service.md](BUILD_16A_User_Service.md)
 
 **Nội dung:**
-1. **UserService:** CRUD users, assign roles, change password, confirm email
-2. **RoleService:** CRUD roles, manage permissions
-3. **FunctionService:** CRUD functions
-4. User DTOs, Role DTOs, Function DTOs
-5. Specifications (UserByEmailSpec, RoleByNameSpec)
+1. **UserService:** Complete user management với TẤT CẢ operations
+2. User DTOs (UserDetailDto, CreateUserRequest, UpdateUserRequest)
+3. User CRUD operations (Search, Get, Create, Update, Toggle Status)
+4. Email/Phone confirmation
+5. Password operations (Forgot, Reset, Change) - Note: Chi tiết implementation trong file
+6. Permission operations (GetPermissions, HasPermission với caching) - Note: Chi tiết implementation trong file
+7. Email templates (registration + password reset)
+8. FluentValidation cho tất cả requests
 
-**Kết quả:** Identity services hoàn chỉnh.
+**Kết quả:** User management service HOÀN CHỈNH với tất cả operations.
+
+---
+
+##### **Bước 16B: Role Service** ⭐⭐⭐
+**File:** [BUILD_16B_Role_Service.md](BUILD_16B_Role_Service.md)
+
+**Nội dung:**
+1. **RoleService:** CRUD roles, manage permissions
+2. Role DTOs (RoleDto, CreateOrUpdateRoleRequest, UpdateRolePermissionsRequest)
+3. Role specifications (RoleByNameSpec, RoleByIdSpec)
+4. Permission management (Get, Update permissions for roles)
+
+**Kết quả:** Role management service hoàn chỉnh.
+
+---
+
+##### **Bước 16C: Function Service** ⭐⭐⭐
+**File:** [BUILD_16C_Function_Service.md](BUILD_16C_Function_Service.md)
+
+**Nội dung:**
+1. **FunctionService:** CRUD functions (Permission modules)
+2. Function DTOs (FunctionDto, CreateOrUpdateFunctionRequest)
+3. Function specifications (FunctionByIdSpec, FunctionByNameSpec)
+4. Action management (Get actions for functions)
+
+**Kết quả:** Function management service hoàn chỉnh.
+
+---
+
+##### **Bước 16D: Identity Controllers** ⭐⭐⭐
+**File:** [BUILD_16D_Identity_Controllers.md](BUILD_16D_Identity_Controllers.md)
+
+**Nội dung:**
+1. **TokensController:** Login, Refresh token endpoints
+2. **UsersController:** User management REST APIs
+3. **RoleController:** Role & Function management APIs
+4. **PersonalController:** Current user profile APIs
+5. **ClaimsPrincipalExtensions:** Helper methods (GetUserId, GetEmail)
+6. Swagger documentation với OpenAPI attributes
+
+**Kết quả:** Identity Controllers hoàn chỉnh với REST APIs.
 
 ---
 
