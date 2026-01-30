@@ -116,11 +116,10 @@ Xây dựng các services hỗ trợ (caching, storage, jobs, email).
 |------|----------|----------|---------------|
 | 19 | [BUILD_19](BUILD_19_Caching_Services.md) | Local cache, Distributed cache (Redis) | Phase 4 |
 | 20 | [BUILD_20](BUILD_20_File_Storage.md) | Local file storage, File upload/download | Bước 19 |
-| 21 | [BUILD_21](BUILD_21_Blob_Storage.md) | Azure Blob Storage, AWS S3 | Bước 20 |
-| 22 | [BUILD_22](BUILD_22_Google_Drive.md) | Google Drive integration | Bước 21 |
-| 23 | [BUILD_23](BUILD_23_Email_Service.md) | SMTP email, Email templates (Razor) | Bước 22 |
-| 24 | [BUILD_24](BUILD_24_Background_Jobs.md) | Hangfire background jobs | Bước 23 |
-| 25 | [BUILD_25](BUILD_25_Logging.md) | Serilog, Seq, Elasticsearch | Bước 24 |
+| 21 | [BUILD_21](BUILD_21_Email_Service.md) | SMTP email, Email templates (Razor) | Bước 20 |
+| 22 | [BUILD_22](BUILD_22_Blob_Storage.md) | Azure Blob Storage, AWS S3 | Bước 21 |
+| 23 | [BUILD_23](BUILD_23_Background_Jobs.md) | Hangfire background jobs | Bước 22 |
+| 24 | [BUILD_24](BUILD_24_Logging.md) | Serilog, Seq, Elasticsearch | Bước 23 |
 
 **Kết quả Phase 5:** Infrastructure services đầy đủ (Caching, Storage, Email, Jobs, Logging).
 
@@ -131,11 +130,11 @@ Xây dựng các modules nghiệp vụ và features nâng cao.
 
 | Bước | Tài liệu | Nội dung | Prerequisites |
 |------|----------|----------|---------------|
-| 26 | [BUILD_26](BUILD_26_Auditing.md) | Audit trails, Change tracking | Phase 5 |
-| 27 | [BUILD_27](BUILD_27_Notifications.md) | SignalR notifications, Real-time updates | Bước 26 |
-| 28 | [BUILD_28](BUILD_28_Catalog_Module.md) | Products, Categories CRUD | Bước 27 |
-| 29 | [BUILD_29](BUILD_29_Payment_Integration.md) | VNPay payment gateway | Bước 28 |
-| 30 | [BUILD_30](BUILD_30_Export_Services.md) | Excel export, Report generation | Bước 29 |
+| 25 | [BUILD_25](BUILD_25_Auditing.md) | Audit trails, Change tracking | Phase 5 |
+| 26 | [BUILD_26](BUILD_26_Notifications.md) | SignalR notifications, Real-time updates | Bước 25 |
+| 27 | [BUILD_27](BUILD_27_Catalog_Module.md) | Products, Categories CRUD | Bước 26 |
+| 28 | [BUILD_28](BUILD_28_Payment_Integration.md) | VNPay payment gateway | Bước 27 |
+| 29 | [BUILD_29](BUILD_29_Export_Services.md) | Excel export, Report generation | Bước 28 |
 
 **Kết quả Phase 6:** Advanced features complete (Auditing, Notifications, Catalog, Payment, Export).
 
@@ -143,7 +142,7 @@ Xây dựng các modules nghiệp vụ và features nâng cao.
 
 ## 📚 Chi tiết các bước
 
-### **PHASE 1: Foundation Setup**
+### **PHASE 1: FOUNDATION SETUP**
 
 #### **Bước 1: Solution và Build Configuration** ⭐
 **File:** [BUILD_01_Solution_Setup.md](BUILD_01_Solution_Setup.md)
@@ -235,7 +234,7 @@ Xây dựng các modules nghiệp vụ và features nâng cao.
 
 ---
 
-### **PHASE 2: Database & Core Patterns**
+### **PHASE 2: DATABASE & CORE PATTERNS**
 
 #### **Bước 7: Database Initialization và Seed Data** ⭐⭐⭐
 **File:** [BUILD_07_Database_Initialization.md](BUILD_07_Database_Initialization.md)
@@ -325,7 +324,7 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-### **PHASE 3: Core Services**
+### **PHASE 3: CORE SERVICES**
 
 #### **Bước 12: Common Services** ⭐
 **File:** [BUILD_12_Common_Services.md](BUILD_12_Common_Services.md)
@@ -365,7 +364,7 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-### **PHASE 4: Authentication & Authorization**
+### **PHASE 4: AUTHENTICATION & AUTHORIZATION**
 
 #### **Bước 15: JWT Authentication** ⭐⭐⭐
 **File:** [BUILD_15_JWT_Authentication.md](BUILD_15_JWT_Authentication.md)
@@ -471,7 +470,7 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-### **PHASE 5: Infrastructure Services**
+### **PHASE 5: INFRASTRUCTURE SERVICES**
 
 #### **Bước 19: Caching Services** ⭐⭐
 **File:** [BUILD_19_Caching_Services.md](BUILD_19_Caching_Services.md)
@@ -501,36 +500,8 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-#### **Bước 21: Blob Storage** ⭐⭐
-**File:** [BUILD_21_Blob_Storage.md](BUILD_21_Blob_Storage.md)
-
-**Nội dung:**
-1. `IBlobStorageService` interface
-2. `BlobStorageService` implementation (Azure Blob Storage)
-3. Container management
-4. Blob upload/download/delete
-5. `BlobModel`, `BlobContainerModel` DTOs
-
-**Kết quả:** Azure Blob Storage integration.
-
----
-
-#### **Bước 22: Google Drive Integration** ⭐⭐
-**File:** [BUILD_22_Google_Drive.md](BUILD_22_Google_Drive.md)
-
-**Nội dung:**
-1. `IGoogleDriveService` interface
-2. `GoogleDriveService` implementation
-3. Google Drive API setup (credentials.json)
-4. Upload/download files to Google Drive
-5. `GoogleDriveSettings` configuration
-
-**Kết quả:** Google Drive integration hoàn chỉnh.
-
----
-
-#### **Bước 23: Email Service** ⭐⭐⭐
-**File:** [BUILD_23_Email_Service.md](BUILD_23_Email_Service.md)
+#### **Bước 21: Email Service** ⭐⭐⭐
+**File:** [BUILD_21_Email_Service.md](BUILD_21_Email_Service.md)
 
 **Nội dung:**
 1. `IMailService` interface
@@ -544,8 +515,22 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-#### **Bước 24: Background Jobs** ⭐⭐⭐
-**File:** [BUILD_24_Background_Jobs.md](BUILD_24_Background_Jobs.md)
+#### **Bước 22: Blob Storage** ⭐⭐
+**File:** [BUILD_22_Blob_Storage.md](BUILD_22_Blob_Storage.md)
+
+**Nội dung:**
+1. `IBlobStorageService` interface
+2. `BlobStorageService` implementation (Azure Blob Storage)
+3. Container management
+4. Blob upload/download/delete
+5. `BlobModel`, `BlobContainerModel` DTOs
+
+**Kết quả:** Azure Blob Storage integration.
+
+---
+
+#### **Bước 23: Background Jobs** ⭐⭐⭐
+**File:** [BUILD_23_Background_Jobs.md](BUILD_23_Background_Jobs.md)
 
 **Nội dung:**
 1. `IJobService` interface
@@ -559,8 +544,8 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-#### **Bước 25: Logging** ⭐⭐
-**File:** [BUILD_25_Logging.md](BUILD_25_Logging.md)
+#### **Bước 24: Logging** ⭐⭐
+**File:** [BUILD_24_Logging.md](BUILD_24_Logging.md)
 
 **Nội dung:**
 1. Serilog setup (Console, File, Seq, Elasticsearch)
@@ -573,10 +558,10 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-### **PHASE 6: Advanced Features**
+### **PHASE 6: ADVANCED FEATURES**
 
-#### **Bước 26: Auditing** ⭐⭐
-**File:** [BUILD_26_Auditing.md](BUILD_26_Auditing.md)
+#### **Bước 25: Auditing** ⭐⭐
+**File:** [BUILD_25_Auditing.md](BUILD_25_Auditing.md)
 
 **Nội dung:**
 1. `IAuditService` interface
@@ -590,8 +575,8 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-#### **Bước 27: Notifications** ⭐⭐⭐
-**File:** [BUILD_27_Notifications.md](BUILD_27_Notifications.md)
+#### **Bước 26: Notifications** ⭐⭐⭐
+**File:** [BUILD_26_Notifications.md](BUILD_26_Notifications.md)
 
 **Nội dung:**
 1. `INotificationService` interface
@@ -606,8 +591,8 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-#### **Bước 28: Catalog Module** ⭐⭐⭐
-**File:** [BUILD_28_Catalog_Module.md](BUILD_28_Catalog_Module.md)
+#### **Bước 27: Catalog Module** ⭐⭐⭐
+**File:** [BUILD_27_Catalog_Module.md](BUILD_27_Catalog_Module.md)
 
 **Nội dung:**
 1. **Products:** CRUD operations, variants, attributes
@@ -622,8 +607,8 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-#### **Bước 29: Payment Integration** ⭐⭐⭐
-**File:** [BUILD_29_Payment_Integration.md](BUILD_29_Payment_Integration.md)
+#### **Bước 28: Payment Integration** ⭐⭐⭐
+**File:** [BUILD_28_Payment_Integration.md](BUILD_28_Payment_Integration.md)
 
 **Nội dung:**
 1. `IPaymentService` interface
@@ -637,8 +622,8 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-#### **Bước 30: Export Services** ⭐⭐
-**File:** [BUILD_30_Export_Services.md](BUILD_30_Export_Services.md)
+#### **Bước 29: Export Services** ⭐⭐
+**File:** [BUILD_29_Export_Services.md](BUILD_29_Export_Services.md)
 
 **Nội dung:**
 1. `IExcelWriter` interface
@@ -671,7 +656,6 @@ await app.Services...InitializeDatabasesAsync();
 - `MailKit` (v3.6.0) - Email sending
 - `StackExchange.Redis` - Distributed caching
 - `Azure.Storage.Blobs` (v12.21.2) - Blob storage
-- `Google.Apis.Drive.v3` (v1.68.0.3574) - Google Drive integration
 - `Microsoft.AspNetCore.SignalR` (v8.0.0) - Real-time notifications
 
 ### **Host Layer**
@@ -1029,7 +1013,7 @@ Agent luôn tham khảo:
 | Database & Patterns | ✅ Complete | BUILD_07 - BUILD_11 | Database, Repository |
 | Core Services | 🚧 In Progress | BUILD_12 - BUILD_14 | CurrentUser, Exceptions, Validation |
 | Authentication & Authorization | 📝 Planned | BUILD_15 - BUILD_18 | JWT, Identity, Permissions, OAuth2 |
-| Infrastructure Services | 📝 Planned | BUILD_19 - BUILD_25 | Caching, Storage, Email, Jobs, Logging |
+| Infrastructure Services | 📝 Planned | BUILD_19 - BUILD_24 | Caching, Storage, Email, Jobs, Logging |
 | Advanced Features | 📝 Planned | BUILD_26 - BUILD_30 | Auditing, Notifications, Catalog, Payment, Export |
 
 **Legend:**
