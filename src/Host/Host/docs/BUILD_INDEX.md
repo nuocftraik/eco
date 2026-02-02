@@ -130,13 +130,15 @@ Xây dựng các modules nghiệp vụ và features nâng cao.
 
 | Bước | Tài liệu | Nội dung | Prerequisites |
 |------|----------|----------|---------------|
-| 25 | [BUILD_25](BUILD_25_Auditing.md) | Audit trails, Change tracking | Phase 5 |
-| 26 | [BUILD_26](BUILD_26_Notifications.md) | SignalR notifications, Real-time updates | Bước 25 |
-| 27 | [BUILD_27](BUILD_27_Catalog_Module.md) | Products, Categories CRUD | Bước 26 |
+| 22 | [BUILD_22](BUILD_22_Auditing.md) | Audit trails, Change tracking | Phase 5 |
+| 23 | [BUILD_23](BUILD_23_Export_Services.md) | Excel export, Report generation | Bước 22 |
+| 24 | [BUILD_24](BUILD_24_Catalog_Module.md) | Products, Categories CRUD | Bước 23 |
+| 25 | [BUILD_25](BUILD_25_Notifications.md) | SignalR notifications, Real-time updates | Bước 24 |
+| 26 | [BUILD_26](BUILD_26_Blob_Storage.md) | Azure Blob Storage, AWS S3 | Bước 25 |
+| 27 | [BUILD_27](BUILD_27_Background_Jobs.md) | Hangfire background jobs | Bước 26 |
 | 28 | [BUILD_28](BUILD_28_Payment_Integration.md) | VNPay payment gateway | Bước 27 |
-| 29 | [BUILD_29](BUILD_29_Export_Services.md) | Excel export, Report generation | Bước 28 |
 
-**Kết quả Phase 6:** Advanced features complete (Auditing, Notifications, Catalog, Payment, Export).
+**Kết quả Phase 6:** Advanced features complete (Auditing, Export, Catalog, Notifications, Blob Storage, Background Jobs, Payment).
 
 ---
 
@@ -530,7 +532,7 @@ await app.Services...InitializeDatabasesAsync();
 ---
 
 #### **Bước 23: Background Jobs** ⭐⭐⭐
-**File:** [BUILD_23_Background_Jobs.md](BUILD_23_Background_Jobs.md)
+**File:** [BUILD_23_Background_Jobs.md](BUILD_23_BACKGROUND_JOBS.md)
 
 **Nội dung:**
 1. `IJobService` interface
@@ -560,8 +562,8 @@ await app.Services...InitializeDatabasesAsync();
 
 ### **PHASE 6: ADVANCED FEATURES**
 
-#### **Bước 25: Auditing** ⭐⭐
-**File:** [BUILD_25_Auditing.md](BUILD_25_Auditing.md)
+#### **Bước 22: Auditing** ⭐⭐
+**File:** [BUILD_22_Auditing.md](BUILD_22_Auditing.md)
 
 **Nội dung:**
 1. `IAuditService` interface
@@ -575,8 +577,38 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-#### **Bước 26: Notifications** ⭐⭐⭐
-**File:** [BUILD_26_Notifications.md](BUILD_26_Notifications.md)
+#### **Bước 23: Export Services** ⭐⭐
+**File:** [BUILD_23_Export_Services.md](BUILD_23_Export_Services.md)
+
+**Nội dung:**
+1. `IExcelWriter` interface
+2. `ExcelWriter` implementation (ClosedXML)
+3. Export templates
+4. Dynamic column mapping
+5. Export products to Excel example
+
+**Kết quả:** Excel export hoàn chỉnh.
+
+---
+
+#### **Bước 24: Catalog Module** ⭐⭐⭐
+**File:** [BUILD_24_Catalog_Module.md](BUILD_24_Catalog_Module.md)
+
+**Nội dung:**
+1. **Products:** CRUD operations, variants, attributes
+2. **Categories:** CRUD operations, product categories
+3. Product DTOs (ProductDto, ProductInListDto, VariantDto, AttributeDto)
+4. Category DTOs (CategoryDto, CategoryInListDto)
+5. Specifications (ProductBySearchSpec, CategoryBySearchSpec)
+6. Requests (CreateProductRequest, UpdateProductRequest, SearchProductRequest)
+7. Event handlers (ProductCreatedEventHandler)
+
+**Kết quả:** Catalog module hoàn chỉnh (Products, Categories).
+
+---
+
+#### **Bước 25: Notifications** ⭐⭐⭐
+**File:** [BUILD_25_Notifications.md](BUILD_25_Notifications.md)
 
 **Nội dung:**
 1. `INotificationService` interface
@@ -591,19 +623,32 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-#### **Bước 27: Catalog Module** ⭐⭐⭐
-**File:** [BUILD_27_Catalog_Module.md](BUILD_27_Catalog_Module.md)
+#### **Bước 26: Blob Storage** ⭐⭐
+**File:** [BUILD_26_Blob_Storage.md](BUILD_26_Blob_Storage.md)
 
 **Nội dung:**
-1. **Products:** CRUD operations, variants, attributes
-2. **Categories:** CRUD operations, product categories
-3. Product DTOs (ProductDto, ProductInListDto, VariantDto, AttributeDto)
-4. Category DTOs (CategoryDto, CategoryInListDto)
-5. Specifications (ProductBySearchSpec, CategoryBySearchSpec)
-6. Requests (CreateProductRequest, UpdateProductRequest, SearchProductRequest)
-7. Event handlers (ProductCreatedEventHandler)
+1. `IBlobStorageService` interface
+2. `BlobStorageService` implementation (Azure Blob Storage)
+3. Container management
+4. Blob upload/download/delete
+5. `BlobModel`, `BlobContainerModel` DTOs
 
-**Kết quả:** Catalog module hoàn chỉnh (Products, Categories).
+**Kết quả:** Azure Blob Storage integration.
+
+---
+
+#### **Bước 27: Background Jobs** ⭐⭐⭐
+**File:** [BUILD_27_Background_Jobs.md](BUILD_27_Background_Jobs.md)
+
+**Nội dung:**
+1. `IJobService` interface
+2. `HangfireService` implementation
+3. Hangfire setup (SQL Server storage)
+4. Job scheduling (Fire-and-forget, Delayed, Recurring)
+5. `HangfireStorageSettings` configuration
+6. Hangfire dashboard
+
+**Kết quả:** Background jobs hoàn chỉnh (Hangfire).
 
 ---
 
@@ -619,20 +664,6 @@ await app.Services...InitializeDatabasesAsync();
 6. Payment callback handling
 
 **Kết quả:** VNPay payment integration hoàn chỉnh.
-
----
-
-#### **Bước 29: Export Services** ⭐⭐
-**File:** [BUILD_29_Export_Services.md](BUILD_29_Export_Services.md)
-
-**Nội dung:**
-1. `IExcelWriter` interface
-2. `ExcelWriter` implementation (ClosedXML)
-3. Export templates
-4. Dynamic column mapping
-5. Export products to Excel example
-
-**Kết quả:** Excel export hoàn chỉnh.
 
 ---
 
@@ -1013,8 +1044,8 @@ Agent luôn tham khảo:
 | Database & Patterns | ✅ Complete | BUILD_07 - BUILD_11 | Database, Repository |
 | Core Services | 🚧 In Progress | BUILD_12 - BUILD_14 | CurrentUser, Exceptions, Validation |
 | Authentication & Authorization | 📝 Planned | BUILD_15 - BUILD_18 | JWT, Identity, Permissions, OAuth2 |
-| Infrastructure Services | 📝 Planned | BUILD_19 - BUILD_24 | Caching, Storage, Email, Jobs, Logging |
-| Advanced Features | 📝 Planned | BUILD_26 - BUILD_30 | Auditing, Notifications, Catalog, Payment, Export |
+| Infrastructure Services | 📝 Planned | BUILD_19 - BUILD_21 | Caching, Storage, Email, Logging |
+| Advanced Features | 📝 Planned | BUILD_22 - BUILD_28 | Auditing, Export, Catalog, Notifications, Blob, Jobs, Payment |
 
 **Legend:**
 - ✅ Complete - Đã hoàn thành và có docs
@@ -1026,15 +1057,17 @@ Agent luôn tham khảo:
 **🎯 Mục tiêu cuối cùng:** Sau khi hoàn thành tất cả bước, bạn sẽ có một production-ready API với:
 - ✅ Clean Architecture
 - ✅ Authentication & Authorization (JWT + OAuth2)
-- ✅ Background Jobs (Hangfire)
 - ✅ Caching (Local + Redis)
+- ✅ File Storage (Local file system)
 - ✅ Email Service (SMTP + Templates)
-- ✅ File Storage (Local + Blob + Google Drive)
 - ✅ Logging (Serilog + Seq/Elasticsearch)
+- ✅ Audit Trails (Track entity changes)
+- ✅ Excel Export (ClosedXML)
+- ✅ Catalog Module (Products, Categories CRUD)
 - ✅ Real-time Notifications (SignalR)
+- ✅ Blob Storage (Azure Blob Storage)
+- ✅ Background Jobs (Hangfire)
 - ✅ Payment Integration (VNPay)
-- ✅ Audit Trails
-- ✅ Excel Export
 - ✅ API Documentation (Swagger)
 - ✅ Database Migrations & Seeding
 
