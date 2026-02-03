@@ -109,36 +109,45 @@ Xây dựng hệ thống authentication và authorization.
 
 ---
 
-### **PHASE 5: Infrastructure Services** (Dịch vụ hạ tầng)
+### **PHASE 5: Foundation Patterns** (Patterns nền tảng)
+Setup soft delete và auditing - nền tảng cho toàn hệ thống.
+
+| Bước | Tài liệu | Nội dung | Prerequisites |
+|------|----------|----------|---------------|
+| 19 | [BUILD_19](BUILD_19_Soft_Delete.md) | Soft Delete, Global Query Filters | Phase 4 |
+| 20 | [BUILD_20](BUILD_20_Auditing.md) | Audit trails, Change tracking | Bước 19 |
+
+**Kết quả Phase 5:** Soft delete và audit trail hoàn chỉnh - nền tảng cho data integrity và compliance.
+
+---
+
+### **PHASE 6: Infrastructure Services** (Dịch vụ hạ tầng)
 Xây dựng các services hỗ trợ (caching, storage, jobs, email).
 
 | Bước | Tài liệu | Nội dung | Prerequisites |
 |------|----------|----------|---------------|
-| 19 | [BUILD_19](BUILD_19_Caching_Services.md) | Local cache, Distributed cache (Redis) | Phase 4 |
-| 20 | [BUILD_20](BUILD_20_File_Storage.md) | Local file storage, File upload/download | Bước 19 |
-| 21 | [BUILD_21](BUILD_21_Email_Service.md) | SMTP email, Email templates (Razor) | Bước 20 |
-| 22 | [BUILD_22](BUILD_22_Blob_Storage.md) | Azure Blob Storage, AWS S3 | Bước 21 |
-| 23 | [BUILD_23](BUILD_23_Background_Jobs.md) | Hangfire background jobs | Bước 22 |
-| 24 | [BUILD_24](BUILD_24_Logging.md) | Serilog, Seq, Elasticsearch | Bước 23 |
+| 21 | [BUILD_21](BUILD_21_Caching_Services.md) | Local cache, Distributed cache (Redis) | Phase 5 |
+| 22 | [BUILD_22](BUILD_22_File_Storage.md) | Local file storage, File upload/download | Bước 21 |
+| 23 | [BUILD_23](BUILD_23_Email_Service.md) | SMTP email, Email templates (Razor) | Bước 22 |
+| 24 | [BUILD_24](BUILD_24_Blob_Storage.md) | Azure Blob Storage, AWS S3 | Bước 23 |
+| 25 | [BUILD_25](BUILD_25_Background_Jobs.md) | Hangfire background jobs | Bước 24 |
+| 26 | [BUILD_26](BUILD_26_Logging.md) | Serilog, Seq, Elasticsearch | Bước 25 |
 
-**Kết quả Phase 5:** Infrastructure services đầy đủ (Caching, Storage, Email, Jobs, Logging).
+**Kết quả Phase 6:** Infrastructure services đầy đủ (Caching, Storage, Email, Jobs, Logging).
 
 ---
 
-### **PHASE 6: Advanced Features** (Tính năng nâng cao)
-Xây dựng các modules nghiệp vụ và features nâng cao.
+### **PHASE 7: Business Modules** (Modules nghiệp vụ)
+Xây dựng các modules nghiệp vụ và tính năng nâng cao.
 
 | Bước | Tài liệu | Nội dung | Prerequisites |
 |------|----------|----------|---------------|
-| 22 | [BUILD_22](BUILD_22_Auditing.md) | Audit trails, Change tracking | Phase 5 |
-| 23 | [BUILD_23](BUILD_23_Export_Services.md) | Excel export, Report generation | Bước 22 |
-| 24 | [BUILD_24](BUILD_24_Catalog_Module.md) | Products, Categories CRUD | Bước 23 |
-| 25 | [BUILD_25](BUILD_25_Notifications.md) | SignalR notifications, Real-time updates | Bước 24 |
-| 26 | [BUILD_26](BUILD_26_Blob_Storage.md) | Azure Blob Storage, AWS S3 | Bước 25 |
-| 27 | [BUILD_27](BUILD_27_Background_Jobs.md) | Hangfire background jobs | Bước 26 |
-| 28 | [BUILD_28](BUILD_28_Payment_Integration.md) | VNPay payment gateway | Bước 27 |
+| 27 | [BUILD_27](BUILD_27_Export_Services.md) | Excel export, Report generation | Phase 6 |
+| 28 | [BUILD_28](BUILD_28_Catalog_Module.md) | Products, Categories CRUD | Bước 27 |
+| 29 | [BUILD_29](BUILD_29_Notifications.md) | SignalR notifications, Real-time updates | Bước 28 |
+| 30 | [BUILD_30](BUILD_30_Payment_Integration.md) | VNPay payment gateway | Bước 29 |
 
-**Kết quả Phase 6:** Advanced features complete (Auditing, Export, Catalog, Notifications, Blob Storage, Background Jobs, Payment).
+**Kết quả Phase 7:** Business modules complete (Export, Catalog, Notifications, Payment).
 
 ---
 
@@ -289,13 +298,15 @@ await app.Services...InitializeDatabasesAsync();
 **File:** [BUILD_09_Domain_Base_Entities.md](BUILD_09_Domain_Base_Entities.md)
 
 **Nội dung:**
-1. Tạo `IEvent` interface, `DomainEvent` base class
-2. Tạo `IEntity`, `BaseEntity`, `AuditableEntity`
-3. Tạo `IAggregateRoot` marker interface
-4. Tạo domain events: `EntityCreatedEvent`, `EntityUpdatedEvent`, `EntityDeletedEvent`
-5. Tạo `ISoftDelete`, `IAuditableEntity` interfaces
+1. **IEvent interface** - Domain event marker
+2. **DomainEvent base class** - With TriggeredOn timestamp
+3. **IEntity interface** - Base entity contract với DomainEvents collection
+4. **IAuditableEntity interface** - Created/Modified tracking 
+5. **BaseEntity** - Sequential GUID generation, DomainEvents
+6. **AuditableEntity** - Implement IAuditableEntity (Created/Modified only)
+7. **IAggregateRoot** - Marker for aggregate roots
+8. **Entity Lifecycle Events** - Created, Updated, Deleted events
 
-**Kết quả:** Base entities với domain events support.
 
 ---
 
@@ -472,10 +483,83 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-### **PHASE 5: INFRASTRUCTURE SERVICES**
+### **PHASE 5: FOUNDATION PATTERNS**
 
-#### **Bước 19: Caching Services** ⭐⭐
-**File:** [BUILD_19_Caching_Services.md](BUILD_19_Caching_Services.md)
+#### **Bước 19: Soft Delete** ⭐⭐
+**File:** [BUILD_19_Soft_Delete.md](BUILD_19_Soft_Delete.md)
+
+**Nội dung:**
+1. **ISoftDelete Interface:** Marker interface với DeletedOn, DeletedBy properties
+2. **Update AuditableEntity:** Implement ISoftDelete (thêm DeletedOn, DeletedBy)
+3. **Global Query Filter:** Tự động exclude deleted entities (`WHERE DeletedOn IS NULL`)
+4. **AppendGlobalQueryFilter:** Extension method apply filter cho interfaces
+5. **SaveChangesAsync Enhancement:** Convert `EntityState.Deleted → EntityState.Modified`
+6. **Restore Methods:** Restore deleted entities
+7. **Soft Delete Specifications:** Query deleted entities (OnlyDeletedSpec, IncludeDeletedSpec)
+8. **API Endpoints:** Restore, permanent delete, get deleted
+
+**Changes to existing code:**
+```diff
+// AuditableEntity.cs
+- public abstract class AuditableEntity<T> : BaseEntity<T>, IAuditableEntity
++ public abstract class AuditableEntity<T> : BaseEntity<T>, IAuditableEntity, ISoftDelete
++ {
++     public DateTime? DeletedOn { get; set; }
++     public Guid? DeletedBy { get; set; }
++ }
+```
+
+**Key Features:**
+- ✅ Global query filters tự động apply
+- ✅ Soft delete thay vì physical delete
+- ✅ Restore functionality
+- ✅ Permanent delete option (with caution)
+- ✅ Integration với BUILD_20 Auditing (tracks delete events)
+
+**Kết quả:** Soft delete pattern complete - xóa mềm thay vì xóa vĩnh viễn.
+
+---
+
+#### **Bước 20: Auditing** ⭐⭐
+**File:** [BUILD_20_Auditing.md](BUILD_20_Auditing.md)
+
+**Nội dung:**
+1. **Trail Entity:** Lưu audit logs trong database
+2. **TrailType Enum:** Type-safe audit types (Create, Update, Delete)
+3. **AuditTrail Helper:** Build audit trails từ EntityEntry
+4. **Audit Interceptor:** Tự động capture changes trong SaveChangesAsync
+5. **Soft Delete Detection:** Detect khi DeletedOn changed from null → value
+6. **IAuditService:** Query audit logs
+7. **GetMyAuditLogsRequest:** Current user audit logs
+8. **PersonalController:** Expose audit logs via API
+
+**Dependencies:**
+- ✅ IAuditableEntity (từ BUILD_09) - Track Created/Modified
+- ✅ ISoftDelete (từ BUILD_19) - Track soft delete events
+- ✅ BaseDbContext (từ BUILD_05)
+- ✅ ISerializerService (từ BUILD_12)
+
+**Audit Integration:**
+```csharp
+// Audit automatically tracks soft delete
+if (property.IsModified && 
+    entry.Entity is ISoftDelete && 
+    propertyName == nameof(ISoftDelete.DeletedOn) &&
+    property.OriginalValue == null && 
+    property.CurrentValue != null)
+{
+    trailEntry.TrailType = TrailType.Delete; // ✅ Log as Delete
+}
+```
+
+**Kết quả:** Audit trail system complete - track tất cả thay đổi including soft delete.
+
+---
+
+### **PHASE 6: INFRASTRUCTURE SERVICES**
+
+#### **Bước 21: Caching Services** ⭐⭐
+**File:** [BUILD_21_Caching_Services.md](BUILD_21_Caching_Services.md)
 
 **Nội dung:**
 1. `ICacheService` interface
@@ -488,8 +572,8 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-#### **Bước 20: File Storage** ⭐⭐
-**File:** [BUILD_20_File_Storage.md](BUILD_20_File_Storage.md)
+#### **Bước 22: File Storage** ⭐⭐
+**File:** [BUILD_22_File_Storage.md](BUILD_22_File_Storage.md)
 
 **Nội dung:**
 1. `IFileStorageService` interface
@@ -502,8 +586,8 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-#### **Bước 21: Email Service** ⭐⭐⭐
-**File:** [BUILD_21_Email_Service.md](BUILD_21_Email_Service.md)
+#### **Bước 23: Email Service** ⭐⭐⭐
+**File:** [BUILD_23_Email_Service.md](BUILD_23_Email_Service.md)
 
 **Nội dung:**
 1. `IMailService` interface
@@ -517,8 +601,8 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-#### **Bước 22: Blob Storage** ⭐⭐
-**File:** [BUILD_22_Blob_Storage.md](BUILD_22_Blob_Storage.md)
+#### **Bước 24: Blob Storage** ⭐⭐
+**File:** [BUILD_24_Blob_Storage.md](BUILD_24_Blob_Storage.md)
 
 **Nội dung:**
 1. `IBlobStorageService` interface
@@ -531,8 +615,8 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-#### **Bước 23: Background Jobs** ⭐⭐⭐
-**File:** [BUILD_23_Background_Jobs.md](BUILD_23_BACKGROUND_JOBS.md)
+#### **Bước 25: Background Jobs** ⭐⭐⭐
+**File:** [BUILD_25_Background_Jobs.md](BUILD_25_Background_Jobs.md)
 
 **Nội dung:**
 1. `IJobService` interface
@@ -546,8 +630,8 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-#### **Bước 24: Logging** ⭐⭐
-**File:** [BUILD_24_Logging.md](BUILD_24_Logging.md)
+#### **Bước 26: Logging** ⭐⭐
+**File:** [BUILD_26_Logging.md](BUILD_26_Logging.md)
 
 **Nội dung:**
 1. Serilog setup (Console, File, Seq, Elasticsearch)
@@ -560,517 +644,58 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-### **PHASE 6: ADVANCED FEATURES**
+### **PHASE 7: BUSINESS MODULES**
 
-#### **Bước 22: Auditing** ⭐⭐
-**File:** [BUILD_22_Auditing.md](BUILD_22_Auditing.md)
-
-**Nội dung:**
-1. `IAuditService` interface
-2. `AuditService` implementation
-3. `Trail` entity (audit log)
-4. `AuditTrail` helper class
-5. Audit interceptor (track changes)
-6. `GetMyAuditLogsRequest` query
-
-**Kết quả:** Audit trails hoàn chỉnh (track all entity changes).
-
----
-
-#### **Bước 23: Export Services** ⭐⭐
-**File:** [BUILD_23_Export_Services.md](BUILD_23_Export_Services.md)
+#### **Bước 27: Export Services** ⭐⭐
+**File:** [BUILD_27_Export_Services.md](BUILD_27_Export_Services.md)
 
 **Nội dung:**
-1. `IExcelWriter` interface
-2. `ExcelWriter` implementation (ClosedXML)
-3. Export templates
+1. `IExcelService` interface
+2. Excel export với ClosedXML
+3. Export audit logs, products, users
 4. Dynamic column mapping
-5. Export products to Excel example
+5. Template-based export
 
-**Kết quả:** Excel export hoàn chỉnh.
+**Kết quả:** Excel export service hoàn chỉnh.
 
 ---
 
-#### **Bước 24: Catalog Module** ⭐⭐⭐
-**File:** [BUILD_24_Catalog_Module.md](BUILD_24_Catalog_Module.md)
+#### **Bước 28: Catalog Module** ⭐⭐⭐
+**File:** [BUILD_28_Catalog_Module.md](BUILD_28_Catalog_Module.md)
 
 **Nội dung:**
-1. **Products:** CRUD operations, variants, attributes
-2. **Categories:** CRUD operations, product categories
-3. Product DTOs (ProductDto, ProductInListDto, VariantDto, AttributeDto)
-4. Category DTOs (CategoryDto, CategoryInListDto)
-5. Specifications (ProductBySearchSpec, CategoryBySearchSpec)
-6. Requests (CreateProductRequest, UpdateProductRequest, SearchProductRequest)
-7. Event handlers (ProductCreatedEventHandler)
+1. Product entity và CRUD operations
+2. Category entity và hierarchical structure
+3. Product-Category relationships
+4. Search và filtering
+5. Specifications cho complex queries
 
-**Kết quả:** Catalog module hoàn chỉnh (Products, Categories).
+**Kết quả:** Complete catalog module với products và categories.
 
 ---
 
-#### **Bước 25: Notifications** ⭐⭐⭐
-**File:** [BUILD_25_Notifications.md](BUILD_25_Notifications.md)
+#### **Bước 29: Notifications** ⭐⭐
+**File:** [BUILD_29_Notifications.md](BUILD_29_Notifications.md)
 
 **Nội dung:**
-1. `INotificationService` interface
-2. `NotificationService` implementation
-3. `INotificationSender` interface
-4. `NotificationSender` implementation (SignalR)
-5. `NotificationHub` (SignalR hub)
-6. Notification DTOs (NotificationDto, SendNotificationRequest)
-7. `SignalRSettings` configuration
+1. SignalR setup
+2. Real-time notification hub
+3. Notification entity và persistence
+4. Push notifications to clients
+5. Notification center UI integration
 
-**Kết quả:** Real-time notifications hoàn chỉnh (SignalR).
+**Kết quả:** Real-time notifications với SignalR.
 
 ---
 
-#### **Bước 26: Blob Storage** ⭐⭐
-**File:** [BUILD_26_Blob_Storage.md](BUILD_26_Blob_Storage.md)
+#### **Bước 30: Payment Integration** ⭐⭐
+**File:** [BUILD_30_Payment_Integration.md](BUILD_30_Payment_Integration.md)
 
 **Nội dung:**
-1. `IBlobStorageService` interface
-2. `BlobStorageService` implementation (Azure Blob Storage)
-3. Container management
-4. Blob upload/download/delete
-5. `BlobModel`, `BlobContainerModel` DTOs
-
-**Kết quả:** Azure Blob Storage integration.
-
----
-
-#### **Bước 27: Background Jobs** ⭐⭐⭐
-**File:** [BUILD_27_Background_Jobs.md](BUILD_27_Background_Jobs.md)
-
-**Nội dung:**
-1. `IJobService` interface
-2. `HangfireService` implementation
-3. Hangfire setup (SQL Server storage)
-4. Job scheduling (Fire-and-forget, Delayed, Recurring)
-5. `HangfireStorageSettings` configuration
-6. Hangfire dashboard
-
-**Kết quả:** Background jobs hoàn chỉnh (Hangfire).
-
----
-
-#### **Bước 28: Payment Integration** ⭐⭐⭐
-**File:** [BUILD_28_Payment_Integration.md](BUILD_28_Payment_Integration.md)
-
-**Nội dung:**
-1. `IPaymentService` interface
-2. `IVnPay` interface
-3. `PaymentService` implementation (VNPay)
-4. Payment models (PaymentRequest, PaymentResponse, PaymentResult, TransactionStatus)
-5. VNPay helpers (Encoder, PaymentHelper, NetworkHelper)
-6. Payment callback handling
-
-**Kết quả:** VNPay payment integration hoàn chỉnh.
-
----
-
-## 🔧 Công cụ và Packages chính
-
-### **Domain Layer**
-- `Microsoft.AspNetCore.Identity` (v2.1.39)
-- `Microsoft.AspNetCore.Identity.EntityFrameworkCore` (v8.0.0)
-- `NewId` (v4.0.1) - Distributed ID generation
-
-### **Application Layer**
-- `MediatR` (v12.4.0) - CQRS pattern
-- `FluentValidation.DependencyInjectionExtensions` (v11.9.2)
-- `Mapster` (v7.4.0) - Object mapping
-- `Ardalis.Specification` (v8.0.0) - Specification pattern
-
-### **Infrastructure Layer**
-- `Microsoft.EntityFrameworkCore.SqlServer` (v8.0.0)
-- `Hangfire` (v1.7.34) - Background jobs
-- `Serilog` suite - Structured logging
-- `MailKit` (v3.6.0) - Email sending
-- `StackExchange.Redis` - Distributed caching
-- `Azure.Storage.Blobs` (v12.21.2) - Blob storage
-- `Microsoft.AspNetCore.SignalR` (v8.0.0) - Real-time notifications
-
-### **Host Layer**
-- `Swashbuckle.AspNetCore` (v6.4.0) - Swagger/OpenAPI
-- `FluentValidation.AspNetCore` (v11.3.0)
-
----
-
-## ⚠️ Điểm quan trọng cần nhớ
-
-### **1. Thứ tự tạo Projects (QUAN TRỌNG!)**
-```bash
-# Phải tạo theo thứ tự này vì dependencies
-1. Shared (không phụ thuộc gì)
-2. Domain (phụ thuộc Shared)
-3. Application (phụ thuộc Domain + Shared)
-4. Infrastructure (phụ thuộc Application + Domain)
-5. Host (phụ thuộc Infrastructure + Application)
-6. Migrators.MSSQL (phụ thuộc Infrastructure + Domain)
-```
-
-### **2. Thứ tự Seed Data (QUAN TRỌNG!)**
-```
-1. Actions (Create, Update, Delete, View...)
-2. Functions (User, Role, Product...)
-3. ActionInFunctions (mapping table)
-4. Roles (Admin, Basic)
-5. Admin User
-6. RoleClaims (permissions for roles)
-7. Custom Seeders (NotificationSeeder...)
-```
-
-### **3. Database Migration Commands**
-```bash
-# Phải chạy từ thư mục Host
-cd src/Host/Host/
-
-# Tạo migration
-dotnet ef migrations add MigrationName --project ../../Migrators/Migrators.MSSQL/Migrators.MSSQL.csproj
-
-# Apply migration
-dotnet ef database update --project ../../Migrators/Migrators.MSSQL/Migrators.MSSQL.csproj
-```
-
-### **4. Configuration Files Location**
-Tất cả JSON configs nằm trong `src/Host/Host/Configurations/`:
-- `database.json` - Database connection strings
-- `cache.json` - Redis configuration
-- `mail.json` - SMTP settings
-- `hangfire.json` - Background jobs settings
-- `security.json` - JWT settings
-- `signalr.json` - SignalR settings
-
-### **5. Sử dụng Mapster thay vì AutoMapper**
-```csharp
-// ✅ Đúng - Mapster
-var dto = entity.Adapt<EntityDto>();
-
-// ❌ Sai - Không dùng AutoMapper
-var dto = _mapper.Map<EntityDto>(entity);
-```
-
----
-
-## 🎓 Best Practices
-
-### **1. Domain Layer**
-- ✅ Entities có methods, không chỉ properties
-- ✅ Sử dụng Domain Events cho side effects
-- ✅ Value Objects cho complex concepts
-- ❌ Không reference Infrastructure
-
-### **2. Application Layer**
-- ✅ DTOs chỉ chứa data
-- ✅ Handlers delegate cho domain services
-- ✅ Validation trong FluentValidation validators
-- ❌ Không có business logic trong DTOs
-
-### **3. Infrastructure Layer**
-- ✅ Implementations đơn giản
-- ✅ Repository pattern cho data access
-- ✅ Caching ở infrastructure layer
-- ❌ Không chứa business logic
-
-### **4. Host Layer**
-- ✅ Controllers thin, chỉ route requests
-- ✅ Configuration files tách biệt
-- ✅ Middleware pipeline rõ ràng
-- ❌ Không có business logic trong controllers
-
----
-
-## 🚀 Quick Start Checklist
-
-Sau khi hoàn thành tất cả bước, check list này để verify:
-
-- [ ] Solution build thành công
-- [ ] Tất cả tests pass (nếu có)
-- [ ] Database migrate và seed thành công
-- [ ] API chạy được trên `https://localhost:7001`
-- [ ] Swagger UI accessible tại `/swagger`
-- [ ] Có thể login với admin user
-- [ ] JWT token được generate đúng
-- [ ] Permissions được check đúng
-- [ ] Background jobs chạy được (Hangfire dashboard)
-- [ ] Email gửi thành công (test với MailHog/Papercut)
-- [ ] Cache hoạt động (Redis/In-Memory)
-- [ ] File upload/download hoạt động
-- [ ] Logging ghi ra Seq/Elasticsearch/File
-- [ ] Real-time notifications hoạt động (SignalR)
-- [ ] Payment integration hoạt động (VNPay sandbox)
-
----
-
-## 📞 Troubleshooting
-
-### **Problem 1: Migration fails**
-```bash
-# Solution: Ensure correct project paths
-cd src/Host/Host/
-dotnet ef migrations add MigrationName --project ../../Migrators/Migrators.MSSQL/Migrators.MSSQL.csproj
-```
-
-### **Problem 2: Seed data duplicates**
-```csharp
-// Solution: Check idempotency in seeder
-if (await _db.Actions.AnyAsync()) return;
-```
-
-### **Problem 3: JWT token invalid**
-```json
-// Solution: Check security.json
-{
-  "SecuritySettings": {
-    "Key": "your-super-secret-key-minimum-32-characters",
-    "Issuer": "ECO.WebApi",
-    "Audience": "ECO.WebApi"
-  }
-}
-```
-
-### **Problem 4: Redis connection failed**
-```json
-// Solution: Check cache.json và ensure Redis is running
-{
-  "CacheSettings": {
-    "UseDistributedCache": true,
-    "PreferRedis": true,
-    "RedisURL": "localhost:6379"
-  }
-}
-```
-
-### **Problem 5: Hangfire dashboard not accessible**
-```csharp
-// Solution: Check Hangfire settings and authentication
-app.UseHangfireDashboard("/hangfire", new DashboardOptions
-{
-    Authorization = new[] { new HangfireCustomBasicAuthenticationFilter() }
-});
-```
-
----
-
-## 📖 Tài liệu tham khảo
-
-- [Clean Architecture by Uncle Bob](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [Ardalis Specification Pattern](https://github.com/ardalis/Specification)
-- [MediatR Documentation](https://github.com/jbogard/MediatR)
-- [Mapster Documentation](https://github.com/MapsterMapper/Mapster)
-- [EF Core Documentation](https://learn.microsoft.com/en-us/ef/core/)
-- [Hangfire Documentation](https://docs.hangfire.io/)
-- [Serilog Documentation](https://serilog.net/)
-- [SignalR Documentation](https://learn.microsoft.com/en-us/aspnet/core/signalr/)
-
----
-
-## 🤖 **IX. AI-Assisted Development Infrastructure**
-
-### **Agent Memories Location**
-
-ECO.WebApi hỗ trợ AI-assisted development với tập hợp tài liệu kiến thức có cấu trúc:
-
-```
-.agent/
-├── memories/
-│   ├── 01_architecture.md          # Clean Architecture patterns
-│   ├── 02_coding_standards.md      # Coding conventions
-│   ├── 03_database_patterns.md     # Database design patterns
-│   └── 04_api_patterns.md          # RESTful API conventions
-├── skills/                          # Custom agent skills (future)
-│   ├── eco_crud_generator/         # Generate CRUD operations
-│   ├── eco_migration_helper/       # EF Core migrations
-│   └── eco_test_generator/         # Unit test scaffolding
-├── rules.md                         # Development rules
-└── target_instructions.md           # Agent objectives
-```
-
-### **Memory Files Purpose**
-
-| File | Purpose | Content |
-|------|---------|---------|
-| `01_architecture.md` | Core architecture | Clean Architecture layers, dependencies, design patterns |
-| `02_coding_standards.md` | Coding conventions | Naming, structure, code quality rules |
-| `03_database_patterns.md` | Database patterns | EF Core, migrations, seeding, queries |
-| `04_api_patterns.md` | API design | RESTful conventions, routing, responses |
-| `rules.md` | Development rules | Code generation, security, workflow |
-| `target_instructions.md` | Agent capabilities | Objectives, tasks, response patterns |
-
-### **Quick AI Assistant Commands**
-
-Khi làm việc với AI agent, bạn có thể sử dụng các lệnh:
-
-```bash
-# Generate CRUD
-"/generate-crud Product"
-→ Tạo đầy đủ CRUD cho entity Product
-
-# Add Feature
-"/add-feature OrderManagement"
-→ Plan và generate feature mới
-
-# Review Code
-"/review-code ProductService.cs"
-→ Kiểm tra code theo ECO standards
-
-# Create Migration
-"/create-migration AddProductTable"
-→ Generate migration command
-
-# Explain Concept
-"/explain Repository Pattern"
-→ Giải thích pattern trong context ECO
-
-# Refactor code
-"/refactor ProductController.cs"
-→ Đề xuất cải tiến
-
-# Generate Tests
-"/test ProductService"
-→ Tạo unit tests
-
-# Generate Documentation
-"/docs Authentication"
-→ Tạo tài liệu
-```
-
-### **Agent Capabilities**
-
-AI assistant có thể giúp bạn:
-
-1. **✅ Code Generation**: Tạo code theo ECO patterns
-   - Entities với business logic
-   - DTOs và validators
-   - Handlers (Commands/Queries)
-   - Controllers với routing chuẩn
-   - EF Core configurations
-   - Unit và integration tests
-
-2. **✅ Code Review**: Kiểm tra code theo standards
-   - Clean Architecture compliance
-   - StyleCop + SonarAnalyzer rules
-   - Naming conventions
-   - Anti-patterns
-   - Security vulnerabilities
-
-3. **✅ Documentation**: Tự động generate docs
-   - XML documentation
-   - README files
-   - API documentation
-   - Architecture diagrams
-
-4. **✅ Refactoring**: Cải thiện code
-   - Extract interfaces
-   - Apply design patterns
-   - Performance optimization
-   - Reduce duplication
-
-### **How to Use Agent Effectively**
-
-**1. Bắt đầu với context:**
-```
-Tôi đang làm việc với ECO.WebApi. 
-Tôi muốn thêm feature quản lý sản phẩm.
-```
-
-**2. Agent sẽ tham khảo memories:**
-- `.agent/memories/01_architecture.md` cho layer structure
-- `.agent/memories/02_coding_standards.md` cho naming
-- `.agent/memories/03_database_patterns.md` cho database
-- `.agent/memories/04_api_patterns.md` cho API design
-- `.agent/rules.md` cho development rules
-
-**3. Agent sẽ generate code:**
-- Full code, không có placeholders
-- Tuân thủ ECO conventions
-- Include XML documentation
-- Ready to compile
-
-**4. Bạn review và apply:**
-- Copy code vào project
-- Run migration nếu có
-- Test endpoints
-- Commit changes
-
-### **Agent Learning Resources**
-
-Agent luôn tham khảo:
-- ✅ `.agent/memories/` - Core knowledge base
-- ✅ `.agent/rules.md` - Development rules
-- ✅ `.agent/target_instructions.md` - Agent objectives
-- ✅ `docs/BUILD_INDEX.md` - Full documentation roadmap
-- ✅ `docs/MODULE_DOCUMENTATION_TEMPLATE.md` - Doc template
-- ✅ `docs/BUILD_XX_*.md` - Specific module docs
-
-### **Benefits of AI-Assisted Development**
-
-1. **🚀 Faster Development**
-   - Generate boilerplate code instantly
-   - No manual repetitive work
-   - Focus on business logic
-
-2. **✅ Consistent Quality**
-   - Always follow patterns
-   - No naming inconsistencies
-   - Proper error handling
-
-3. **📚 Learning Tool**
-   - Explains WHY, not just WHAT
-   - Teaches best practices
-   - References documentation
-
-4. **🔍 Code Review Assistant**
-   - Catch issues early
-   - Enforce standards
-   - Suggest improvements
-
----
-
-## 📝 Notes
-
-- **Version:** .NET 8.0
-- **Architecture:** Clean Architecture / Onion Architecture
-- **Patterns:** Repository, Specification, CQRS, Decorator, Modular Startup, Event-Driven
-- **Database:** SQL Server (có thể switch sang PostgreSQL/MySQL)
-- **Last Updated:** 2024
-
----
-
-## 🎯 Module Status
-
-| Module | Status | Build Doc | Notes |
-|--------|--------|-----------|-------|
-| Foundation Setup | ✅ Complete | BUILD_01 - BUILD_06 | Solution structure |
-| Database & Patterns | ✅ Complete | BUILD_07 - BUILD_11 | Database, Repository |
-| Core Services | 🚧 In Progress | BUILD_12 - BUILD_14 | CurrentUser, Exceptions, Validation |
-| Authentication & Authorization | 📝 Planned | BUILD_15 - BUILD_18 | JWT, Identity, Permissions, OAuth2 |
-| Infrastructure Services | 📝 Planned | BUILD_19 - BUILD_21 | Caching, Storage, Email, Logging |
-| Advanced Features | 📝 Planned | BUILD_22 - BUILD_28 | Auditing, Export, Catalog, Notifications, Blob, Jobs, Payment |
-
-**Legend:**
-- ✅ Complete - Đã hoàn thành và có docs
-- 🚧 In Progress - Đang viết docs
-- 📝 Planned - Chưa bắt đầu
-
----
-
-**🎯 Mục tiêu cuối cùng:** Sau khi hoàn thành tất cả bước, bạn sẽ có một production-ready API với:
-- ✅ Clean Architecture
-- ✅ Authentication & Authorization (JWT + OAuth2)
-- ✅ Caching (Local + Redis)
-- ✅ File Storage (Local file system)
-- ✅ Email Service (SMTP + Templates)
-- ✅ Logging (Serilog + Seq/Elasticsearch)
-- ✅ Audit Trails (Track entity changes)
-- ✅ Excel Export (ClosedXML)
-- ✅ Catalog Module (Products, Categories CRUD)
-- ✅ Real-time Notifications (SignalR)
-- ✅ Blob Storage (Azure Blob Storage)
-- ✅ Background Jobs (Hangfire)
-- ✅ Payment Integration (VNPay)
-- ✅ API Documentation (Swagger)
-- ✅ Database Migrations & Seeding
-
----
-
-*Bắt đầu với [Bước 1: Solution Setup](BUILD_01_Solution_Setup.md)*
+1. VNPay payment gateway integration
+2. Payment request và callback handling
+3. Payment verification và security
+4. Order payment flow
+5. Payment status tracking
+
+**Kết quả:** VNPay payment gateway hoàn chỉnh.
