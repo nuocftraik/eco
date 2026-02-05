@@ -696,10 +696,14 @@ internal static class Startup
 
 **Tại sao:** Đánh dấu class là domain event, support generic event handling.
 
-**File:** `src/Core/Shared/Events/IEvent.cs`
+**⚠️ Lưu ý quan trọng:**
+- Trong BUILD_09, `IEvent` đã được **di chuyển** từ `Shared.Events` sang `Domain.Common.Contracts`
+- Nếu bạn đã tạo `IEvent` trong Shared layer (BUILD_02 cũ), xem [BUILD_09 Section 12](BUILD_09_Domain_Base_Entities.md#12-migration-note) để migrate
+
+**File:** `src/Core/Domain/Common/Contracts/IEvent.cs` (đã tạo trong BUILD_09)
 
 ```csharp
-namespace ECO.WebApi.Shared.Events;
+namespace ECO.WebApi.Domain.Common.Contracts;
 
 /// <summary>
 /// Marker interface cho tất cả domain events
@@ -713,12 +717,17 @@ public interface IEvent
 **Giải thích:**
 - Marker interface → không có methods
 - Tất cả domain events phải implement
-- Ở Shared layer → có thể dùng ở mọi layer
+- **Ở Domain layer** (BUILD_09 đã di chuyển từ Shared) → Pure domain concept
 
-**Tại sao trong Shared layer:**
-- Domain events là contract
-- Application và Infrastructure đều cần
-- No dependencies
+**Tại sao trong Domain layer:**
+- Domain events là domain concept (business logic)
+- Không phụ thuộc infrastructure
+- Follow DDD principles
+
+**Migration from BUILD_02:**
+- BUILD_02 cũ có `IEvent` trong `Shared.Events` (deprecated)
+- BUILD_09 di chuyển sang `Domain.Common.Contracts` (correct)
+- Update imports: `using ECO.WebApi.Domain.Common.Contracts;`
 
 ---
 
@@ -731,7 +740,7 @@ public interface IEvent
 **File:** `src/Core/Application/Common/Events/EventNotification.cs`
 
 ```csharp
-using ECO.WebApi.Shared.Events;
+using ECO.WebApi.Domain.Common.Contracts; // ⚠️ Updated from Shared.Events
 using MediatR;
 
 namespace ECO.WebApi.Application.Common.Events;
@@ -776,7 +785,7 @@ public class EventNotification<TEvent> : INotification
 
 ```csharp
 using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Shared.Events;
+using ECO.WebApi.Domain.Common.Contracts; // ⚠️ Updated from Shared.Events
 
 namespace ECO.WebApi.Application.Common.Events;
 
@@ -815,7 +824,7 @@ public interface IEventPublisher : ITransientService
 
 ```csharp
 using ECO.WebApi.Application.Common.Events;
-using ECO.WebApi.Shared.Events;
+using ECO.WebApi.Domain.Common.Contracts; // ⚠️ Updated from Shared.Events
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -830,7 +839,7 @@ public class EventPublisher : IEventPublisher
     private readonly IPublisher _mediator;
 
     public EventPublisher(ILogger<EventPublisher> logger, IPublisher mediator) =>
-        (_logger, _mediator) = (logger, mediator);
+(_logger, _mediator) = (logger, mediator);
 
     /// <summary>
     /// Publish domain event qua MediatR
@@ -841,7 +850,7 @@ public class EventPublisher : IEventPublisher
         _logger.LogInformation("Publishing Event: {EventType}", @event.GetType().Name);
         
         // Wrap event thành EventNotification và publish qua MediatR
-        return _mediator.Publish(CreateEventNotification(@event));
+     return _mediator.Publish(CreateEventNotification(@event));
     }
 
     /// <summary>
@@ -852,7 +861,7 @@ public class EventPublisher : IEventPublisher
     {
    // Step 1: Lấy runtime type của event (ví dụ: ProductCreatedEvent)
     var eventType = @event.GetType();
-        
+  
     // Step 2: Tạo generic type EventNotification<ProductCreatedEvent>
         var notificationType = typeof(EventNotification<>).MakeGenericType(eventType);
         
@@ -909,7 +918,7 @@ return (INotification)instance;
 **File:** `src/Core/Application/Common/Events/IEventNotificationHandler.cs`
 
 ```csharp
-using ECO.WebApi.Shared.Events;
+using ECO.WebApi.Domain.Common.Contracts; // ⚠️ Updated from Shared.Events
 using MediatR;
 
 namespace ECO.WebApi.Application.Common.Events;
@@ -938,7 +947,7 @@ public abstract class EventNotificationHandler<TEvent> : INotificationHandler<Ev
     /// <summary>
     /// Handle domain event (phải implement trong derived class)
     /// </summary>
-    public abstract Task Handle(TEvent @event, CancellationToken cancellationToken);
+ public abstract Task Handle(TEvent @event, CancellationToken cancellationToken);
 }
 ```
 
@@ -970,7 +979,7 @@ public class ProductCreatedHandler : EventNotificationHandler<ProductCreatedEven
 {
     public override Task Handle(ProductCreatedEvent @event, ...)
   {
-        // Handle event directly - đã unwrap rồi
+     // Handle event directly - đã unwrap rồi
         _logger.LogInformation("Product created: {Name}", @event.Product.Name);
         return Task.CompletedTask;
     }
@@ -1203,11 +1212,11 @@ var product = new Product
 **Create domain event:**
 ```csharp
 // File: src/Core/Domain/Catalog/Events/ProductCreatedEvent.cs
-using ECO.WebApi.Shared.Events;
+using ECO.WebApi.Domain.Common.Contracts; // ⚠️ Updated: IEvent now in Domain.Common.Contracts
 
 namespace ECO.WebApi.Domain.Catalog.Events;
 
-public class ProductCreatedEvent : IEvent
+public class ProductCreatedEvent : DomainEvent // ⚠️ Extends DomainEvent (from BUILD_09)
 {
     public Product Product { get; }
 
@@ -1216,6 +1225,16 @@ public class ProductCreatedEvent : IEvent
         Product = product;
  }
 }
+```
+
+**⚠️ Alternative using BUILD_09 Static Factory Pattern:**
+```csharp
+// Option 2: Use EntityCreatedEvent generic (recommended from BUILD_09)
+using ECO.WebApi.Domain.Common.Events;
+
+// In handler - no need custom event class
+var createdEvent = EntityCreatedEvent.WithEntity(product);
+await _eventPublisher.PublishAsync(createdEvent);
 ```
 
 **Create event handler:**
@@ -1232,7 +1251,7 @@ public class ProductCreatedEventHandler : EventNotificationHandler<ProductCreate
     private readonly ILogger<ProductCreatedEventHandler> _logger;
 
     public ProductCreatedEventHandler(ILogger<ProductCreatedEventHandler> logger)
-    {
+ {
         _logger = logger;
     }
 
@@ -1240,12 +1259,12 @@ public class ProductCreatedEventHandler : EventNotificationHandler<ProductCreate
   {
         _logger.LogInformation("Product created: {ProductId} - {ProductName}",
       @event.Product.Id,
-         @event.Product.Name);
+       @event.Product.Name);
 
     // TODO: Send email notification
-        // TODO: Update cache
+      // TODO: Update cache
      // TODO: Send webhook
-   
+
    return Task.CompletedTask;
     }
 }
@@ -1258,7 +1277,7 @@ public class CreateProductHandler : IRequestHandler<CreateProductRequest, Guid>
     private readonly IRepository<Product> _repository;
     private readonly IEventPublisher _eventPublisher;
 
-    public async Task<Guid> Handle(CreateProductRequest request, CancellationToken ct)
+public async Task<Guid> Handle(CreateProductRequest request, CancellationToken ct)
     {
         var product = Product.Create(request.Name, request.Price);
         
@@ -1280,96 +1299,3 @@ info: Product created: a1b2c3d4-e5f6-... - iPhone 15
 ```
 
 ---
-
-## 8. Summary
-
-### ✓ Đã hoàn thành trong bước này:
-
-**CurrentUser Service:**
-- ✓ `ICurrentUser` interface (GetUserId, GetEmail, IsAuthenticated, etc.)
-- ✓ `ICurrentUserInitializer` interface (SetCurrentUser, SetCurrentUserId)
-- ✓ `ClaimsPrincipalExtensions` (helper methods)
-- ✓ `CurrentUser` implementation (với ClaimsPrincipal)
-- ✓ `CurrentUserMiddleware` (auto-set current user)
-- ✓ Service registration (Scoped)
-
-**Serializer Service:**
-- ✓ `ISerializerService` interface (Serialize, Deserialize)
-- ✓ `NewtonSoftService` implementation (Newtonsoft.Json)
-- ✓ Settings: CamelCase, Ignore nulls, Enum as string
-- ✓ Service registration (Transient)
-
-**Event Publisher:**
-- ✓ `IEvent` marker interface (Shared layer)
-- ✓ `EventNotification<TEvent>` wrapper (Application layer)
-- ✓ `IEventPublisher` interface (PublishAsync)
-- ✓ `EventPublisher` implementation (với MediatR + reflection)
-- ✓ `EventNotificationHandler<TEvent>` base class
-- ✓ Service registration (Transient)
-
-### 🎯 Key Concepts:
-
-**CurrentUser:**
-- Scoped service → mỗi request một instance
-- Thread-safe với ClaimsPrincipal
-- Middleware auto-set từ JWT token
-- Fallback cho background jobs
-
-**Serializer:**
-- Transient service → stateless
-- JSON serialization với custom settings
-- API-friendly format (camelCase, no nulls, enum strings)
-
-**Event Publisher:**
-- Publish domain events qua MediatR
-- Decouple domain logic và side effects
-- Multiple handlers cho một event
-- Reflection để support runtime types
-
-### 📁 File Structure:
-
-```
-src/Core/Application/Common/
-├── Interfaces/
-│   ├── ICurrentUser.cs
-│   ├── ICurrentUserInitializer.cs
-│   └── ISerializerService.cs
-└── Events/
-    ├── IEventPublisher.cs
-    ├── EventNotification.cs
-    └── IEventNotificationHandler.cs
-
-src/Core/Shared/
-├── Events/
-│   └── IEvent.cs
-└── Authorization/
-    └── ClaimsPrincipalExtensions.cs
-
-src/Infrastructure/Infrastructure/
-├── Auth/
-│   ├── CurrentUser.cs
-│   ├── CurrentUserMiddleware.cs
-│   └── Startup.cs
-└── Common/
-    ├── Services/
-    │   └── NewtonSoftService.cs
-    ├── Events/
-  │   └── EventPublisher.cs
-    └── Startup.cs
-```
-
----
-
-## 9. Next Steps
-
-**Tiếp theo:** [BUILD_13 - Exception Handling & Middleware](BUILD_13_Exceptions_Middleware.md)
-
-Trong bước tiếp theo, chúng ta sẽ:
-1. ✓ Tạo Custom Exceptions (NotFoundException, UnauthorizedException, ForbiddenException, ConflictException, InternalServerException)
-2. ✓ Tạo ErrorResult model (error response format)
-3. ✓ Implement ExceptionMiddleware (global exception handler)
-4. ✓ Register middleware pipeline
-
----
-
-**Quay lại:** [Mục lục](BUILD_INDEX.md)

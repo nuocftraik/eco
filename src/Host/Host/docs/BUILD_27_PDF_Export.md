@@ -38,8 +38,8 @@ var invoice = new InvoiceData
     CustomerName = "Nguyen Van A",
     Items = new List<InvoiceItem>
     {
-    new("Product 1", 2, 100000),
-  new("Product 2", 1, 150000)
+        new("Product 1", 2, 100000),
+        new("Product 2", 1, 150000)
     },
     Total = 350000
 };
