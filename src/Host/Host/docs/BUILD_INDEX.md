@@ -779,6 +779,9 @@ Template chuẩn để viết tài liệu cho các modules mới:
 - Notification entity
 - In-app notification center
 - Email/SMS notification integration
+- **Event-Driven:** Auto-send từ domain events
+- **Multi-Channel:** Web (SignalR), Email (future), SMS (future)
+- **Scalable:** Redis backplane support
 
 #### **BUILD_30: Payment Integration** 📝
 - VNPay payment gateway
