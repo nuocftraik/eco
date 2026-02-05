@@ -144,13 +144,14 @@ Xây dựng các modules nghiệp vụ và tính năng nâng cao.
 | Bước | Tài liệu | Nội dung | Prerequisites |
 |------|----------|----------|---------------|
 | 26 | [BUILD_26](BUILD_26_Export_Services.md) 📝 | Excel export, Report generation | Phase 6 |
-| 27 | [BUILD_27](BUILD_27_Catalog_Module.md) 📝 | Products, Categories CRUD | Bước 26 |
-| 28 | [BUILD_28](BUILD_28_Notifications.md) 📝 | SignalR notifications, Real-time updates | Bước 27 |
-| 29 | [BUILD_29](BUILD_29_Payment_Integration.md) 📝 | VNPay payment gateway | Bước 28 |
+| 27 | [BUILD_27](BUILD_27_PDF_Export.md) 📝 | PDF generation, Report templates | Bước 26 |
+| 28 | [BUILD_28](BUILD_28_Catalog_Module.md) 📝 | Products, Categories CRUD | Bước 27 |
+| 29 | [BUILD_29](BUILD_29_Notifications.md) 📝 | SignalR notifications, Real-time updates | Bước 28 |
+| 30 | [BUILD_30](BUILD_30_Payment_Integration.md) 📝 | VNPay payment gateway | Bước 29 |
 
 **⚠️ Lưu ý:** Phase 7 đang trong quá trình xây dựng. Tài liệu sẽ được cập nhật dần.
 
-**Kết quả Phase 7:** Business modules complete (Export, Catalog, Notifications, Payment).
+**Kết quả Phase 7:** Business modules complete (Excel Export, PDF Export, Catalog, Notifications, Payment).
 
 ---
 
@@ -720,13 +721,13 @@ Template chuẩn để viết tài liệu cho các modules mới:
 - ✅ **Phase 6:** Infrastructure Services (5 steps + 1 alternative)
 
 ### **In Progress:**
-- 🚧 **Phase 7:** Business Modules (Planned: 4 steps)
+- 🚧 **Phase 7:** Business Modules (Planned: 5 steps)
 
 ### **Total Documentation:**
-- **Main BUILD files:** 25 (BUILD_01 → BUILD_25)
+- **Main BUILD files:** 30 (BUILD_01 → BUILD_30)
 - **Sub-documentation:** 2 (BUILD_11 specs, BUILD_24 AWS)
 - **Templates:** 1 (MODULE_DOCUMENTATION_TEMPLATE)
-- **Total pages:** 28+ documents
+- **Total pages:** 33+ documents
 
 ---
 
@@ -744,26 +745,34 @@ Template chuẩn để viết tài liệu cho các modules mới:
 
 #### **BUILD_26: Export Services** 📝
 - Excel export với ClosedXML
-- PDF generation
 - CSV export
-- Report templates
+- Export templates
 - Dynamic column mapping
+- Batch export operations
 
-#### **BUILD_27: Catalog Module** 📝
+#### **BUILD_27: PDF Export Service** 📝
+- PDF generation với QuestPDF/iTextSharp
+- Invoice/Report templates
+- Header/Footer customization
+- Charts và images embedding
+- Watermarks và digital signatures
+- PDF merge và split operations
+
+#### **BUILD_28: Catalog Module** 📝
 - Product entity và CRUD
 - Category hierarchical structure
 - Product-Category relationships
 - Search và filtering
 - Product specifications
 
-#### **BUILD_28: Notifications** 📝
+#### **BUILD_29: Notifications** 📝
 - SignalR hub setup
 - Real-time push notifications
 - Notification entity
 - In-app notification center
 - Email/SMS notification integration
 
-#### **BUILD_29: Payment Integration** 📝
+#### **BUILD_30: Payment Integration** 📝
 - VNPay payment gateway
 - Payment flow (request → callback → verify)
 - Payment status tracking
@@ -776,4 +785,4 @@ Template chuẩn để viết tài liệu cho các modules mới:
 
 **Maintained By:** ECO.WebApi Development Team  
 **Last Updated:** 2026-01-30  
-**Version:** 2.1 (Renumbered Phase 7: BUILD_26-29)
+**Version:** 2.2 (Added BUILD_27 PDF Export Service, Renumbered Phase 7: BUILD_26-30)

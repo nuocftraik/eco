@@ -209,7 +209,7 @@ public class ExportOptions
 
     /// <summary>
     /// Freeze header row
- /// </summary>
+    /// </summary>
     public bool FreezeHeader { get; set; } = true;
 
     /// <summary>
@@ -276,71 +276,71 @@ public class ClosedXMLWriter : IExcelWriter
         IEnumerable<T> data,
         string sheetName = "Sheet1",
         List<string>? headers = null,
-      CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default)
     {
         return await Task.Run(() =>
- {
-  using var workbook = new XLWorkbook();
-     var worksheet = workbook.Worksheets.Add(sheetName);
+        {
+             using var workbook = new XLWorkbook();
+             var worksheet = workbook.Worksheets.Add(sheetName);
 
-         var dataList = data.ToList();
+             var dataList = data.ToList();
 
             if (!dataList.Any())
-          {
-          _logger.LogWarning("No data to export for sheet '{SheetName}'", sheetName);
-       return SaveWorkbookToBytes(workbook);
+            {
+                _logger.LogWarning("No data to export for sheet '{SheetName}'", sheetName);
+                return SaveWorkbookToBytes(workbook);
             }
 
-  // Get properties
+      // Get properties
       var properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Where(p => p.CanRead && IsExportableType(p.PropertyType))
                 .ToList();
 
             // Write headers
             var headerRow = 1;
-   for (int i = 0; i < properties.Count; i++)
-    {
-             var header = headers != null && i < headers.Count
-       ? headers[i]
-       : FormatPropertyName(properties[i].Name);
+      for (int i = 0; i < properties.Count; i++)
+      {
+            var header = headers != null && i < headers.Count
+                        ? headers[i]
+                        : FormatPropertyName(properties[i].Name);
 
-     var cell = worksheet.Cell(headerRow, i + 1);
-        cell.Value = header;
-         cell.Style.Font.Bold = true;
-        cell.Style.Fill.BackgroundColor = XLColor.LightGray;
-         }
+            var cell = worksheet.Cell(headerRow, i + 1);
+                cell.Value = header;
+                cell.Style.Font.Bold = true;
+                cell.Style.Fill.BackgroundColor = XLColor.LightGray;
+       }
 
-    // Write data
+        // Write data
        var currentRow = headerRow + 1;
             foreach (var item in dataList)
             {
-        for (int i = 0; i < properties.Count; i++)
-         {
-          var value = properties[i].GetValue(item);
-          var cell = worksheet.Cell(currentRow, i + 1);
+                 for (int i = 0; i < properties.Count; i++)
+                {
+                     var value = properties[i].GetValue(item);
+                     var cell = worksheet.Cell(currentRow, i + 1);
 
-        SetCellValue(cell, value, properties[i].PropertyType);
-           }
+                     SetCellValue(cell, value, properties[i].PropertyType);
+                }
 
-       currentRow++;
-  }
+                currentRow++;
+             }
 
-   // Auto-fit columns
-            worksheet.Columns().AdjustToContents();
+        // Auto-fit columns
+        worksheet.Columns().AdjustToContents();
 
        // Freeze header row
-     worksheet.SheetView.FreezeRows(1);
+        worksheet.SheetView.FreezeRows(1);
 
-  // Add auto-filter
-   var dataRange = worksheet.Range(headerRow, 1, currentRow - 1, properties.Count);
- dataRange.SetAutoFilter();
+        // Add auto-filter
+        var dataRange = worksheet.Range(headerRow, 1, currentRow - 1, properties.Count);
+        dataRange.SetAutoFilter();
 
         _logger.LogInformation(
            "Exported {Count} rows to Excel sheet '{SheetName}'",
-          dataList.Count,
-    sheetName);
+            dataList.Count,
+            sheetName);
 
-    return SaveWorkbookToBytes(workbook);
+        return SaveWorkbookToBytes(workbook);
         }, cancellationToken);
   }
 
@@ -350,30 +350,30 @@ public class ClosedXMLWriter : IExcelWriter
         CancellationToken cancellationToken = default)
     {
         return await Task.Run(() =>
- {
+        {
             using var workbook = new XLWorkbook();
-         var worksheet = workbook.Worksheets.Add(sheetName);
+            var worksheet = workbook.Worksheets.Add(sheetName);
 
-   // Insert DataTable
+        // Insert DataTable
             worksheet.Cell(1, 1).InsertTable(dataTable);
 
-   // Style header row
+        // Style header row
             var headerRow = worksheet.Row(1);
-    headerRow.Style.Font.Bold = true;
+            headerRow.Style.Font.Bold = true;
             headerRow.Style.Fill.BackgroundColor = XLColor.LightGray;
 
-   // Auto-fit columns
+       // Auto-fit columns
        worksheet.Columns().AdjustToContents();
 
- // Freeze header
-            worksheet.SheetView.FreezeRows(1);
+        // Freeze header
+       worksheet.SheetView.FreezeRows(1);
 
- _logger.LogInformation(
+        _logger.LogInformation(
                 "Exported DataTable with {Count} rows to Excel sheet '{SheetName}'",
-     dataTable.Rows.Count,
-      sheetName);
+                dataTable.Rows.Count,
+                sheetName);
 
-return SaveWorkbookToBytes(workbook);
+    return SaveWorkbookToBytes(workbook);
         }, cancellationToken);
     }
 
@@ -383,30 +383,30 @@ return SaveWorkbookToBytes(workbook);
  {
         return await Task.Run(() =>
         {
-    using var workbook = new XLWorkbook();
+            using var workbook = new XLWorkbook();
 
-       foreach (var kvp in sheets)
-     {
-var worksheet = workbook.Worksheets.Add(kvp.Key);
+            foreach (var kvp in sheets)
+            {
+                var worksheet = workbook.Worksheets.Add(kvp.Key);
 
- // Insert DataTable
-     worksheet.Cell(1, 1).InsertTable(kvp.Value);
+                // Insert DataTable
+                worksheet.Cell(1, 1).InsertTable(kvp.Value);
 
-     // Style header row
-    var headerRow = worksheet.Row(1);
-          headerRow.Style.Font.Bold = true;
-   headerRow.Style.Fill.BackgroundColor = XLColor.LightGray;
+                        // Style header row
+                  var headerRow = worksheet.Row(1);
+                  headerRow.Style.Font.Bold = true;
+                  headerRow.Style.Fill.BackgroundColor = XLColor.LightGray;
 
-          // Auto-fit columns
-          worksheet.Columns().AdjustToContents();
+                 // Auto-fit columns
+                 worksheet.Columns().AdjustToContents();
 
-     // Freeze header
-      worksheet.SheetView.FreezeRows(1);
-   }
+                // Freeze header
+                 worksheet.SheetView.FreezeRows(1);
+             }
 
      _logger.LogInformation(
        "Exported {Count} sheets to Excel workbook",
-  sheets.Count);
+        sheets.Count);
 
         return SaveWorkbookToBytes(workbook);
         }, cancellationToken);
@@ -418,37 +418,37 @@ var worksheet = workbook.Worksheets.Add(kvp.Key);
     private static void SetCellValue(IXLCell cell, object? value, Type propertyType)
   {
         if (value == null)
-      {
-   cell.Value = string.Empty;
-     return;
+       {
+            cell.Value = string.Empty;
+            return;
         }
 
-   // Handle specific types
+        // Handle specific types
         if (propertyType == typeof(DateTime) || propertyType == typeof(DateTime?))
- {
-       cell.Value = (DateTime)value;
-      cell.Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
+        {
+            cell.Value = (DateTime)value;
+            cell.Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
         }
         else if (propertyType == typeof(DateTimeOffset) || propertyType == typeof(DateTimeOffset?))
-     {
-  cell.Value = ((DateTimeOffset)value).DateTime;
+        {
+            cell.Value = ((DateTimeOffset)value).DateTime;
             cell.Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
-}
+        }
         else if (propertyType == typeof(bool) || propertyType == typeof(bool?))
-    {
+        {
             cell.Value = (bool)value ? "Yes" : "No";
         }
         else if (propertyType == typeof(decimal) || propertyType == typeof(decimal?))
-  {
- cell.Value = (decimal)value;
+        {
+            cell.Value = (decimal)value;
             cell.Style.NumberFormat.Format = "#,##0.00";
-   }
+        }
         else if (IsNumericType(propertyType))
         {
- cell.Value = Convert.ToDouble(value);
+            cell.Value = Convert.ToDouble(value);
             cell.Style.NumberFormat.Format = "#,##0";
         }
-      else
+        else
         {
             cell.Value = value.ToString();
         }
@@ -462,12 +462,12 @@ var worksheet = workbook.Worksheets.Add(kvp.Key);
         type = Nullable.GetUnderlyingType(type) ?? type;
 
      return type == typeof(int) ||
-          type == typeof(long) ||
-   type == typeof(short) ||
-   type == typeof(byte) ||
-          type == typeof(double) ||
-               type == typeof(float) ||
-          type == typeof(decimal);
+            type == typeof(long) ||
+            type == typeof(short) ||
+            type == typeof(byte) ||
+            type == typeof(double) ||
+            type == typeof(float) ||
+            type == typeof(decimal);
     }
 
     /// <summary>
@@ -478,11 +478,11 @@ var worksheet = workbook.Worksheets.Add(kvp.Key);
         type = Nullable.GetUnderlyingType(type) ?? type;
 
    return type.IsPrimitive ||
-type == typeof(string) ||
-   type == typeof(DateTime) ||
-   type == typeof(DateTimeOffset) ||
-         type == typeof(decimal) ||
-           type == typeof(Guid);
+          type == typeof(string) ||
+          type == typeof(DateTime) ||
+          type == typeof(DateTimeOffset) ||
+          type == typeof(decimal) ||
+          type == typeof(Guid);
     }
 
     /// <summary>
@@ -493,7 +493,7 @@ type == typeof(string) ||
         // CamelCase -> Camel Case
         return System.Text.RegularExpressions.Regex.Replace(
             propertyName,
-         "([a-z])([A-Z])",
+            "([a-z])([A-Z])",
             "$1 $2");
     }
 
@@ -503,8 +503,8 @@ type == typeof(string) ||
     private static byte[] SaveWorkbookToBytes(XLWorkbook workbook)
  {
         using var stream = new MemoryStream();
-     workbook.SaveAs(stream);
-      return stream.ToArray();
+         workbook.SaveAs(stream);
+         return stream.ToArray();
     }
 }
 ```
@@ -546,7 +546,7 @@ internal static class Startup
     internal static IServiceCollection AddExporters(this IServiceCollection services)
     {
         // Register Excel writer
-services.AddTransient<IExcelWriter, ClosedXMLWriter>();
+        services.AddTransient<IExcelWriter, ClosedXMLWriter>();
 
         return services;
     }
@@ -605,7 +605,7 @@ namespace ECO.WebApi.Application.Auditing;
 public class ExportAuditLogsRequest : BaseFilter, IRequest<byte[]>
 {
     public DateTime? StartDate { get; set; }
-public DateTime? EndDate { get; set; }
+    public DateTime? EndDate { get; set; }
     public string? UserId { get; set; }
     public string? TableName { get; set; }
 }
@@ -652,10 +652,10 @@ public class ExportAuditLogsHandler : IRequestHandler<ExportAuditLogsRequest, by
        DateTime = t.DateTime,
             UserId = t.UserId,
             Type = t.Type.ToString(),
-    TableName = t.TableName,
-   OldValues = t.OldValues,
-      NewValues = t.NewValues,
-   AffectedColumns = t.AffectedColumns,
+            TableName = t.TableName,
+            OldValues = t.OldValues,
+             NewValues = t.NewValues,
+            AffectedColumns = t.AffectedColumns,
             PrimaryKey = t.PrimaryKey
      }).ToList();
 
@@ -666,12 +666,12 @@ public class ExportAuditLogsHandler : IRequestHandler<ExportAuditLogsRequest, by
    headers: new List<string>
        {
     "Date Time",
-"User ID",
-     "Action",
-           "Table",
+    "User ID",
+    "Action",
+    "Table",
     "Old Values",
     "New Values",
-   "Changed Columns",
+    "Changed Columns",
   "Record ID"
    },
             cancellationToken: cancellationToken);
