@@ -11,27 +11,27 @@ ECO.WebApi được xây dựng theo **Clean Architecture** với 5 layers:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                     Host Layer                          │
+│    Host Layer        │
 │   ASP.NET Core API, Controllers, Program.cs             │
 └────────────────────┬────────────────────────────────────┘
-               ↓ depends on
+        ↓ depends on
 ┌────────────────────┴────────────────────────────────────┐
-│                   Infrastructure Layer                  │
+│  Infrastructure Layer      │
 │ EF Core, Identity, Caching, Mailing, External Services  │
 └────────────────────┬────────────────────────────────────┘
-                ↓ depends on
+↓ depends on
 ┌────────────────────┴────────────────────────────────────┐
-│           Application Layer                             │
-│         Use Cases, DTOs, Interfaces, Validators         │
+│         Application Layer      │
+│         Use Cases, DTOs, Interfaces, Validators      │
 └────────────────────┬────────────────────────────────────┘
-                ↓ depends on
+          ↓ depends on
 ┌────────────────────┴────────────────────────────────────┐
-│               Domain Layer                              │
+│        Domain Layer             │
 │        Entities, Value Objects, Domain Events, Enums    │
 └────────────────────┬────────────────────────────────────┘
-                ↓ depends on
+   ↓ depends on
 ┌────────────────────┴────────────────────────────────────┐
-│                Shared Layer                             │
+│        Shared Layer        │
 │          Common Contracts, Authorization Constants      │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -63,18 +63,20 @@ Xây dựng cấu trúc cơ bản, build configuration, và layers trống.
 
 ---
 
-### **PHASE 2: Database & Core Patterns** (Database + Core Logic)
-Setup database, migrations, domain patterns, và repository.
+### **PHASE 2: Core Infrastructure** (Hạ tầng cốt lõi)
+Setup logging, database, và core patterns.
 
 | Bước | Tài liệu | Nội dung | Prerequisites |
 |------|----------|----------|---------------|
-| 7 | [BUILD_07](BUILD_07_Database_Initialization.md) | Database setup, migrations, seeding | Phase 1 |
-| 8 | [BUILD_08](BUILD_08_Service_Registration.md) | Auto service registration pattern | Bước 7 |
+| 7 | [BUILD_07](BUILD_07_Logging_Setup.md) | Serilog setup (Console, File, Seq) | Phase 1 |
+| 8 | [BUILD_08](BUILD_08_Database_Initialization.md) | Database setup, migrations, seeding | Bước 7 |
 | 9 | [BUILD_09](BUILD_09_Domain_Base_Entities.md) | Base entities, Domain Events | Bước 8 |
-| 10 | [BUILD_10](BUILD_10_Service_Registration.md) | Service registration pattern | Bước 9 |
+| 10 | [BUILD_10](BUILD_10_Service_Registration.md) | Auto service registration pattern | Bước 9 |
 | 11 | [BUILD_11](BUILD_11_Repository_Pattern.md) | Repository pattern, Specifications | Bước 10 |
+| 11.1 | [BUILD_11_Specification](BUILD_11_Specification.md) | Specification pattern chi tiết | Bước 11 |
+| 11.2 | [BUILD_11_PropertyExpressions](BUILD_11_1_PropertyExpressions.md) | Property expressions helper | Bước 11 |
 
-**Kết quả Phase 2:** Database hoạt động, domain patterns complete, repository ready.
+**Kết quả Phase 2:** Logging hoạt động, Database ready, Repository pattern complete.
 
 ---
 
@@ -83,7 +85,7 @@ Xây dựng các services nền tảng cho toàn hệ thống.
 
 | Bước | Tài liệu | Nội dung | Prerequisites |
 |------|----------|----------|---------------|
-| 12 | [BUILD_12](BUILD_12_Common_Services.md) | CurrentUser, Serializer, Event Publisher | Bước 11 |
+| 12 | [BUILD_12](BUILD_12_Common_Services.md) | CurrentUser, Serializer, Event Publisher | Phase 2 |
 | 13 | [BUILD_13](BUILD_13_Exceptions_Middleware.md) | Exception handling, Error responses | Bước 12 |
 | 14 | [BUILD_14](BUILD_14_Validation_Behavior.md) | FluentValidation, MediatR Behaviors | Bước 13 |
 
@@ -106,10 +108,9 @@ Xây dựng hệ thống authentication và authorization.
 
 **Kết quả Phase 4:** Authentication & Authorization hoàn chỉnh (JWT, Permissions, OAuth2).
 
-
 ---
 
-### **PHASE 5: Foundation Patterns** (Patterns nền tảng)
+### **PHASE 5: Data Integrity Patterns** (Patterns bảo toàn dữ liệu)
 Setup soft delete và auditing - nền tảng cho toàn hệ thống.
 
 | Bước | Tài liệu | Nội dung | Prerequisites |
@@ -129,23 +130,25 @@ Xây dựng các services hỗ trợ (caching, storage, jobs, email).
 | 21 | [BUILD_21](BUILD_21_Caching_Services.md) | Local cache, Distributed cache (Redis) | Phase 5 |
 | 22 | [BUILD_22](BUILD_22_File_Storage.md) | Local file storage, File upload/download | Bước 21 |
 | 23 | [BUILD_23](BUILD_23_Email_Service.md) | SMTP email, Email templates (Razor) | Bước 22 |
-| 24 | [BUILD_24](BUILD_24_Blob_Storage.md) | Azure Blob Storage, AWS S3 | Bước 23 |
+| 24 | [BUILD_24](BUILD_24_Blob_Storage.md) | Azure Blob Storage | Bước 23 |
+| 24-AWS | [BUILD_24_AWS_S3](BUILD_24_AWS_S3.md) | AWS S3 Storage (Alternative) | Bước 24 |
 | 25 | [BUILD_25](BUILD_25_Background_Jobs.md) | Hangfire background jobs | Bước 24 |
-| 26 | [BUILD_26](BUILD_26_Logging.md) | Serilog, Seq, Elasticsearch | Bước 25 |
 
-**Kết quả Phase 6:** Infrastructure services đầy đủ (Caching, Storage, Email, Jobs, Logging).
+**Kết quả Phase 6:** Infrastructure services đầy đủ (Caching, Storage, Email, Blob Storage, Background Jobs).
 
 ---
 
-### **PHASE 7: Business Modules** (Modules nghiệp vụ)
+### **PHASE 7: Business Modules** (Modules nghiệp vụ) 🚧
 Xây dựng các modules nghiệp vụ và tính năng nâng cao.
 
 | Bước | Tài liệu | Nội dung | Prerequisites |
 |------|----------|----------|---------------|
-| 27 | [BUILD_27](BUILD_27_Export_Services.md) | Excel export, Report generation | Phase 6 |
-| 28 | [BUILD_28](BUILD_28_Catalog_Module.md) | Products, Categories CRUD | Bước 27 |
-| 29 | [BUILD_29](BUILD_29_Notifications.md) | SignalR notifications, Real-time updates | Bước 28 |
-| 30 | [BUILD_30](BUILD_30_Payment_Integration.md) | VNPay payment gateway | Bước 29 |
+| 26 | [BUILD_26](BUILD_26_Export_Services.md) 📝 | Excel export, Report generation | Phase 6 |
+| 27 | [BUILD_27](BUILD_27_Catalog_Module.md) 📝 | Products, Categories CRUD | Bước 26 |
+| 28 | [BUILD_28](BUILD_28_Notifications.md) 📝 | SignalR notifications, Real-time updates | Bước 27 |
+| 29 | [BUILD_29](BUILD_29_Payment_Integration.md) 📝 | VNPay payment gateway | Bước 28 |
+
+**⚠️ Lưu ý:** Phase 7 đang trong quá trình xây dựng. Tài liệu sẽ được cập nhật dần.
 
 **Kết quả Phase 7:** Business modules complete (Export, Catalog, Notifications, Payment).
 
@@ -245,20 +248,34 @@ Xây dựng các modules nghiệp vụ và tính năng nâng cao.
 
 ---
 
-### **PHASE 2: DATABASE & CORE PATTERNS**
+### **PHASE 2: CORE INFRASTRUCTURE**
 
-#### **Bước 7: Database Initialization và Seed Data** ⭐⭐⭐
-**File:** [BUILD_07_Database_Initialization.md](BUILD_07_Database_Initialization.md)
+#### **Bước 7: Logging Setup** ⭐⭐
+**File:** [BUILD_07_Logging_Setup.md](BUILD_07_Logging_Setup.md)
+
+**Nội dung:**
+1. Serilog setup (Console, File, Seq)
+2. `LoggerSettings` configuration
+3. Structured logging
+4. Request logging middleware
+5. Exception logging integration
+
+**Kết quả:** Logging hoàn chỉnh (Serilog + Seq).
+
+---
+
+#### **Bước 8: Database Initialization và Seed Data** ⭐⭐⭐
+**File:** [BUILD_08_Database_Initialization.md](BUILD_08_Database_Initialization.md)
 
 **Nội dung quan trọng - thứ tự thực hiện:**
 
-**7.1. Tạo Interfaces:**
+**8.1. Tạo Interfaces:**
 ```csharp
 IDatabaseInitializer
 ICustomSeeder
 ```
 
-**7.2. Tạo Implementations (theo thứ tự dependency):**
+**8.2. Tạo Implementations (theo thứ tự dependency):**
 ```csharp
 DatabaseInitializer (implement IDatabaseInitializer)
 ApplicationDbInitializer (kế thừa DatabaseInitializer)
@@ -271,26 +288,13 @@ CustomSeederRunner
 NotificationSeeder (implement ICustomSeeder)
 ```
 
-**7.3. Register và Run:**
+**8.3. Register và Run:**
 ```csharp
 services.AddScoped<IDatabaseInitializer, ApplicationDbInitializer>();
 await app.Services...InitializeDatabasesAsync();
 ```
 
 **Kết quả:** Database tự động migrate và seed Actions → Functions → Roles → Admin User.
-
----
-
-#### **Bước 8: Service Registration Pattern** ⭐
-**File:** [BUILD_08_Service_Registration.md](BUILD_08_Service_Registration.md)
-
-**Nội dung:**
-1. Tạo marker interfaces: `ITransientService`, `IScopedService`, `ISingletonService`
-2. Tạo `AddServices()` extension method
-3. Auto-register services bằng reflection
-4. Apply cho Application và Infrastructure layers
-
-**Kết quả:** Services tự động register, không cần thủ công.
 
 ---
 
@@ -307,6 +311,7 @@ await app.Services...InitializeDatabasesAsync();
 7. **IAggregateRoot** - Marker for aggregate roots
 8. **Entity Lifecycle Events** - Created, Updated, Deleted events
 
+**Kết quả:** Domain base classes complete với event sourcing support.
 
 ---
 
@@ -330,10 +335,34 @@ await app.Services...InitializeDatabasesAsync();
 2. Tạo `IRepository<T>`, `IReadRepository<T>`, `IRepositoryWithEvents<T>`
 3. Implement `ApplicationDbRepository<T>`
 4. Tạo `EventAddingRepositoryDecorator<T>` (decorator pattern)
-5. Tạo `SpecificationBuilderExtensions` (full code trong BUILD_11_Specification.md)
-6. Tạo base specifications: `EntitiesByBaseFilterSpec`, `EntitiesByPaginationFilterSpec`
+5. Tạo base specifications: `EntitiesByBaseFilterSpec`, `EntitiesByPaginationFilterSpec`
 
 **Kết quả:** Repository pattern hoàn chỉnh với specification support và domain events.
+
+---
+
+##### **Bước 11.1: Specification Pattern Chi tiết** ⭐⭐
+**File:** [BUILD_11_Specification.md](BUILD_11_Specification.md)
+
+**Nội dung:**
+- `SpecificationBuilderExtensions` (full implementation)
+- Advanced query building
+- Complex filtering và sorting
+- Paging support
+
+**Kết quả:** Specification pattern với advanced querying capabilities.
+
+---
+
+##### **Bước 11.2: Property Expressions Helper** ⭐
+**File:** [BUILD_11_1_PropertyExpressions.md](BUILD_11_1_PropertyExpressions.md)
+
+**Nội dung:**
+- Expression tree helpers
+- Dynamic property access
+- Type-safe property expressions
+
+**Kết quả:** Helper utilities cho dynamic querying.
 
 ---
 
@@ -405,8 +434,8 @@ await app.Services...InitializeDatabasesAsync();
 2. User DTOs (UserDetailDto, CreateUserRequest, UpdateUserRequest)
 3. User CRUD operations (Search, Get, Create, Update, Toggle Status)
 4. Email/Phone confirmation
-5. Password operations (Forgot, Reset, Change) - Note: Chi tiết implementation trong file
-6. Permission operations (GetPermissions, HasPermission với caching) - Note: Chi tiết implementation trong file
+5. Password operations (Forgot, Reset, Change)
+6. Permission operations (GetPermissions, HasPermission với caching)
 7. Email templates (registration + password reset)
 8. FluentValidation cho tất cả requests
 
@@ -483,7 +512,7 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
-### **PHASE 5: FOUNDATION PATTERNS**
+### **PHASE 5: DATA INTEGRITY PATTERNS**
 
 #### **Bước 19: Soft Delete** ⭐⭐
 **File:** [BUILD_19_Soft_Delete.md](BUILD_19_Soft_Delete.md)
@@ -497,24 +526,6 @@ await app.Services...InitializeDatabasesAsync();
 6. **Restore Methods:** Restore deleted entities
 7. **Soft Delete Specifications:** Query deleted entities (OnlyDeletedSpec, IncludeDeletedSpec)
 8. **API Endpoints:** Restore, permanent delete, get deleted
-
-**Changes to existing code:**
-```diff
-// AuditableEntity.cs
-- public abstract class AuditableEntity<T> : BaseEntity<T>, IAuditableEntity
-+ public abstract class AuditableEntity<T> : BaseEntity<T>, IAuditableEntity, ISoftDelete
-+ {
-+     public DateTime? DeletedOn { get; set; }
-+     public Guid? DeletedBy { get; set; }
-+ }
-```
-
-**Key Features:**
-- ✅ Global query filters tự động apply
-- ✅ Soft delete thay vì physical delete
-- ✅ Restore functionality
-- ✅ Permanent delete option (with caution)
-- ✅ Integration với BUILD_20 Auditing (tracks delete events)
 
 **Kết quả:** Soft delete pattern complete - xóa mềm thay vì xóa vĩnh viễn.
 
@@ -532,25 +543,6 @@ await app.Services...InitializeDatabasesAsync();
 6. **IAuditService:** Query audit logs
 7. **GetMyAuditLogsRequest:** Current user audit logs
 8. **PersonalController:** Expose audit logs via API
-
-**Dependencies:**
-- ✅ IAuditableEntity (từ BUILD_09) - Track Created/Modified
-- ✅ ISoftDelete (từ BUILD_19) - Track soft delete events
-- ✅ BaseDbContext (từ BUILD_05)
-- ✅ ISerializerService (từ BUILD_12)
-
-**Audit Integration:**
-```csharp
-// Audit automatically tracks soft delete
-if (property.IsModified && 
-    entry.Entity is ISoftDelete && 
-    propertyName == nameof(ISoftDelete.DeletedOn) &&
-    property.OriginalValue == null && 
-    property.CurrentValue != null)
-{
-    trailEntry.TrailType = TrailType.Delete; // ✅ Log as Delete
-}
-```
 
 **Kết quả:** Audit trail system complete - track tất cả thay đổi including soft delete.
 
@@ -601,17 +593,34 @@ if (property.IsModified &&
 
 ---
 
-#### **Bước 24: Blob Storage** ⭐⭐
+#### **Bước 24: Azure Blob Storage** ⭐⭐
 **File:** [BUILD_24_Blob_Storage.md](BUILD_24_Blob_Storage.md)
 
 **Nội dung:**
 1. `IBlobStorageService` interface
-2. `BlobStorageService` implementation (Azure Blob Storage)
-3. Container management
-4. Blob upload/download/delete
-5. `BlobModel`, `BlobContainerModel` DTOs
+2. `AzureBlobStorageService` implementation
+3. Container management (create, delete, list)
+4. Blob operations (upload, download, delete, exists)
+5. SAS token generation (temporary access URLs)
+6. `BlobStorageSettings` configuration
+7. `UploadBlobRequest`, `BlobModel` DTOs
 
-**Kết quả:** Azure Blob Storage integration.
+**Kết quả:** Azure Blob Storage integration hoàn chỉnh.
+
+---
+
+##### **Bước 24-AWS: AWS S3 Storage (Alternative)** ⭐⭐
+**File:** [BUILD_24_AWS_S3.md](BUILD_24_AWS_S3.md)
+
+**Nội dung:**
+1. `AwsS3StorageService` implementation (alternative cho Azure)
+2. AWS S3 bucket operations
+3. Pre-signed URL generation
+4. Prefix-based container simulation
+5. `AwsS3Settings` configuration
+6. Key differences: Azure vs AWS
+
+**Kết quả:** AWS S3 Storage implementation - alternative cho Azure Blob Storage.
 
 ---
 
@@ -624,78 +633,147 @@ if (property.IsModified &&
 3. Hangfire setup (SQL Server storage)
 4. Job scheduling (Fire-and-forget, Delayed, Recurring)
 5. `HangfireStorageSettings` configuration
-6. Hangfire dashboard
+6. Hangfire dashboard (Basic Authentication)
+7. Job examples (Email sending, cleanup tasks)
 
 **Kết quả:** Background jobs hoàn chỉnh (Hangfire).
 
 ---
 
-#### **Bước 26: Logging** ⭐⭐
-**File:** [BUILD_26_Logging.md](BUILD_26_Logging.md)
+## 📝 Template Documentation
 
-**Nội dung:**
-1. Serilog setup (Console, File, Seq, Elasticsearch)
-2. `LoggerSettings` configuration
-3. Structured logging
-4. Request logging middleware
-5. Exception logging
+### **Module Documentation Template**
+**File:** [MODULE_DOCUMENTATION_TEMPLATE.md](MODULE_DOCUMENTATION_TEMPLATE.md)
 
-**Kết quả:** Logging hoàn chỉnh (Serilog + Seq/Elasticsearch).
+Template chuẩn để viết tài liệu cho các modules mới:
+- Cấu trúc sections bắt buộc
+- Naming conventions
+- Code style requirements
+- Anti-patterns to avoid
+- Best practices
 
----
-
-### **PHASE 7: BUSINESS MODULES**
-
-#### **Bước 27: Export Services** ⭐⭐
-**File:** [BUILD_27_Export_Services.md](BUILD_27_Export_Services.md)
-
-**Nội dung:**
-1. `IExcelService` interface
-2. Excel export với ClosedXML
-3. Export audit logs, products, users
-4. Dynamic column mapping
-5. Template-based export
-
-**Kết quả:** Excel export service hoàn chỉnh.
+**Sử dụng template này khi:**
+- Xây dựng module mới (Phase 7+)
+- Document infrastructure service mới
+- Thêm feature lớn vào hệ thống
 
 ---
 
-#### **Bước 28: Catalog Module** ⭐⭐⭐
-**File:** [BUILD_28_Catalog_Module.md](BUILD_28_Catalog_Module.md)
+## 🔄 Workflow Recommendations
 
-**Nội dung:**
-1. Product entity và CRUD operations
-2. Category entity và hierarchical structure
-3. Product-Category relationships
-4. Search và filtering
-5. Specifications cho complex queries
+### **Khi bắt đầu project mới:**
+1. Follow **Phase 1** → Setup foundation
+2. Follow **Phase 2** → Setup database & logging
+3. Follow **Phase 3** → Setup core services
+4. Follow **Phase 4** → Setup authentication
+5. Follow **Phase 5** → Setup data integrity
+6. Follow **Phase 6** → Setup infrastructure services
+7. **Phase 7** → Build business features (đang phát triển) 🚧
 
-**Kết quả:** Complete catalog module với products và categories.
+### **Khi thêm feature mới:**
+1. Đọc [MODULE_DOCUMENTATION_TEMPLATE.md](MODULE_DOCUMENTATION_TEMPLATE.md)
+2. Follow template structure
+3. Update BUILD_INDEX.md với entry mới
+4. Cross-reference với các modules related
 
----
-
-#### **Bước 29: Notifications** ⭐⭐
-**File:** [BUILD_29_Notifications.md](BUILD_29_Notifications.md)
-
-**Nội dung:**
-1. SignalR setup
-2. Real-time notification hub
-3. Notification entity và persistence
-4. Push notifications to clients
-5. Notification center UI integration
-
-**Kết quả:** Real-time notifications với SignalR.
+### **Khi debug issue:**
+1. Check **BUILD_07** (Logging) - xem logs
+2. Check **BUILD_13** (Exceptions) - error handling
+3. Check **BUILD_20** (Auditing) - data changes
+4. Check **BUILD_25** (Background Jobs) - async operations
 
 ---
 
-#### **Bước 30: Payment Integration** ⭐⭐
-**File:** [BUILD_30_Payment_Integration.md](BUILD_30_Payment_Integration.md)
+## 🎯 Key Success Factors
 
-**Nội dung:**
-1. VNPay payment gateway integration
-2. Payment request và callback handling
-3. Payment verification và security
-4. Order payment flow
-5. Payment status tracking
+**✅ Tuân thủ Clean Architecture:**
+- Dependency flow đúng (outer → inner)
+- Domain không phụ thuộc infrastructure
+- Use cases trong Application layer
 
-**Kết quả:** VNPay payment gateway hoàn chỉnh.
+**✅ Follow Documentation:**
+- Đọc kỹ Prerequisites trước khi bắt đầu
+- Execute theo đúng thứ tự
+- Test sau mỗi phase
+
+**✅ Code Quality:**
+- Follow naming conventions từ MODULE_DOCUMENTATION_TEMPLATE
+- XML documentation cho public APIs
+- Unit tests cho critical logic
+
+**✅ Security:**
+- Permission-based authorization (BUILD_17)
+- JWT authentication (BUILD_15)
+- Input validation (BUILD_14)
+- Audit trails (BUILD_20)
+
+---
+
+## 📊 Development Progress
+
+### **Completed Phases:**
+- ✅ **Phase 1:** Foundation Setup (6 steps)
+- ✅ **Phase 2:** Core Infrastructure (5 steps + 2 sub-docs)
+- ✅ **Phase 3:** Core Services (3 steps)
+- ✅ **Phase 4:** Authentication & Authorization (6 steps)
+- ✅ **Phase 5:** Data Integrity Patterns (2 steps)
+- ✅ **Phase 6:** Infrastructure Services (5 steps + 1 alternative)
+
+### **In Progress:**
+- 🚧 **Phase 7:** Business Modules (Planned: 4 steps)
+
+### **Total Documentation:**
+- **Main BUILD files:** 25 (BUILD_01 → BUILD_25)
+- **Sub-documentation:** 2 (BUILD_11 specs, BUILD_24 AWS)
+- **Templates:** 1 (MODULE_DOCUMENTATION_TEMPLATE)
+- **Total pages:** 28+ documents
+
+---
+
+## 📖 Additional Resources
+
+- **Setup Guide:** [SETUP_GUIDE.md](SETUP_GUIDE.md) - Quick start guide
+- **README:** [README.md](README.md) - Project overview
+- **Module Template:** [MODULE_DOCUMENTATION_TEMPLATE.md](MODULE_DOCUMENTATION_TEMPLATE.md)
+
+---
+
+## 🗺️ Documentation Roadmap
+
+### **Upcoming Documentation (Phase 7):**
+
+#### **BUILD_26: Export Services** 📝
+- Excel export với ClosedXML
+- PDF generation
+- CSV export
+- Report templates
+- Dynamic column mapping
+
+#### **BUILD_27: Catalog Module** 📝
+- Product entity và CRUD
+- Category hierarchical structure
+- Product-Category relationships
+- Search và filtering
+- Product specifications
+
+#### **BUILD_28: Notifications** 📝
+- SignalR hub setup
+- Real-time push notifications
+- Notification entity
+- In-app notification center
+- Email/SMS notification integration
+
+#### **BUILD_29: Payment Integration** 📝
+- VNPay payment gateway
+- Payment flow (request → callback → verify)
+- Payment status tracking
+- Refund handling
+- Transaction history
+
+**📅 Expected completion:** Q2 2026
+
+---
+
+**Maintained By:** ECO.WebApi Development Team  
+**Last Updated:** 2026-01-30  
+**Version:** 2.1 (Renumbered Phase 7: BUILD_26-29)
