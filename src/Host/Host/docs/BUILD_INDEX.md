@@ -764,6 +764,14 @@ Template chuẩn để viết tài liệu cho các modules mới:
 - Product-Category relationships
 - Search và filtering
 - Product specifications
+- **DDD patterns:** Value Objects (Money, SKU), Rich Domain Models
+- **CQRS:** Commands/Queries separation
+- **Domain Events:** ProductPriceChanged, ProductLowStock
+
+**Sub-documentation:**
+- [BUILD_28_Domain_Layer.md](BUILD_28_Domain_Layer.md) - DDD patterns
+- [BUILD_28_Application_Layer.md](BUILD_28_Application_Layer.md) - CQRS
+- [BUILD_28_Infrastructure_Controllers.md](BUILD_28_Infrastructure_Controllers.md) - EF Core & APIs
 
 #### **BUILD_29: Notifications** 📝
 - SignalR hub setup
