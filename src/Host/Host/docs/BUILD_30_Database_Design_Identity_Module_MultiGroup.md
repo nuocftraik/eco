@@ -3,7 +3,8 @@
 > 📚 [Quay lại Mục lục](BUILD_INDEX.md)  
 > 📋 **Prerequisites:** BUILD_03B (Identity ERD Simplified) đã complete  
 > 🎯 **Approach:** Code-First với EF Core  
-> 🆕 **Update:** Support **1 User = Many Groups** (Many-to-Many relationship)
+> 🆕 **Update:** Support **1 User = Many Groups** (Many-to-Many relationship)  
+> ⚠️ **Important:** UserUserGroups is a **pure junction table** - NO audit fields
 
 Tài liệu này hướng dẫn **thiết kế database chi tiết cho Identity Module** với **Multi-Group Support** - Mỗi user có thể thuộc nhiều groups.
 
@@ -23,7 +24,7 @@ NEW Design: UserUserGroups junction table (1 user = many groups)
 ```
 14 Tables (thêm 1 table mới):
 ├── UserGroups (Custom)
-├── UserUserGroups (Custom - NEW: Junction table) ⭐
+├── UserUserGroups (Custom - NEW: Pure junction table) ⭐
 ├── UserGroupPermissions (Custom)
 ├── AspNetUsers (NO UserGroupId column) ⭐
 ├── AspNetRoles (Extended)
@@ -34,6 +35,12 @@ NEW Design: UserUserGroups junction table (1 user = many groups)
 ├── Permissions (Custom)
 └── RolePermissions (Custom)
 ```
+
+**Junction Table Design Philosophy:**
+- ✅ **Pure junction tables** (no extra metadata) → Use **Composite Primary Key**
+- ✅ **NO AssignedOn, AssignedBy** - Keep it simple
+- ✅ Prevents duplicate entries automatically
+- ✅ Better performance (smaller table, smaller indexes)
 
 ---
 
@@ -48,16 +55,13 @@ erDiagram
     
     UserGroups {
    nvarchar_450 Id PK "GUID"
-        nvarchar_100 Name UK "VIP, Staff, Manager, Wholesale"
+  nvarchar_100 Name UK "VIP, Staff, Manager, Wholesale"
     nvarchar_500 Description "Group purpose"
     }
     
-    UserUserGroups {
-      nvarchar_450 Id PK "GUID"
-      nvarchar_450 UserId FK "User reference"
-   nvarchar_450 UserGroupId FK "Group reference"
-      datetime2 AssignedOn "When assigned"
-        nvarchar_450 AssignedBy "Who assigned (audit)"
+  UserUserGroups {
+      nvarchar_450 UserId PK "Composite PK - User reference"
+   nvarchar_450 UserGroupId PK "Composite PK - Group reference"
     }
     
     UserGroupPermissions {
@@ -65,26 +69,26 @@ erDiagram
         nvarchar_450 UserGroupId FK "Group reference"
         nvarchar_450 PermissionId FK "Permission reference"
     }
-    
+ 
     AspNetUsers {
-        nvarchar_450 Id PK "GUID"
-        nvarchar_256 UserName UK "Unique username"
-        nvarchar_256 NormalizedUserName UK "Indexed"
-        nvarchar_256 Email "Email address"
-        nvarchar_256 NormalizedEmail UK "Indexed"
+   nvarchar_450 Id PK "GUID"
+ nvarchar_256 UserName UK "Unique username"
+   nvarchar_256 NormalizedUserName UK "Indexed"
+nvarchar_256 Email "Email address"
+ nvarchar_256 NormalizedEmail UK "Indexed"
  bit EmailConfirmed "Default: 0"
-        nvarchar_max PasswordHash "Hashed password"
+  nvarchar_max PasswordHash "Hashed password"
       nvarchar_max SecurityStamp "Security token"
         nvarchar_max ConcurrencyStamp "Concurrency"
  nvarchar_max PhoneNumber "Phone"
-      bit PhoneNumberConfirmed "Default: 0"
+ bit PhoneNumberConfirmed "Default: 0"
         bit TwoFactorEnabled "2FA flag"
-        datetimeoffset LockoutEnd "Lockout expiry"
-        bit LockoutEnabled "Can be locked"
-        int AccessFailedCount "Failed login attempts"
-        nvarchar_100 FirstName "Custom field"
-        nvarchar_100 LastName "Custom field"
-        nvarchar_500 ImageUrl "Profile image"
+datetimeoffset LockoutEnd "Lockout expiry"
+    bit LockoutEnabled "Can be locked"
+     int AccessFailedCount "Failed login attempts"
+  nvarchar_100 FirstName "Custom field"
+    nvarchar_100 LastName "Custom field"
+   nvarchar_500 ImageUrl "Profile image"
    bit IsActive "Account status"
   nvarchar_max RefreshToken "JWT refresh token"
     datetime2 RefreshTokenExpiryTime "Token expiry"
@@ -92,12 +96,12 @@ erDiagram
     }
     
     AspNetRoles {
-        nvarchar_450 Id PK "GUID"
+    nvarchar_450 Id PK "GUID"
         nvarchar_256 Name UK "Role name"
         nvarchar_256 NormalizedName UK "Indexed"
-     nvarchar_max ConcurrencyStamp "Concurrency"
+   nvarchar_max ConcurrencyStamp "Concurrency"
         nvarchar_500 Description "Custom field"
-        bit IsDefault "Default role on register"
+     bit IsDefault "Default role on register"
     bit IsStatic "System role, cannot delete"
     }
     
@@ -126,18 +130,18 @@ nvarchar_max ClaimType "Claim type"
         nvarchar_max ProviderDisplayName "Display name"
  nvarchar_450 UserId FK "User reference"
     }
-    
+ 
     AspNetUserTokens {
    nvarchar_450 UserId PK "User reference"
-        nvarchar_128 LoginProvider PK "Token provider"
+      nvarchar_128 LoginProvider PK "Token provider"
         nvarchar_128 Name PK "Token name"
-        nvarchar_max Value "Token value"
+      nvarchar_max Value "Token value"
     }
 
     Actions {
   nvarchar_450 Id PK "GUID"
-      nvarchar_50 Name UK "View, Create, Update, Delete"
-        nvarchar_100 DisplayName "Localized name"
+    nvarchar_50 Name UK "View, Create, Update, Delete"
+ nvarchar_100 DisplayName "Localized name"
   int SortOrder "Display order"
         bit IsActive "Default: 1"
     }
@@ -148,25 +152,25 @@ nvarchar_max ClaimType "Claim type"
         nvarchar_200 DisplayName "Localized name"
 nvarchar_450 ParentId FK "Hierarchical parent"
         int SortOrder "Display order"
-        nvarchar_500 Url "Menu URL"
+nvarchar_500 Url "Menu URL"
         nvarchar_100 Icon "Icon class"
-        bit IsActive "Default: 1"
+      bit IsActive "Default: 1"
     }
  
     Permissions {
       nvarchar_450 Id PK "GUID"
-        nvarchar_450 FunctionId FK "Function reference"
+  nvarchar_450 FunctionId FK "Function reference"
         nvarchar_450 ActionId FK "Action reference"
  nvarchar_200 Name UK "Function.Action format"
         nvarchar_300 DisplayName "Localized name"
-        bit IsActive "Default: 1"
+      bit IsActive "Default: 1"
     }
   
     RolePermissions {
         nvarchar_450 Id PK "GUID"
         nvarchar_450 RoleId FK "Role reference"
-      nvarchar_450 PermissionId FK "Permission reference"
-    }
+  nvarchar_450 PermissionId FK "Permission reference"
+  }
     
     AspNetUsers ||--o{ AspNetUserRoles : assigned
     AspNetRoles ||--o{ AspNetUserRoles : contains
@@ -185,8 +189,8 @@ nvarchar_450 ParentId FK "Hierarchical parent"
 ```
 
 **Key Relationships:**
-- ✅ **AspNetUsers ↔ UserGroups**: Many-to-Many via UserUserGroups junction table
-- ✅ **UserGroups ↔ Permissions**: Many-to-Many via UserGroupPermissions junction table
+- ✅ **AspNetUsers ↔ UserGroups**: Many-to-Many via UserUserGroups **(Composite PK)** ⭐
+- ✅ **UserGroups ↔ Permissions**: Many-to-Many via UserGroupPermissions
 - ✅ **AspNetUsers ↔ AspNetRoles**: Many-to-Many via AspNetUserRoles
 - ✅ **AspNetRoles ↔ Permissions**: Many-to-Many via RolePermissions
 - ✅ **Functions ↔ Actions**: Many-to-Many via Permissions
@@ -195,46 +199,36 @@ nvarchar_450 ParentId FK "Hierarchical parent"
 
 ## 2. Key Entity Changes
 
-### **2.1. UserUserGroup Entity** ⭐ (NEW - Junction Table)
+### **2.1. UserUserGroup Entity** ⭐ (NEW - Pure Junction Table)
 
 **File:** `src/Core/Domain/Identity/UserUserGroup.cs`
 
 ```csharp
+using Microsoft.EntityFrameworkCore;
+
 namespace ECO.WebApi.Domain.Identity;
 
 /// <summary>
 /// Junction table: User ↔ UserGroup (Many-to-Many)
 /// Allows 1 user to belong to multiple groups
+/// Uses COMPOSITE PRIMARY KEY (UserId, UserGroupId) - NO surrogate Id
+/// NO audit fields (AssignedOn, AssignedBy) - Keep it simple
 /// </summary>
+[PrimaryKey(nameof(UserId), nameof(UserGroupId))]
 public sealed class UserUserGroup
 {
- /// <summary>
-    /// Primary key
-    /// </summary>
-    public Guid Id { get; private set; }
-
     /// <summary>
-    /// User ID (Foreign Key)
+    /// User ID (Part of composite key)
     /// </summary>
     public Guid UserId { get; private set; }
 
     /// <summary>
-    /// User group ID (Foreign Key)
+    /// User group ID (Part of composite key)
     /// </summary>
     public Guid UserGroupId { get; private set; }
 
-    /// <summary>
-    /// When user was assigned to this group
-    /// </summary>
-    public DateTime AssignedOn { get; private set; }
-
-    /// <summary>
-    /// Who assigned user to this group
-    /// </summary>
-    public Guid? AssignedBy { get; private set; }
-
     // ==================== Navigation Properties ====================
-    
+  
     /// <summary>
     /// User reference
     /// </summary>
@@ -243,7 +237,7 @@ public sealed class UserUserGroup
     /// <summary>
     /// User group reference
     /// </summary>
-    public UserGroup UserGroup { get; private set; } = default!;
+  public UserGroup UserGroup { get; private set; } = default!;
 
     // ==================== Constructors ====================
 
@@ -255,9 +249,9 @@ public sealed class UserUserGroup
     /// <summary>
     /// Assign user to user group
     /// </summary>
-    public static UserUserGroup Create(Guid userId, Guid userGroupId, Guid? assignedBy = null)
+    public static UserUserGroup Create(Guid userId, Guid userGroupId)
     {
-        if (userId == Guid.Empty)
+     if (userId == Guid.Empty)
          throw new ArgumentException("UserId cannot be empty", nameof(userId));
 
         if (userGroupId == Guid.Empty)
@@ -265,21 +259,24 @@ public sealed class UserUserGroup
 
     return new UserUserGroup
       {
-            Id = Guid.NewGuid(),
     UserId = userId,
-      UserGroupId = userGroupId,
-  AssignedOn = DateTime.UtcNow,
-            AssignedBy = assignedBy
+ UserGroupId = userGroupId
     };
     }
 }
 ```
 
 **Key Points:**
-- ✅ **Many-to-Many** junction table
-- ✅ `AssignedOn` - Track when user joined group
-- ✅ `AssignedBy` - Track who assigned (audit)
-- ✅ Composite unique constraint will prevent duplicate assignments
+- ✅ **Composite Primary Key:** `(UserId, UserGroupId)` prevents duplicates automatically
+- ✅ **NO AssignedOn, AssignedBy:** Pure junction table, no audit metadata
+- ✅ **Simpler:** Less complexity, better performance
+- ✅ **Natural Key:** Semantic meaning
+
+**Why NO audit fields?**
+- ❌ **Audit trail not critical for group membership** (can be tracked at application level if needed)
+- ❌ **Adds unnecessary complexity** (extra columns, indexes)
+- ❌ **Performance impact** (larger table, slower queries)
+- ✅ **Keep junction tables pure** (best practice for Many-to-Many)
 
 ---
 
@@ -311,7 +308,7 @@ public sealed class UserGroup
     [MaxLength(100)]
     public string Name { get; private set; } = default!;
 
-    /// <summary>
+  /// <summary>
     /// Group description/purpose
     /// </summary>
     [MaxLength(500)]
@@ -326,7 +323,7 @@ public sealed class UserGroup
 
     /// <summary>
     /// Permissions assigned to this group
-    /// </summary>
+ /// </summary>
     public ICollection<UserGroupPermission> Permissions { get; private set; } = new List<UserGroupPermission>();
 
     // ==================== Constructors ====================
@@ -336,13 +333,13 @@ public sealed class UserGroup
 
     // ==================== Factory Methods ====================
     
-    /// <summary>
+ /// <summary>
   /// Create new user group
     /// </summary>
     public static UserGroup Create(string name, string? description = null)
     {
     if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Group name is required", nameof(name));
+    throw new ArgumentException("Group name is required", nameof(name));
 
         if (name.Length > 100)
        throw new ArgumentException("Group name must be <= 100 characters", nameof(name));
@@ -356,13 +353,13 @@ public sealed class UserGroup
     }
 
     // ==================== Business Methods ====================
-    
+  
   /// <summary>
     /// Update group details
     /// </summary>
     public void UpdateDetails(string name, string? description)
     {
-        if (string.IsNullOrWhiteSpace(name))
+ if (string.IsNullOrWhiteSpace(name))
    throw new ArgumentException("Group name is required", nameof(name));
 
         if (name.Length > 100)
@@ -374,14 +371,14 @@ public sealed class UserGroup
 
     /// <summary>
     /// Assign user to this group
-    /// </summary>
-    public void AssignUser(Guid userId, Guid? assignedBy = null)
+  /// </summary>
+    public void AssignUser(Guid userId)
     {
         // Check if user already in group
         if (UserAssignments.Any(ua => ua.UserId == userId))
       return; // Already assigned
 
-        var assignment = UserUserGroup.Create(userId, Id, assignedBy);
+        var assignment = UserUserGroup.Create(userId, Id);
     UserAssignments.Add(assignment);
   }
 
@@ -392,8 +389,8 @@ public sealed class UserGroup
     {
  var assignment = UserAssignments.FirstOrDefault(ua => ua.UserId == userId);
         if (assignment != null)
-        {
-            UserAssignments.Remove(assignment);
+ {
+  UserAssignments.Remove(assignment);
         }
     }
 
@@ -402,19 +399,19 @@ public sealed class UserGroup
     /// </summary>
     public void AssignPermission(Guid permissionId)
     {
-        if (Permissions.Any(p => p.PermissionId == permissionId))
+      if (Permissions.Any(p => p.PermissionId == permissionId))
    return; // Already assigned
 
       var userGroupPermission = UserGroupPermission.Create(Id, permissionId);
   Permissions.Add(userGroupPermission);
     }
 
-    /// <summary>
+  /// <summary>
     /// Remove permission from group
-    /// </summary>
-    public void RemovePermission(Guid permissionId)
+ /// </summary>
+ public void RemovePermission(Guid permissionId)
 {
-        var permission = Permissions.FirstOrDefault(p => p.PermissionId == permissionId);
+    var permission = Permissions.FirstOrDefault(p => p.PermissionId == permissionId);
   if (permission != null)
         {
             Permissions.Remove(permission);
@@ -430,7 +427,8 @@ public sealed class UserGroup
 
 **Key Changes:**
 - ✅ Changed `Users` navigation to `UserAssignments` (via junction table)
-- ✅ Added `AssignUser()` and `RemoveUser()` methods
+- ✅ `AssignUser()` method **NO assignedBy parameter** (simplified)
+- ✅ Added `RemoveUser()` method
 - ✅ Added `GetUserIds()` helper method
 
 ---
@@ -456,7 +454,7 @@ public class ApplicationUser : IdentityUser<Guid>
     public string? ImageUrl { get; set; }
     public bool IsActive { get; set; } = true;
     public string? RefreshToken { get; set; }
-    public DateTime? RefreshTokenExpiryTime { get; set; }
+  public DateTime? RefreshTokenExpiryTime { get; set; }
     public string? ObjectId { get; set; } // Azure AD
 
     // ==================== Navigation Properties ====================
@@ -474,7 +472,7 @@ public class ApplicationUser : IdentityUser<Guid>
     /// <summary>
     /// User claims
   /// </summary>
-    public ICollection<IdentityUserClaim<Guid>> Claims { get; set; } = new List<IdentityUserClaim<Guid>>();
+public ICollection<IdentityUserClaim<Guid>> Claims { get; set; } = new List<IdentityUserClaim<Guid>>();
 
     /// <summary>
     /// External logins
@@ -501,13 +499,13 @@ public class ApplicationUser : IdentityUser<Guid>
     /// <summary>
     /// Check if user belongs to specific group
     /// </summary>
-    public bool IsInGroup(Guid userGroupId) => GroupAssignments.Any(ga => ga.UserGroupId == userGroupId);
+  public bool IsInGroup(Guid userGroupId) => GroupAssignments.Any(ga => ga.UserGroupId == userGroupId);
 
 /// <summary>
     /// Check if user belongs to any of the specified groups
     /// </summary>
-    public bool IsInAnyGroup(params Guid[] userGroupIds) => 
-        GroupAssignments.Any(ga => userGroupIds.Contains(ga.UserGroupId));
+  public bool IsInAnyGroup(params Guid[] userGroupIds) => 
+   GroupAssignments.Any(ga => userGroupIds.Contains(ga.UserGroupId));
 }
 ```
 
@@ -535,6 +533,7 @@ namespace ECO.WebApi.Infrastructure.Persistence.Configurations.Identity;
 /// <summary>
 /// EF Core configuration for UserUserGroup junction table
 /// Enables Many-to-Many relationship between User and UserGroup
+/// Uses COMPOSITE PRIMARY KEY - NO surrogate Id, NO audit fields
 /// </summary>
 public class UserUserGroupConfiguration : IEntityTypeConfiguration<UserUserGroup>
 {
@@ -543,8 +542,8 @@ public class UserUserGroupConfiguration : IEntityTypeConfiguration<UserUserGroup
         // Table mapping
         builder.ToTable("UserUserGroups", "Identity");
 
-        // Primary key
-        builder.HasKey(uug => uug.Id);
+        // ⭐ Composite Primary Key (configured via [PrimaryKey] attribute in entity)
+        // No need to configure here
 
  // Properties
         builder.Property(uug => uug.UserId)
@@ -553,19 +552,7 @@ public class UserUserGroupConfiguration : IEntityTypeConfiguration<UserUserGroup
    builder.Property(uug => uug.UserGroupId)
   .IsRequired();
 
-   builder.Property(uug => uug.AssignedOn)
-  .IsRequired()
-            .HasDefaultValueSql("GETUTCDATE()");
-
-        builder.Property(uug => uug.AssignedBy)
-  .IsRequired(false);
-
-     // Composite unique constraint (prevent duplicate assignments)
-  builder.HasIndex(uug => new { uug.UserId, uug.UserGroupId })
-            .IsUnique()
-            .HasDatabaseName("IX_UserUserGroups_UserGroup");
-
-        // Indexes for FK columns
+      // Indexes for FK columns (improve query performance)
         builder.HasIndex(uug => uug.UserId)
   .HasDatabaseName("IX_UserUserGroups_UserId");
 
@@ -573,10 +560,10 @@ public class UserUserGroupConfiguration : IEntityTypeConfiguration<UserUserGroup
      .HasDatabaseName("IX_UserUserGroups_UserGroupId");
 
    // Relationships
-        builder.HasOne(uug => uug.User)
+ builder.HasOne(uug => uug.User)
           .WithMany(u => u.GroupAssignments)
             .HasForeignKey(uug => uug.UserId)
-            .OnDelete(DeleteBehavior.Cascade); // Delete assignments when user deleted
+       .OnDelete(DeleteBehavior.Cascade); // Delete assignments when user deleted
 
         builder.HasOne(uug => uug.UserGroup)
   .WithMany(ug => ug.UserAssignments)
@@ -587,9 +574,9 @@ public class UserUserGroupConfiguration : IEntityTypeConfiguration<UserUserGroup
 ```
 
 **Key Points:**
-- ✅ Junction table cho Many-to-Many
-- ✅ Composite unique index prevents duplicate `(UserId, UserGroupId)`
-- ✅ `AssignedOn` default to `GETUTCDATE()`
+- ✅ **Composite Primary Key:** `(UserId, UserGroupId)` prevents duplicates
+- ✅ **NO surrogate Id:** Cleaner, more semantic
+- ✅ **NO AssignedOn, AssignedBy:** Pure junction table
 - ✅ Cascade delete - assignments deleted when user or group deleted
 
 ---
@@ -615,31 +602,31 @@ public class UserGroupConfiguration : IEntityTypeConfiguration<UserGroup>
         // Table mapping
         builder.ToTable("UserGroups", "Identity");
 
-        // Primary key
+   // Primary key
   builder.HasKey(ug => ug.Id);
 
         // Properties
    builder.Property(ug => ug.Name)
-            .IsRequired()
+ .IsRequired()
   .HasMaxLength(100);
 
-    builder.Property(ug => ug.Description)
+  builder.Property(ug => ug.Description)
        .HasMaxLength(500);
 
         // Unique constraint on Name
-        builder.HasIndex(ug => ug.Name)
+  builder.HasIndex(ug => ug.Name)
 .IsUnique()
       .HasDatabaseName("IX_UserGroups_Name");
 
         // Relationships
    builder.HasMany(ug => ug.UserAssignments)
-            .WithOne(uug => uug.UserGroup)
-      .HasForeignKey(uug => uug.UserGroupId)
+     .WithOne(uug => uug.UserGroup)
+   .HasForeignKey(uug => uug.UserGroupId)
     .OnDelete(DeleteBehavior.Cascade);
 
     builder.HasMany(ug => ug.Permissions)
         .WithOne(ugp => ugp.UserGroup)
-    .HasForeignKey(ugp => ugp.UserGroupId)
+.HasForeignKey(ugp => ugp.UserGroupId)
       .OnDelete(DeleteBehavior.Cascade);
     }
 }
@@ -668,26 +655,26 @@ namespace ECO.WebApi.Infrastructure.Persistence.Configurations.Identity;
 public class ApplicationUserConfiguration : IEntityTypeConfiguration<ApplicationUser>
 {
     public void Configure(EntityTypeBuilder<ApplicationUser> builder)
-    {
-        // Custom properties
+  {
+     // Custom properties
         builder.Property(u => u.FirstName)
    .HasMaxLength(100);
 
     builder.Property(u => u.LastName)
-            .HasMaxLength(100);
+   .HasMaxLength(100);
 
  builder.Property(u => u.ImageUrl)
           .HasMaxLength(500);
 
-        builder.Property(u => u.IsActive)
+builder.Property(u => u.IsActive)
      .IsRequired()
             .HasDefaultValue(true);
 
-        builder.Property(u => u.ObjectId)
+  builder.Property(u => u.ObjectId)
             .HasMaxLength(256);
 
-        // Relationships
-        builder.HasMany(u => u.GroupAssignments)
+   // Relationships
+      builder.HasMany(u => u.GroupAssignments)
        .WithOne(uug => uug.User)
      .HasForeignKey(uug => uug.UserId)
         .OnDelete(DeleteBehavior.Cascade);
@@ -714,9 +701,9 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
 private async Task SeedUserUserGroupsAsync()
 {
     if (await _context.UserUserGroups.AnyAsync())
-    {
+ {
         _logger.LogInformation("UserUserGroups already seeded, skipping...");
-        return;
+    return;
 }
 
     _logger.LogInformation("Seeding UserUserGroups...");
@@ -733,9 +720,9 @@ private async Task SeedUserUserGroupsAsync()
         // Admin belongs to both Staff AND Manager groups
    var adminAssignments = new[]
         {
-      UserUserGroup.Create(Guid.Parse(adminUser.Id), staffGroup.Id),
+      UserUserGroup.Create(Guid.Parse(adminUser.Id), staffGroup.Id),  // ✅ NO assignedBy parameter
             UserUserGroup.Create(Guid.Parse(adminUser.Id), managerGroup.Id)
-        };
+     };
 
   await _context.UserUserGroups.AddRangeAsync(adminAssignments);
     }
@@ -745,6 +732,10 @@ private async Task SeedUserUserGroupsAsync()
     _logger.LogInformation("Seeded UserUserGroups");
 }
 ```
+
+**Key Changes:**
+- ✅ `UserUserGroup.Create()` only takes `(userId, userGroupId)` - NO assignedBy
+- ✅ Simpler, cleaner code
 
 ---
 
@@ -944,6 +935,7 @@ CREATE TABLE AspNetUsers (
 
 -- 1 user = 1 group only ❌
 ```
+
 
 ### **NEW Design (N-to-N):**
 ```sql
