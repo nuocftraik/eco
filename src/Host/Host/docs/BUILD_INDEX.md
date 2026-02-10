@@ -147,11 +147,19 @@ Xây dựng các modules nghiệp vụ và tính năng nâng cao.
 | 27 | [BUILD_27](BUILD_27_PDF_Export.md) 📝 | PDF generation, Report templates | Bước 26 |
 | 28 | [BUILD_28](BUILD_28_Catalog_Module.md) 📝 | Products, Categories CRUD | Bước 27 |
 | 29 | [BUILD_29](BUILD_29_Notifications.md) 📝 | SignalR notifications, Real-time updates | Bước 28 |
-| 30 | [BUILD_30](BUILD_30_Payment_Integration.md) 📝 | VNPay payment gateway | Bước 29 |
+| 30 | [BUILD_30](BUILD_30_Database_Design_Identity_Module_MultiGroup.md) ✅ | Database Design - Identity Module (Multi-Group Support) | Phase 5 |
+| 31 | [BUILD_31](BUILD_31_Database_Design_Catalog_Module.md) ✅ | Database Design - Catalog Module (Code-First) | Phase 5 |
+| 31.2 | [BUILD_31_Part2](BUILD_31_Part2.md) ✅ | Catalog Module Part 2: Attributes, Tags, Reviews | Bước 31 |
+| 32 | [BUILD_32](BUILD_32_Database_Design_Order_Cart_Module.md) ✅ | Database Design - Order & Cart Module (Code-First) | Bước 31 |
+| 32.2 | [BUILD_32_Part2](BUILD_32_Part2.md) ✅ | Order & Cart Module Part 2: Payment, Shipping, Configurations | Bước 32 |
 
-**⚠️ Lưu ý:** Phase 7 đang trong quá trình xây dựng. Tài liệu sẽ được cập nhật dần.
+**⚠️ Lưu ý:** Phase 7 đang trong quá trình xây dựng. 
+- ✅ **BUILD_30:** Database Design for Identity Module (Multi-Group) - COMPLETED
+- ✅ **BUILD_31:** Database Design for Catalog Module (2 parts) - COMPLETED
+- ✅ **BUILD_32:** Database Design for Order & Cart Module (2 parts) - COMPLETED
+- 🚧 **BUILD_26-29:** Planned features - Documentation in progress
 
-**Kết quả Phase 7:** Business modules complete (Excel Export, PDF Export, Catalog, Notifications, Payment).
+**Kết quả Phase 7:** Business modules complete (Export Services, PDF Export, Catalog with comprehensive database design, Notifications).
 
 ---
 
@@ -721,13 +729,17 @@ Template chuẩn để viết tài liệu cho các modules mới:
 - ✅ **Phase 6:** Infrastructure Services (5 steps + 1 alternative)
 
 ### **In Progress:**
-- 🚧 **Phase 7:** Business Modules (Planned: 5 steps)
+- 🚧 **Phase 7:** Business Modules
+  - ✅ BUILD_30: Database Design - Identity Module (Multi-Group) - COMPLETED
+  - ✅ BUILD_31: Database Design - Catalog Module (2 parts) - COMPLETED
+  - ✅ BUILD_32: Database Design - Order & Cart Module (2 parts) - COMPLETED
+  - 📝 BUILD_26-29: Planned features (Export Services, PDF, Application Layer, Notifications)
 
 ### **Total Documentation:**
-- **Main BUILD files:** 30 (BUILD_01 → BUILD_30)
-- **Sub-documentation:** 2 (BUILD_11 specs, BUILD_24 AWS)
+- **Main BUILD files:** 32 (BUILD_01 → BUILD_32)
+- **Sub-documentation:** 5 (BUILD_11 specs, BUILD_11.2, BUILD_24 AWS, BUILD_31 Part 2, BUILD_32 Part 2)
 - **Templates:** 1 (MODULE_DOCUMENTATION_TEMPLATE)
-- **Total pages:** 33+ documents
+- **Total pages:** 38+ documents
 
 ---
 
@@ -758,20 +770,17 @@ Template chuẩn để viết tài liệu cho các modules mới:
 - Watermarks và digital signatures
 - PDF merge và split operations
 
-#### **BUILD_28: Catalog Module** 📝
-- Product entity và CRUD
-- Category hierarchical structure
-- Product-Category relationships
-- Search và filtering
-- Product specifications
-- **DDD patterns:** Value Objects (Money, SKU), Rich Domain Models
+#### **BUILD_28: Catalog Module Application Layer** 📝
 - **CQRS:** Commands/Queries separation
-- **Domain Events:** ProductPriceChanged, ProductLowStock
+- Product CRUD use cases (Create, Update, Delete, GetById, Search)
+- Category CRUD use cases (Create, Update, Delete, GetById, GetTree)
+- DTOs và Request/Response models
+- FluentValidation rules
+- Mapster configuration
 
 **Sub-documentation:**
-- [BUILD_28_Domain_Layer.md](BUILD_28_Domain_Layer.md) - DDD patterns
-- [BUILD_28_Application_Layer.md](BUILD_28_Application_Layer.md) - CQRS
-- [BUILD_28_Infrastructure_Controllers.md](BUILD_28_Infrastructure_Controllers.md) - EF Core & APIs
+- [BUILD_28_Application_Layer.md](BUILD_28_Application_Layer.md) - CQRS patterns
+- [BUILD_28_Infrastructure_Controllers.md](BUILD_28_Infrastructure_Controllers.md) - REST APIs
 
 #### **BUILD_29: Notifications** 📝
 - SignalR hub setup
@@ -783,17 +792,99 @@ Template chuẩn để viết tài liệu cho các modules mới:
 - **Multi-Channel:** Web (SignalR), Email (future), SMS (future)
 - **Scalable:** Redis backplane support
 
-#### **BUILD_30: Payment Integration** 📝
-- VNPay payment gateway
-- Payment flow (request → callback → verify)
-- Payment status tracking
-- Refund handling
-- Transaction history
+#### **BUILD_30: Database Design - Identity Module (Multi-Group)** ✅ COMPLETED
+- **Multi-Group Support:** Users can belong to multiple groups
+- **Group Hierarchy:** Parent-child relationships between groups
+- **Group-based Permissions:** Fine-grained access control per group
+- **User Group Roles:** Different roles for users in different groups
+- **Complete EF Core Configurations**
+- **Research-Based Architecture:** Enterprise-ready patterns
 
-**📅 Expected completion:** Q2 2026
+**Database Summary:**
+```
+11 Core Tables:
+├── Products (Marketing info ONLY)
+├── Variants (Price & Inventory - ALWAYS)
+├── Attributes (Dynamic product attributes)
+├── AttributeValues (Attribute value options)
+├── VariantAttributeValues (Junction: Composite PK)
+├── Categories (Hierarchical with Materialized Path)
+├── ProductCategories (Junction: Composite PK)
+├── Tags (Flat tags)
+├── ProductTags (Junction: Composite PK)
+├── UserReviews (Variant-specific reviews)
+└── Audit Tables (Automatic via AuditableEntity)
+```
+
+**📅 Expected completion:** 
+- ✅ BUILD_30: Completed (2025-02-01) - Identity Module Multi-Group
+- ✅ BUILD_31: Completed (2025-02-01) - Catalog Module
+- 🚧 BUILD_26-29: Q2 2026
+
+#### **BUILD_32: Database Design - Order & Cart Module** ✅ COMPLETED
+- **Part 1:** Order Entity, Cart Entity, Enums
+  - ✅ OrderStatus, PaymentMethod, PaymentStatus Enums
+  - ✅ **Price Snapshot Strategy** - Store prices at order time (NOT reference)
+  - ✅ Order Entity (OrderNumber, Status, TotalAmount with breakdown)
+  - ✅ Order Factory Methods (CreateFromCart with price snapshots)
+  - ✅ Order Business Logic (ConfirmPayment, Ship, Deliver, Cancel)
+  - ✅ OrderStatusHistory (Complete audit trail)
+  - ✅ Domain Events (OrderCreated, OrderConfirmed, OrderShipped, OrderDelivered, OrderCancelled)
+  
+- **Part 2:** OrderItem, Cart, Shipping, Payment & Configurations
+  - ✅ OrderItem Entity (Snapshot: UnitPrice, ProductName, SKU, Image)
+  - ✅ Cart Entity (Persistent + Anonymous support with UserId/SessionId)
+  - ✅ CartItem Entity (with quantity management)
+  - ✅ Cart Business Logic (AddItem, UpdateQuantity, RemoveItem, Clear, Merge carts)
+  - ✅ ShippingAddress Entity (Reusable addresses with IsDefault)
+  - ✅ PaymentTransaction Entity (Multiple payment attempts support)
+  - ✅ Coupon System (Optional: DiscountType, Usage limits)
+  - ✅ OrderCoupon Junction (Composite PK, DiscountApplied snapshot)
+  - ✅ Complete EF Core Configurations (9 files)
+  - ✅ Domain Event Handlers (OrderConfirmedEventHandler with inventory deduction)
+  - ✅ Usage Examples (Create order from cart, Add to cart, Merge carts)
+  - ✅ Seed Data Examples (ShippingAddresses, Coupons)
+
+**Key Features:**
+- ✅ **Price Snapshot Strategy** (Historical accuracy: Store prices at order time)
+- ✅ **Event-Driven Order Lifecycle** (Track every status change with domain events)
+- ✅ **Persistent + Anonymous Carts** (Support both logged-in and guest users)
+- ✅ **Cart Merge on Login** (Transfer anonymous cart to user cart)
+- ✅ **Inventory Integration** (Auto deduct stock on order confirmation, restore on cancellation)
+- ✅ **Complete Audit Trail** (OrderStatusHistory tracks all transitions)
+- ✅ **Payment Gateway Ready** (PaymentTransaction with JSON metadata)
+- ✅ **Coupon System** (Percentage/Fixed discount with usage limits)
+- ✅ **Research-Based** (Shopify, Amazon, eBay order patterns)
+
+**Database Summary:**
+```
+10 Core Tables:
+├── Orders (Order header with TotalAmount breakdown)
+├── OrderItems (Line items with price snapshots)
+├── OrderStatusHistory (Complete audit trail)
+├── ShippingAddresses (Reusable delivery addresses)
+├── PaymentTransactions (Payment gateway integration)
+├── Carts (Persistent + Anonymous with expiration)
+├── CartItems (Cart contents with variant references)
+├── Coupons (Discount codes with usage limits)
+├── OrderCoupons (Junction: Composite PK with DiscountApplied)
+└── Audit Tables (Automatic via AuditableEntity)
+```
+
+**Workflow:**
+```
+Browse Catalog (BUILD_31) → Add to Cart → Checkout → 
+Create Order (Price Snapshot) → Payment → Confirm Order → 
+Deduct Inventory → Send Email → Ship → Deliver
+```
+
+**📅 Expected completion:** 
+- ✅ BUILD_30: Completed (2025-02-01) - Identity Module Multi-Group
+- ✅ BUILD_31: Completed (2025-02-01) - Catalog Module
+- ✅ BUILD_32: Completed (2025-02-01) - Order & Cart Module
+- 🚧 BUILD_26-29: Q2 2026
 
 ---
-
 **Maintained By:** ECO.WebApi Development Team  
-**Last Updated:** 2026-01-30  
-**Version:** 2.2 (Added BUILD_27 PDF Export Service, Renumbered Phase 7: BUILD_26-30)
+**Last Updated:** 2026-02-01  
+**Version:** 2.5 (BUILD_30 Identity + BUILD_31 Catalog + BUILD_32 Order & Cart Complete - E-commerce Core Ready)
