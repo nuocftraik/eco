@@ -1,7 +1,8 @@
-# Repository Pattern và Specification
+﻿# BUILD_11 - Repository Pattern và Specification
 
-> 📖 [Quay lại Mục lục](BUILD_INDEX.md)  
-> 📋 **Prerequisites:** Bước 10 (Service Registration) đã hoàn thành
+> 📚 [Quay lại Mục lục](BUILD_INDEX.md)
+> 📋 **Prerequisites:** BUILD_10 (Service Registration) đã hoàn thành  
+> ⏱️ **Thời gian:** Khoảng 30 phút
 
 Tài liệu này hướng dẫn về Repository Pattern với Ardalis.Specification và Domain Events.
 
@@ -31,13 +32,13 @@ public class ProductsController
 {
     public async Task<ActionResult> Search([FromBody] SearchProductsRequest request)
     {
-  // Specification tự động build query từ request
+    // Specification tự động build query từ request
         var spec = new ProductsBySearchSpec(request);
-        
+   
         var products = await _repository.ListAsync(spec); // Query with filters
         var count = await _repository.CountAsync(spec);   // Count without data
         
-        return Ok(new PaginatedResult(products, count, request.PageNumber, request.PageSize));
+    return Ok(new PaginatedResult(products, count, request.PageNumber, request.PageSize));
     }
 }
 ```
@@ -48,10 +49,10 @@ public class ProductsController
 
 ### Bước 2.1: Search Model
 
-**File:** `src/Core/Application/Common/Models/Search.cs`
+**File:** `src/Application/Common/Models/Search.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Models;
+namespace {ProjectName}.Application.Common.Models;
 
 /// <summary>
 /// Advanced search với keyword trong các fields cụ thể
@@ -83,10 +84,10 @@ public class Search
 
 ### Bước 2.2: Filter Model
 
-**File:** `src/Core/Application/Common/Models/Filter.cs`
+**File:** `src/Application/Common/Models/Filter.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Models;
+namespace {ProjectName}.Application.Common.Models;
 
 /// <summary>
 /// Advanced filter với operators và logic
@@ -106,7 +107,7 @@ public class Filter
     /// <summary>
     /// Operator: "eq", "neq", "gt", "gte", "lt", "lte", "contains", "startswith", "endswith"
     /// </summary>
-    public string? Operator { get; set; }
+public string? Operator { get; set; }
     
     /// <summary>
     /// Value để compare
@@ -151,10 +152,10 @@ public class Filter
 
 ### Bước 2.3: BaseFilter và PaginationFilter
 
-**File:** `src/Core/Application/Common/Models/BaseFilter.cs`
+**File:** `src/Application/Common/Models/BaseFilter.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Models;
+namespace {ProjectName}.Application.Common.Models;
 
 /// <summary>
 /// Base filter cho mọi search requests
@@ -178,10 +179,10 @@ public class BaseFilter
 }
 ```
 
-**File:** `src/Core/Application/Common/Models/PaginationFilter.cs`
+**File:** `src/Application/Common/Models/PaginationFilter.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Models;
+namespace {ProjectName}.Application.Common.Models;
 
 /// <summary>
 /// Pagination filter kế thừa BaseFilter, thêm pagination và sorting
@@ -207,7 +208,7 @@ public class PaginationFilter : BaseFilter
 public static class PaginationFilterExtensions
 {
     public static bool HasOrderBy(this PaginationFilter filter) =>
-    filter.OrderBy?.Any() is true;
+        filter.OrderBy?.Any() is true;
 }
 ```
 
@@ -346,9 +347,9 @@ public class ProductsBySearchSpec : Specification<Product>
 
 ```csharp
 using Ardalis.Specification;
-using ECO.WebApi.Application.Common.Models;
+using {ProjectName}.Application.Common.Models;
 
-namespace ECO.WebApi.Application.Common.Specification;
+namespace {ProjectName}.Application.Common.Specification;
 
 /// <summary>
 /// Base spec với search + filter (không có pagination)
@@ -356,7 +357,7 @@ namespace ECO.WebApi.Application.Common.Specification;
 public class EntitiesByBaseFilterSpec<T> : Specification<T>
 {
     public EntitiesByBaseFilterSpec(BaseFilter filter) =>
-        Query.SearchBy(filter);
+  Query.SearchBy(filter);
 }
 
 /// <summary>
@@ -364,21 +365,17 @@ public class EntitiesByBaseFilterSpec<T> : Specification<T>
 /// </summary>
 public class EntitiesByBaseFilterSpec<T, TResult> : Specification<T, TResult>
 {
-    public EntitiesByBaseFilterSpec(BaseFilter filter) =>
+  public EntitiesByBaseFilterSpec(BaseFilter filter) =>
         Query.SearchBy(filter);
 }
 ```
-
----
-
 ### Bước 4.2: EntitiesByPaginationFilterSpec
-
-**File:** `src/Core/Application/Common/Specification/EntitiesByPaginationFilterSpec.cs`
+**File:** `src/Application/Common/Specification/EntitiesByPaginationFilterSpec.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Models;
+using {ProjectName}.Application.Common.Models;
 
-namespace ECO.WebApi.Application.Common.Specification;
+namespace {ProjectName}.Application.Common.Specification;
 
 /// <summary>
 /// Base spec với search + filter + pagination
@@ -386,7 +383,7 @@ namespace ECO.WebApi.Application.Common.Specification;
 public class EntitiesByPaginationFilterSpec<T> : EntitiesByBaseFilterSpec<T>
 {
     public EntitiesByPaginationFilterSpec(PaginationFilter filter)
-    : base(filter) =>
+     : base(filter) =>
         Query.PaginateBy(filter);
 }
 
@@ -397,7 +394,7 @@ public class EntitiesByPaginationFilterSpec<T, TResult> : EntitiesByBaseFilterSp
 {
     public EntitiesByPaginationFilterSpec(PaginationFilter filter)
         : base(filter) =>
-      Query.PaginateBy(filter);
+  Query.PaginateBy(filter);
 }
 ```
 
@@ -474,22 +471,20 @@ var dtos = await _repository.ListAsync(spec); // Return List<ProductDto>
 ---
 
 ## 5. Repository Interfaces
-
 ### Bước 5.1: IRepository Interfaces
-
-**File:** `src/Core/Application/Common/Persistence/IRepository.cs`
+**File:** `src/Application/Common/Persistence/IRepository.cs`
 
 ```csharp
 using Ardalis.Specification;
-using ECO.WebApi.Domain.Common.Contracts;
+using {ProjectName}.Domain.Common.Contracts;
 
-namespace ECO.WebApi.Application.Common.Persistence;
+namespace {ProjectName}.Application.Common.Persistence;
 
 /// <summary>
 /// Read/write repository cho aggregate roots
 /// </summary>
 public interface IRepository<T> : IRepositoryBase<T>
-  where T : class, IAggregateRoot
+    where T : class, IAggregateRoot
 {
 }
 
@@ -505,7 +500,7 @@ public interface IReadRepository<T> : IReadRepositoryBase<T>
 /// Repository tự động thêm Domain Events khi Add/Update/Delete
 /// </summary>
 public interface IRepositoryWithEvents<T> : IRepositoryBase<T>
-    where T : class, IAggregateRoot
+where T : class, IAggregateRoot
 {
 }
 ```
@@ -574,24 +569,22 @@ Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 ---
 
 ## 6. Repository Implementation
-
 ### Bước 6.1: ApplicationDbRepository
-
-**File:** `src/Infrastructure/Infrastructure/Persistence/Repository/ApplicationDbRepository.cs`
+**File:** `src/Infrastructure/Persistence/Repository/ApplicationDbRepository.cs`
 
 ```csharp
 using Ardalis.Specification.EntityFrameworkCore;
-using ECO.WebApi.Application.Common.Persistence;
-using ECO.WebApi.Domain.Common.Contracts;
-using ECO.WebApi.Infrastructure.Persistence.Context;
+using {ProjectName}.Application.Common.Persistence;
+using {ProjectName}.Domain.Common.Contracts;
+using {ProjectName}.Infrastructure.Persistence.Context;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Repository;
+namespace {ProjectName}.Infrastructure.Persistence.Repository;
 
 /// <summary>
 /// EF Core implementation của Repository Pattern với Ardalis.Specification
 /// </summary>
 public class ApplicationDbRepository<T> : RepositoryBase<T>, IReadRepository<T>, IRepository<T>
-  where T : class, IAggregateRoot
+    where T : class, IAggregateRoot
 {
     public ApplicationDbRepository(ApplicationDbContext dbContext)
         : base(dbContext)
@@ -609,18 +602,16 @@ public class ApplicationDbRepository<T> : RepositoryBase<T>, IReadRepository<T>,
 ---
 
 ## 7. Event Adding Decorator
-
 ### Bước 7.1: EventAddingRepositoryDecorator
-
-**File:** `src/Infrastructure/Infrastructure/Persistence/Repository/EventAddingRepositoryDecorator.cs`
+**File:** `src/Infrastructure/Persistence/Repository/EventAddingRepositoryDecorator.cs`
 
 ```csharp
 using Ardalis.Specification;
-using ECO.WebApi.Application.Common.Persistence;
-using ECO.WebApi.Domain.Common.Contracts;
-using ECO.WebApi.Domain.Common.Events;
+using {ProjectName}.Application.Common.Persistence;
+using {ProjectName}.Domain.Common.Contracts;
+using {ProjectName}.Domain.Common.Events;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Repository;
+namespace {ProjectName}.Infrastructure.Persistence.Repository;
 
 /// <summary>
 /// Decorator tự động thêm Domain Events khi Add/Update/Delete entities
@@ -628,37 +619,37 @@ namespace ECO.WebApi.Infrastructure.Persistence.Repository;
 public class EventAddingRepositoryDecorator<T> : IRepositoryWithEvents<T>
     where T : class, IAggregateRoot
 {
- private readonly IRepository<T> _decorated;
+    private readonly IRepository<T> _decorated;
 
-    public EventAddingRepositoryDecorator(IRepository<T> decorated) => 
-  _decorated = decorated;
+    public EventAddingRepositoryDecorator(IRepository<T> decorated) =>
+    _decorated = decorated;
 
     public Task<T> AddAsync(T entity, CancellationToken cancellationToken = default)
     {
         entity.DomainEvents.Add(EntityCreatedEvent.WithEntity(entity));
-  return _decorated.AddAsync(entity, cancellationToken);
+        return _decorated.AddAsync(entity, cancellationToken);
     }
 
     public Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
-{
- entity.DomainEvents.Add(EntityUpdatedEvent.WithEntity(entity));
+    {
+        entity.DomainEvents.Add(EntityUpdatedEvent.WithEntity(entity));
         return _decorated.UpdateAsync(entity, cancellationToken);
     }
 
     public Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
     {
-    entity.DomainEvents.Add(EntityDeletedEvent.WithEntity(entity));
-   return _decorated.DeleteAsync(entity, cancellationToken);
+        entity.DomainEvents.Add(EntityDeletedEvent.WithEntity(entity));
+        return _decorated.DeleteAsync(entity, cancellationToken);
     }
 
-    public Task DeleteRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
+public Task DeleteRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
     {
         foreach (var entity in entities)
         {
-       entity.DomainEvents.Add(EntityDeletedEvent.WithEntity(entity));
-        }
+            entity.DomainEvents.Add(EntityDeletedEvent.WithEntity(entity));
+}
         return _decorated.DeleteRangeAsync(entities, cancellationToken);
- }
+    }
 
     // Tất cả methods khác forward đến decorated repository
     public Task<T?> GetByIdAsync<TId>(TId id, CancellationToken cancellationToken = default) 
@@ -666,7 +657,7 @@ where TId : notnull =>
         _decorated.GetByIdAsync(id, cancellationToken);
 
     public Task<T?> FirstOrDefaultAsync(ISpecification<T> specification, CancellationToken cancellationToken = default) =>
-      _decorated.FirstOrDefaultAsync(specification, cancellationToken);
+        _decorated.FirstOrDefaultAsync(specification, cancellationToken);
 
     public Task<TResult?> FirstOrDefaultAsync<TResult>(ISpecification<T, TResult> specification, CancellationToken cancellationToken = default) =>
         _decorated.FirstOrDefaultAsync(specification, cancellationToken);
@@ -681,25 +672,25 @@ where TId : notnull =>
         _decorated.ListAsync(specification, cancellationToken);
 
     public Task<int> CountAsync(ISpecification<T> specification, CancellationToken cancellationToken = default) =>
-      _decorated.CountAsync(specification, cancellationToken);
+        _decorated.CountAsync(specification, cancellationToken);
 
     public Task<int> CountAsync(CancellationToken cancellationToken = default) =>
-     _decorated.CountAsync(cancellationToken);
+      _decorated.CountAsync(cancellationToken);
 
     public Task<bool> AnyAsync(ISpecification<T> specification, CancellationToken cancellationToken = default) =>
-        _decorated.AnyAsync(specification, cancellationToken);
+  _decorated.AnyAsync(specification, cancellationToken);
 
     public Task<bool> AnyAsync(CancellationToken cancellationToken = default) =>
- _decorated.AnyAsync(cancellationToken);
+        _decorated.AnyAsync(cancellationToken);
 
     public Task<IEnumerable<T>> AddRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default) =>
         _decorated.AddRangeAsync(entities, cancellationToken);
 
     public Task UpdateRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default) =>
-        _decorated.UpdateRangeAsync(entities, cancellationToken);
+  _decorated.UpdateRangeAsync(entities, cancellationToken);
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
-      _decorated.SaveChangesAsync(cancellationToken);
+        _decorated.SaveChangesAsync(cancellationToken);
 }
 ```
 
@@ -733,54 +724,51 @@ Publish Domain Events
 ---
 
 ## 8. Repository Registration
-
 ### Bước 8.1: Đăng ký trong DI Container
-
-**File:** `src/Infrastructure/Infrastructure/Persistence/Startup.cs`
+**Update:** `src/Infrastructure/Persistence/Startup.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Persistence;
-using ECO.WebApi.Domain.Common.Contracts;
-using ECO.WebApi.Infrastructure.Persistence.Repository;
+using {ProjectName}.Application.Common.Persistence;
+using {ProjectName}.Domain.Common.Contracts;
+using {ProjectName}.Infrastructure.Persistence.Repository;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Infrastructure.Persistence;
+namespace {ProjectName}.Infrastructure.Persistence;
 
 internal static class Startup
 {
-  internal static IServiceCollection AddPersistence(this IServiceCollection services)
+    internal static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration config)
     {
-        // ... existing code (DbContext setup) ...
+        // ... existing code ...
 
-        return services
-          .AddRepositories();
+        return services.AddRepositories();
     }
 
     private static IServiceCollection AddRepositories(this IServiceCollection services)
     {
      // Register base repositories
         services.AddScoped(typeof(IRepository<>), typeof(ApplicationDbRepository<>));
-        
+
         // Auto-discover all Aggregate Roots và register repositories
-        foreach (var aggregateRootType in
-  typeof(IAggregateRoot).Assembly.GetExportedTypes()
-       .Where(t => typeof(IAggregateRoot).IsAssignableFrom(t) && t.IsClass)
+      foreach (var aggregateRootType in
+            typeof(IAggregateRoot).Assembly.GetExportedTypes()
+      .Where(t => typeof(IAggregateRoot).IsAssignableFrom(t) && t.IsClass)
           .ToList())
         {
             // IReadRepository<T> → alias của IRepository<T>
-            services.AddScoped(
-     typeof(IReadRepository<>).MakeGenericType(aggregateRootType),
-          sp => sp.GetRequiredService(typeof(IRepository<>).MakeGenericType(aggregateRootType)));
+    services.AddScoped(
+    typeof(IReadRepository<>).MakeGenericType(aggregateRootType),
+      sp => sp.GetRequiredService(typeof(IRepository<>).MakeGenericType(aggregateRootType)));
 
          // IRepositoryWithEvents<T> → EventAddingRepositoryDecorator wrapping IRepository
             services.AddScoped(
-      typeof(IRepositoryWithEvents<>).MakeGenericType(aggregateRootType),
-              sp => Activator.CreateInstance(
-        typeof(EventAddingRepositoryDecorator<>).MakeGenericType(aggregateRootType),
-            sp.GetRequiredService(typeof(IRepository<>).MakeGenericType(aggregateRootType)))
-       ?? throw new InvalidOperationException(
-    $"Could not create EventAddingRepositoryDecorator for {aggregateRootType.Name}"));
-}
+                typeof(IRepositoryWithEvents<>).MakeGenericType(aggregateRootType),
+       sp => Activator.CreateInstance(
+    typeof(EventAddingRepositoryDecorator<>).MakeGenericType(aggregateRootType),
+         sp.GetRequiredService(typeof(IRepository<>).MakeGenericType(aggregateRootType)))
+             ?? throw new InvalidOperationException(
+      $"Could not create EventAddingRepositoryDecorator for {aggregateRootType.Name}"));
+        }
 
         return services;
     }
@@ -1063,38 +1051,31 @@ ApplicationDbContext
 ### 📁 File Structure:
 
 ```
-src/Core/Application/Common/
-├── Models/
+src\Application\Common\
+├── Models\
 │   ├── Search.cs
 │   ├── Filter.cs
 │   ├── BaseFilter.cs
-│ └── PaginationFilter.cs
-├── Specification/
+│   └── PaginationFilter.cs
+├── Specification\
 │   ├── SpecificationBuilderExtensions.cs
 │   ├── EntitiesByBaseFilterSpec.cs
 │   └── EntitiesByPaginationFilterSpec.cs
-└── Persistence/
-    └── IRepository.cs
+└── Persistence\
+ └── IRepository.cs
 
-src/Infrastructure/Infrastructure/Persistence/
-├── Repository/
+src\Infrastructure\Persistence\
+├── Repository\
 │   ├── ApplicationDbRepository.cs
 │   └── EventAddingRepositoryDecorator.cs
-└── Startup.cs (registration)
+└── Startup.cs
 ```
 
 ---
 
-## 11. Next Steps
+## 10. Bước tiếp theo
 
 **Tiếp theo:** [BUILD_12 - CQRS với MediatR](BUILD_12_CQRS_MediatR.md)
-
-Trong bước tiếp theo, chúng ta sẽ:
-1. ✅ Setup MediatR cho CQRS pattern
-2. ✅ Tạo Commands và Queries
-3. ✅ Implement Handlers
-4. ✅ Setup Validation với FluentValidation
-5. ✅ Setup Behaviors (Logging, Validation, etc.)
 
 ---
 

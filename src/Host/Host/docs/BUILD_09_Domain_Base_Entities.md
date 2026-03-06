@@ -1,7 +1,8 @@
-# Domain Base Entities và Domain Events
+﻿# BUILD_09 - Domain Base Entities và Domain Events
 
-> 📖 [Quay lại Mục lục](BUILD_INDEX.md)  
-> 📋 **Prerequisites:** Bước 8 (Database Initialization) hoàn thành
+> 📚 [Quay lại Mục lục](BUILD_INDEX.md)  
+> 📋 **Prerequisites:** BUILD_08 (Database Initialization) đã hoàn thành  
+> ⏱️ **Thời gian:** Khoảng 20 phút
 
 Tài liệu này hướng dẫn về Domain Base Entities và Domain Events - nền tảng cho tất cả entities trong hệ thống.
 
@@ -31,11 +32,11 @@ Tài liệu này hướng dẫn về Domain Base Entities và Domain Events - n�
 
 ### Bước 2.1: Add NewId Package
 
-**File:** `src/Core/Domain/Domain.csproj`
+**File:** `src/Domain/Domain.csproj`
 
 ```xml
 <ItemGroup>
-    <!-- For sequential GUID generation -->
+ <!-- For sequential GUID generation -->
     <PackageReference Include="NewId" Version="4.0.1" />
 </ItemGroup>
 ```
@@ -51,10 +52,10 @@ Tài liệu này hướng dẫn về Domain Base Entities và Domain Events - n�
 
 ### Bước 3.1: IEvent Interface
 
-**File:** `src/Core/Domain/Common/Contracts/IEvent.cs`
+**File:** `src/Domain/Common/Contracts/IEvent.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Common.Contracts;
+namespace {ProjectName}.Domain.Common.Contracts;
 
 /// <summary>
 /// Marker interface for all domain events
@@ -78,10 +79,10 @@ public interface IEvent
 
 ### Bước 3.2: DomainEvent Base Class
 
-**File:** `src/Core/Domain/Common/Contracts/DomainEvent.cs`
+**File:** `src/Domain/Common/Contracts/DomainEvent.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Common.Contracts;
+namespace {ProjectName}.Domain.Common.Contracts;
 
 /// <summary>
 /// Base class for all domain events
@@ -115,10 +116,10 @@ EntityCreatedEvent, EntityUpdatedEvent, etc.
 
 ### Bước 4.1: IEntity Interface
 
-**File:** `src/Core/Domain/Common/Contracts/IEntity.cs`
+**File:** `src/Domain/Common/Contracts/IEntity.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Common.Contracts;
+namespace {ProjectName}.Domain.Common.Contracts;
 
 /// <summary>
 /// Base interface for all entities
@@ -147,13 +148,13 @@ public interface IEntity<TId> : IEntity
 
 ### Bước 5.1: BaseEntity Generic
 
-**File:** `src/Core/Domain/Common/Contracts/BaseEntity.cs`
+**File:** `src/Domain/Common/Contracts/BaseEntity.cs`
 
 ```csharp
 using System.ComponentModel.DataAnnotations.Schema;
 using MassTransit;
 
-namespace ECO.WebApi.Domain.Common.Contracts;
+namespace {ProjectName}.Domain.Common.Contracts;
 
 /// <summary>
 /// Base entity with generic Id type
@@ -195,10 +196,10 @@ Benefits:
 
 ### Bước 5.2: AuditableEntity
 
-**File:** `src/Core/Domain/Common/Contracts/AuditableEntity.cs`
+**File:** `src/Domain/Common/Contracts/AuditableEntity.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Common.Contracts;
+namespace {ProjectName}.Domain.Common.Contracts;
 
 /// <summary>
 /// Entity with audit trail (Created/Updated by/on)
@@ -226,13 +227,13 @@ public abstract class AuditableEntity<TId> : BaseEntity<TId>
     public Guid CreatedBy { get; set; }
     public DateTime CreatedOn { get; private set; }
     
- public Guid LastModifiedBy { get; set; }
+    public Guid LastModifiedBy { get; set; }
     public DateTime? LastModifiedOn { get; set; }
 
     protected AuditableEntity()
     {
         CreatedOn = DateTime.UtcNow;
-     LastModifiedOn = DateTime.UtcNow;
+        LastModifiedOn = DateTime.UtcNow;
     }
 }
 ```
@@ -258,10 +259,10 @@ public class Product : AuditableEntity { }
 
 ### Bước 6.1: IAggregateRoot Interface
 
-**File:** `src/Core/Domain/Common/Contracts/IAggregateRoot.cs`
+**File:** `src/Domain/Common/Contracts/IAggregateRoot.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Common.Contracts;
+namespace {ProjectName}.Domain.Common.Contracts;
 
 /// <summary>
 /// Marker interface for aggregate root entities.
@@ -299,8 +300,8 @@ public class OrderItem : BaseEntity
     // No public constructor
     internal OrderItem(Guid productId, int quantity)
     {
-        ProductId = productId;
-        Quantity = quantity;
+     ProductId = productId;
+    Quantity = quantity;
     }
 }
 ```
@@ -343,28 +344,28 @@ Khi tạo Product mới:
 
 ### Bước 7.1: EntityCreatedEvent - Sự Kiện Tạo Mới
 
-**File:** `src/Core/Domain/Common/Events/EntityCreatedEvent.cs`
+**File:** `src/Domain/Common/Events/EntityCreatedEvent.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Common.Contracts;
+using {ProjectName}.Domain.Common.Contracts;
 
-namespace ECO.WebApi.Domain.Common.Events;
+namespace {ProjectName}.Domain.Common.Events;
 
 // Static class - chứa hàm factory tạo event
 public static class EntityCreatedEvent
 {
-  // Factory method: Tạo event dễ dàng với type inference
+    // Factory method: Tạo event dễ dàng với type inference
     public static EntityCreatedEvent<TEntity> WithEntity<TEntity>(TEntity entity)
-        where TEntity : IEntity
+ where TEntity : IEntity
         => new(entity);
 }
 
 // Generic class - chứa thông tin entity được tạo
 public class EntityCreatedEvent<TEntity> : DomainEvent
-  where TEntity : IEntity
+    where TEntity : IEntity
 {
     // Entity vừa được tạo
- public TEntity Entity { get; }
+    public TEntity Entity { get; }
     
     // Constructor internal - chỉ factory method mới tạo được
     internal EntityCreatedEvent(TEntity entity) => Entity = entity;
@@ -437,7 +438,59 @@ internal EntityCreatedEvent(TEntity entity) => Entity = entity;
 
 ---
 
+### Bước 7.2: EntityUpdatedEvent
 
+**File:** `src/Domain/Common/Events/EntityUpdatedEvent.cs`
+
+```csharp
+using {ProjectName}.Domain.Common.Contracts;
+
+namespace {ProjectName}.Domain.Common.Events;
+
+public static class EntityUpdatedEvent
+{
+    public static EntityUpdatedEvent<TEntity> WithEntity<TEntity>(TEntity entity)
+   where TEntity : IEntity
+        => new(entity);
+}
+
+public class EntityUpdatedEvent<TEntity> : DomainEvent
+ where TEntity : IEntity
+{
+    public TEntity Entity { get; }
+    
+    internal EntityUpdatedEvent(TEntity entity) => Entity = entity;
+}
+```
+
+---
+
+### Bước 7.3: EntityDeletedEvent
+
+**File:** `src/Domain/Common/Events/EntityDeletedEvent.cs`
+
+```csharp
+using {ProjectName}.Domain.Common.Contracts;
+
+namespace {ProjectName}.Domain.Common.Events;
+
+public static class EntityDeletedEvent
+{
+  public static EntityDeletedEvent<TEntity> WithEntity<TEntity>(TEntity entity)
+   where TEntity : IEntity
+        => new(entity);
+}
+
+public class EntityDeletedEvent<TEntity> : DomainEvent
+    where TEntity : IEntity
+{
+    public TEntity Entity { get; }
+    
+    internal EntityDeletedEvent(TEntity entity) => Entity = entity;
+}
+```
+
+---
 
 ### 💡 **Event Pattern - Giải thích kỹ hơn**
 
@@ -447,12 +500,12 @@ internal EntityCreatedEvent(TEntity entity) => Entity = entity;
 // Thay vì:
 var event = new EntityCreatedEvent<Product>(product);  // Dài
 var event = new EntityCreatedEvent<Order>(order);      // Dài
-var event = new EntityCreatedEvent<User>(user);   // Dài
+var event = new EntityCreatedEvent<User>(user);  // Dài
 
 // Ta dùng:
 var event = EntityCreatedEvent.WithEntity(product);    // Ngắn
 var event = EntityCreatedEvent.WithEntity(order);      // Ngắn
-var event = EntityCreatedEvent.WithEntity(user);  // Ngắn
+var event = EntityCreatedEvent.WithEntity(user);    // Ngắn
 ```
 
 **Lợi ích:**
@@ -491,7 +544,7 @@ public async Task<Product> AddAsync(Product product)
 {
     // ✅ Event tự động được thêm vào DomainEvents collection
     product.DomainEvents.Add(
-  EntityCreatedEvent.WithEntity(product)
+        EntityCreatedEvent.WithEntity(product)
     );
     
     await _dbContext.Products.AddAsync(product);
@@ -512,19 +565,19 @@ public override async Task<int> SaveChangesAsync(CancellationToken cancellationT
         .Where(e => e.Entity.DomainEvents.Any())
         .ToList();
     
-    // 2. Publish từng event qua MediatR
+// 2. Publish từng event qua MediatR
     foreach (var entry in entitiesWithEvents)
     {
-    foreach (var domainEvent in entry.Entity.DomainEvents)
-     {
-            await _mediator.Publish(domainEvent, cancellationToken);
+        foreach (var domainEvent in entry.Entity.DomainEvents)
+        {
+await _mediator.Publish(domainEvent, cancellationToken);
         }
  
-        // 3. Clear events sau khi publish
+  // 3. Clear events sau khi publish
         entry.Entity.DomainEvents.Clear();
-    }
+  }
     
-    // 4. Save changes vào database
+  // 4. Save changes vào database
     return await base.SaveChangesAsync(cancellationToken);
 }
 ```
@@ -539,20 +592,20 @@ public class ProductCreatedEmailHandler
     private readonly IEmailService _emailService;
     
     public ProductCreatedEmailHandler(IEmailService emailService)
- {
-   _emailService = emailService;
+    {
+    _emailService = emailService;
     }
     
     public async Task Handle(
-   EntityCreatedEvent<Product> notification, 
-        CancellationToken cancellationToken)
+ EntityCreatedEvent<Product> notification, 
+   CancellationToken cancellationToken)
     {
-    var product = notification.Entity;
+        var product = notification.Entity;
         
       await _emailService.SendAsync(
-         to: "admin@example.com",
-       subject: "Sản phẩm mới",
-  body: $"Sản phẩm '{product.Name}' vừa được tạo với giá {product.Price:C}"
+            to: "admin@example.com",
+            subject: "Sản phẩm mới",
+      body: $"Sản phẩm '{product.Name}' vừa được tạo với giá {product.Price:C}"
         );
     }
 }
@@ -566,17 +619,17 @@ public class ProductUpdatedCacheHandler
     public ProductUpdatedCacheHandler(ICacheService cacheService)
     {
         _cacheService = cacheService;
-    }
+ }
     
     public async Task Handle(
-    EntityUpdatedEvent<Product> notification, 
+EntityUpdatedEvent<Product> notification, 
         CancellationToken cancellationToken)
-    {
+ {
         var product = notification.Entity;
         
         // Xóa cache cũ
         await _cacheService.RemoveAsync($"product:{product.Id}");
- await _cacheService.RemoveAsync("products:all");
+        await _cacheService.RemoveAsync("products:all");
     }
 }
 ```
@@ -589,15 +642,15 @@ public class ProductUpdatedCacheHandler
 1. User gọi API: POST /api/products
     ↓
 2. ProductService.CreateAsync(dto)
-    ↓
+↓
 3. Product được tạo: var product = Product.Create(...)
-    ↓
+  ↓
 4. Repository.AddAsync(product)
     ↓ 
 5. Decorator thêm event: product.DomainEvents.Add(EntityCreatedEvent.WithEntity(product))
     ↓
 6. DbContext.SaveChangesAsync()
-    ↓
+  ↓
 7. Detect entities có DomainEvents
     ↓
 8. Publish từng event qua MediatR
@@ -605,7 +658,7 @@ public class ProductUpdatedCacheHandler
 9. MediatR gọi tất cả handlers:
     - ProductCreatedEmailHandler → Gửi email
     - ProductCreatedCacheHandler → Update cache
-  - ProductCreatedAuditHandler → Ghi log
+    - ProductCreatedAuditHandler → Ghi log
     ↓
 10. Clear DomainEvents collection
     ↓
@@ -660,15 +713,15 @@ public async Task Handle_ShouldSendEmail_WhenProductCreated()
     // Arrange
     var emailServiceMock = new Mock<IEmailService>();
     var handler = new ProductCreatedEmailHandler(emailServiceMock.Object);
-  var product = Product.Create("Test", "Desc", 100m, 10);
+    var product = Product.Create("Test", "Desc", 100m, 10);
     var notification = EntityCreatedEvent.WithEntity(product);
     
     // Act
     await handler.Handle(notification, CancellationToken.None);
     
-    // Assert
+  // Assert
     emailServiceMock.Verify(x => x.SendAsync(
-        It.IsAny<string>(),
+      It.IsAny<string>(),
         "Sản phẩm mới",
         It.IsAny<string>()
     ), Times.Once);
@@ -716,12 +769,12 @@ Tất cả chỉ biết về DomainEvent!
 
 ### Bước 8.1: Sample Product Entity
 
-**File:** `src/Core/Domain/Catalog/Product.cs` (example)
+**File:** `src/Domain/Catalog/Product.cs` (example)
 
 ```csharp
-using ECO.WebApi.Domain.Common.Contracts;
+using {ProjectName}.Domain.Common.Contracts;
 
-namespace ECO.WebApi.Domain.Catalog;
+namespace {ProjectName}.Domain.Catalog;
 
 public class Product : AuditableEntity, IAggregateRoot
 {
@@ -736,33 +789,33 @@ public class Product : AuditableEntity, IAggregateRoot
     // Factory method
     public static Product Create(string name, string description, decimal price, int stock)
     {
-        var product = new Product
+    var product = new Product
         {
-       Name = name,
-      Description = description,
+      Name = name,
+         Description = description;
   Price = price,
-       Stock = stock
+  Stock = stock
         };
 
-        return product;
+ return product;
     }
 
     // Business logic
     public void UpdatePrice(decimal newPrice)
     {
-        if (newPrice < 0)
+  if (newPrice < 0)
      throw new InvalidOperationException("Price cannot be negative");
 
-        Price = newPrice;
-  }
+      Price = newPrice;
+    }
 
     public void ReduceStock(int quantity)
     {
-        if (Stock < quantity)
-      throw new InvalidOperationException("Insufficient stock");
+      if (Stock < quantity)
+            throw new InvalidOperationException("Insufficient stock");
 
-        Stock -= quantity;
-  }
+      Stock -= quantity;
+    }
 }
 ```
 
@@ -775,193 +828,37 @@ public class Product : AuditableEntity, IAggregateRoot
 
 ---
 
-## 9. Domain Events Publishing
+## 9. Summary
 
-### Bước 9.1: How Events Flow
-
-```
-1. Entity Created/Updated/Deleted
-  ↓
-2. Repository Decorator adds event to Entity.DomainEvents
-    ↓
-3. SaveChangesAsync() in DbContext
-    ↓
-4. EventPublishingInterceptor detects entities with events
-    ↓
-5. Publish events to MediatR
-    ↓
-6. Event handlers process events
-    ↓
-7. Clear DomainEvents collection
-    ↓
-8. Commit transaction
-```
-
-**Example Event Handler:**
-```csharp
-public class ProductCreatedEventHandler 
-    : INotificationHandler<EntityCreatedEvent<Product>>
-{
-    private readonly IEmailService _emailService;
-
-    public ProductCreatedEventHandler(IEmailService emailService)
-    {
-        _emailService = emailService;
-    }
-
-    public async Task Handle(
-   EntityCreatedEvent<Product> notification, 
- CancellationToken cancellationToken)
-    {
-      var product = notification.Entity;
-      
-     // Send notification email
-   await _emailService.SendAsync(
-       "admin@example.com",
-            "New Product Created",
-            $"Product {product.Name} has been created.");
-    }
-}
-```
-
----
-
-## 10. Testing
-
-### Bước 10.1: Unit Test Example
-
-```csharp
-public class ProductTests
-{
-    [Fact]
-    public void Create_ShouldSetPropertiesCorrectly()
-    {
-        // Arrange & Act
-        var product = Product.Create("Test Product", "Description", 99.99m, 10);
-
-        // Assert
-        Assert.NotEqual(Guid.Empty, product.Id);
-        Assert.Equal("Test Product", product.Name);
-      Assert.Equal(99.99m, product.Price);
-Assert.Equal(10, product.Stock);
-    }
-
-    [Fact]
-    public void UpdatePrice_WithNegativePrice_ShouldThrow()
-    {
- // Arrange
-   var product = Product.Create("Test", "Description", 99.99m, 10);
-
-        // Act & Assert
-        Assert.Throws<InvalidOperationException>(() => 
-            product.UpdatePrice(-10));
-    }
-
-    [Fact]
-    public void ReduceStock_WhenInsufficientStock_ShouldThrow()
-    {
-        // Arrange
-        var product = Product.Create("Test", "Description", 99.99m, 5);
-
-        // Act & Assert
-        Assert.Throws<InvalidOperationException>(() => 
-        product.ReduceStock(10));
-    }
-}
-```
-
----
-
-## 11. Summary
-
-### ✅ Đã hoàn thành trong bước này:
+### ✅ Đã hoàn thành:
 
 **Domain Event Contracts:**
-- ✅ IEvent interface (marker)
+- ✅ IEvent interface
 - ✅ DomainEvent base class
 
 **Entity Contracts:**
-- ✅ IEntity interface (with DomainEvents)
-- ✅ BaseEntity (with sequential GUID)
-- ✅ AuditableEntity (with audit trail)
-- ✅ IAggregateRoot marker interface
+- ✅ IEntity interface
+- ✅ BaseEntity (sequential GUID)
+- ✅ AuditableEntity (audit trail)
+- ✅ IAggregateRoot
 
 **Entity Lifecycle Events:**
 - ✅ EntityCreatedEvent
 - ✅ EntityUpdatedEvent
 - ✅ EntityDeletedEvent
 
-**Best Practices:**
-- ✅ DDD aggregate pattern
-- ✅ Encapsulation với private setters
-- ✅ Business logic trong domain
-- ✅ Event-driven architecture
-
-### 📊 Entity Hierarchy:
-
-```
-IEntity
-    ↓
-IEntity<TId>
- ↓
-BaseEntity<TId>
- ↓
-BaseEntity (Guid Id)
-    ↓
-AuditableEntity (+ audit fields)
-```
-
-### 📊 Event Hierarchy:
-
-```
-IEvent (Domain.Common.Contracts)
-    ↓
-DomainEvent (Domain.Common.Contracts)
-    ↓
-EntityCreatedEvent
-EntityUpdatedEvent
-EntityDeletedEvent
-```
-
-### 🎯 Key Concepts:
-
-**IEvent:**
-- Marker interface cho domain events
-- Domain layer (không phải Shared)
-- Pure domain concept
-
-**BaseEntity:**
-- Sequential GUID generation
-- DomainEvents collection
-- Generic Id support
-
-**AuditableEntity:**
-- CreatedBy/CreatedOn
-- LastModifiedBy/LastModifiedOn
-- Automatic timestamp
-
-**IAggregateRoot:**
-- Marker for repository access
-- DDD aggregate pattern
-- Boundary enforcement
-
-**Domain Events:**
-- Event-driven architecture
-- Loose coupling
-- Extensibility
-
 ### 📁 File Structure:
 
 ```
-src/Core/Domain/Common/
-├── Contracts/
-│   ├── IEvent.cs         ⭐ NEW
+src\Domain\Common\
+├── Contracts\
+│   ├── IEvent.cs
 │   ├── IEntity.cs
-│   ├── DomainEvent.cs (kế thừa IEvent)
+│   ├── DomainEvent.cs
 │   ├── BaseEntity.cs
 │   ├── AuditableEntity.cs
 │   └── IAggregateRoot.cs
-└── Events/
+└── Events\
     ├── EntityCreatedEvent.cs
     ├── EntityUpdatedEvent.cs
     └── EntityDeletedEvent.cs
@@ -969,53 +866,9 @@ src/Core/Domain/Common/
 
 ---
 
-## 12. Migration Note
-
-### Breaking Change from BUILD_02
-
-**If you have existing code referencing Shared.Events.IEvent:**
-
-**Old code (BUILD_02):**
-```csharp
-using ECO.WebApi.Shared.Events;
-
-public abstract class DomainEvent : IEvent
-{
-    // ...
-}
-```
-
-**New code (BUILD_09):**
-```csharp
-using ECO.WebApi.Domain.Common.Contracts;
-
-public abstract class DomainEvent : IEvent
-{
-    // ...
-}
-```
-
-**Action items:**
-1. Remove `IEvent` from `src/Core/Shared/Events/IEvent.cs` (if exists)
-2. Update all references from `ECO.WebApi.Shared.Events.IEvent` to `ECO.WebApi.Domain.Common.Contracts.IEvent`
-3. Rebuild solution
-
-**Why this change:**
-- `IEvent` is a domain concept, not infrastructure
-- Follows DDD principles (domain layer owns domain events)
-- Better separation of concerns
-
----
-
-## 13. Next Steps
+## 10. Bước tiếp theo
 
 **Tiếp theo:** [BUILD_10 - Service Registration Pattern](BUILD_10_Service_Registration.md)
-
-Trong bước tiếp theo, chúng ta sẽ:
-1. ✅ Tạo marker interfaces (ITransientService, IScopedService)
-2. ✅ Setup auto-registration
-3. ✅ Service lifetime management
-4. ✅ Convention-based service discovery
 
 ---
 

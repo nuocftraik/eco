@@ -1,9 +1,8 @@
-# Service Registration Pattern
+﻿# BUILD_10 - Service Registration Pattern
 
-> 📖 [Quay lại Mục lục](BUILD_INDEX.md)  
-> 📋 **Prerequisites:** Bước 8 (Database Initialization) hoàn thành
-
-Tài liệu này hướng dẫn về Service Registration Pattern - tự động đăng ký services mà không cần đăng ký thủ công từng service.
+> 📚 [Quay lại Mục lục](BUILD_INDEX.md)  
+> 📋 **Prerequisites:** BUILD_09 (Domain Base Entities) đã hoàn thành  
+> ⏱️ **Thời gian:** Khoảng 15 phút
 
 ---
 
@@ -26,8 +25,6 @@ Tài liệu này hướng dẫn về Service Registration Pattern - tự động
 ---
 
 ## 2. Understanding Service Lifetimes
-
-### Bước 2.1: Service Lifetime Types
 
 **Transient:**
 ```csharp
@@ -59,12 +56,12 @@ services.AddSingleton<IService, Service>();
 
 ## 3. Tạo Marker Interfaces
 
-### Bước 3.1: ITransientService Interface
+### Bước 3.1: ITransientService
 
-**File:** `src/Core/Application/Common/Interfaces/ITransientService.cs`
+**File:** `src/Application/Common/Interfaces/ITransientService.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Interfaces;
+namespace {ProjectName}.Application.Common.Interfaces;
 
 /// <summary>
 /// Marker interface for transient services.
@@ -77,12 +74,12 @@ public interface ITransientService
 
 ---
 
-### Bước 3.2: IScopedService Interface
+### Bước 3.2: IScopedService
 
-**File:** `src/Core/Application/Common/Interfaces/IScopedService.cs`
+**File:** `src/Application/Common/Interfaces/IScopedService.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Interfaces;
+namespace {ProjectName}.Application.Common.Interfaces;
 
 /// <summary>
 /// Marker interface for scoped services.
@@ -102,79 +99,61 @@ public interface IScopedService
 
 ## 4. Tạo AddServices Extension Method
 
-### Bước 4.1: Service Registration Extensions
-
-**File:** `src/Infrastructure/Infrastructure/Common/Extensions.cs`
+**File:** `src/Infrastructure/Common/Startup.cs`
 
 ```csharp
-using System.Reflection;
-using ECO.WebApi.Application.Common.Interfaces;
+using {ProjectName}.Application.Common.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Infrastructure.Common;
+namespace {ProjectName}.Infrastructure.Common;
 
-internal static class Extensions
+internal static class Startup
 {
-    /// <summary>
-    /// Auto-register all services implementing ITransientService or IScopedService
-    /// </summary>
     internal static IServiceCollection AddServices(this IServiceCollection services) =>
-  services
-        .AddServices(typeof(ITransientService), ServiceLifetime.Transient)
+    services
+            .AddServices(typeof(ITransientService), ServiceLifetime.Transient)
    .AddServices(typeof(IScopedService), ServiceLifetime.Scoped);
 
-    /// <summary>
-    /// Scan assemblies and register services implementing specified marker interface
-    /// </summary>
-    internal static IServiceCollection AddServices(
-  this IServiceCollection services,
-        Type markerInterfaceType,
-    ServiceLifetime lifetime)
-    {
-        // Get all assemblies in current AppDomain
-    var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-        // Scan for types implementing marker interface
-   var implementationTypes = assemblies
-   .SelectMany(assembly => assembly.GetTypes())
-         .Where(type =>
-   type.IsClass &&
-      !type.IsAbstract &&
-        !type.IsGenericType &&
-          markerInterfaceType.IsAssignableFrom(type))
-     .ToList();
-
-  foreach (var implementationType in implementationTypes)
-        {
-       // Get business interfaces (exclude marker interfaces)
-      var serviceInterfaces = implementationType.GetInterfaces()
-        .Where(i => i != markerInterfaceType &&
-            !typeof(ITransientService).IsAssignableFrom(i) &&
-         !typeof(IScopedService).IsAssignableFrom(i))
-     .ToList();
-
-            // Register with first business interface found
-  if (serviceInterfaces.Any())
+    internal static IServiceCollection AddServices(this IServiceCollection services, Type interfaceType, ServiceLifetime lifetime)
   {
-      var serviceInterface = serviceInterfaces.First();
-       services.Add(new ServiceDescriptor(
-           serviceInterface,
-            implementationType,
-            lifetime));
-            }
-        }
+      var interfaceTypes =
+      AppDomain.CurrentDomain.GetAssemblies()
+       .SelectMany(s => s.GetTypes())
+     .Where(t => interfaceType.IsAssignableFrom(t)
+            && t.IsClass && !t.IsAbstract)
+         .Select(t => new
+   {
+            Service = t.GetInterfaces().FirstOrDefault(),
+  Implementation = t
+                })
+    .Where(t => t.Service is not null
+              && interfaceType.IsAssignableFrom(t.Service));
 
-    return services;
+        foreach (var type in interfaceTypes)
+ {
+          services.AddService(type.Service!, type.Implementation, lifetime);
     }
+
+        return services;
+    }
+
+    internal static IServiceCollection AddService(this IServiceCollection services, Type serviceType, Type implementationType, ServiceLifetime lifetime) =>
+  lifetime switch
+        {
+        ServiceLifetime.Transient => services.AddTransient(serviceType, implementationType),
+         ServiceLifetime.Scoped => services.AddScoped(serviceType, implementationType),
+  ServiceLifetime.Singleton => services.AddSingleton(serviceType, implementationType),
+  _ => throw new ArgumentException("Invalid lifeTime", nameof(lifetime))
+        };
 }
 ```
 
 **Key Logic:**
 
 1. **Scan assemblies:** Get all types from loaded assemblies
-2. **Filter classes:** Only concrete, non-abstract, non-generic classes
-3. **Check marker:** Must implement marker interface (ITransientService/IScopedService)
-4. **Get business interface:** Filter out marker interfaces, get first business interface
+2. **Filter classes:** Only concrete, non-abstract classes
+3. **Check marker:** Must implement marker interface
+4. **Get business interface:** Get first interface (exclude marker)
 5. **Register:** Add to DI container with specified lifetime
 
 **Why filter marker interfaces:**
@@ -190,55 +169,48 @@ services.AddTransient<IProductService, ProductService>(); // Correct!
 
 ## 5. Setup trong Infrastructure
 
-### Bước 5.1: Update Infrastructure Startup
-
-**File:** `src/Infrastructure/Infrastructure/Startup.cs`
+**Update:** `src/Infrastructure/Startup.cs`
 
 ```csharp
-using ECO.WebApi.Infrastructure.Auth;
-using ECO.WebApi.Infrastructure.BackgroundJobs;
-using ECO.WebApi.Infrastructure.Caching;
-using ECO.WebApi.Infrastructure.Common;
-using ECO.WebApi.Infrastructure.FileStorage;
-using ECO.WebApi.Infrastructure.Localization;
-using ECO.WebApi.Infrastructure.Mailing;
-using ECO.WebApi.Infrastructure.Middleware;
-using ECO.WebApi.Infrastructure.Notifications;
-using ECO.WebApi.Infrastructure.OpenApi;
-using ECO.WebApi.Infrastructure.Persistence;
-using ECO.WebApi.Infrastructure.Persistence.Initialization;
+using {ProjectName}.Infrastructure.Common;
+using {ProjectName}.Infrastructure.Persistence;
+using {ProjectName}.Infrastructure.Persistence.Initialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Infrastructure;
+namespace {ProjectName}.Infrastructure;
 
 public static class Startup
 {
-    public static IServiceCollection AddInfrastructure(
-        this IServiceCollection services,
-        IConfiguration config)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
-    MapsterSettings.Configure();
-        
-        return services
-  .AddApiVersioning()
- .AddAuth(config)
-            .AddBackgroundJobs(config)
-            .AddCaching(config)
-   .AddExceptionMiddleware()
-    .AddLocalization(config)
-          .AddMailing(config)
-  .AddNotifications(config)
- .AddOpenApiDocumentation(config)
-       .AddPersistence(config)
-      .AddRequestLogging(config)
-            .AddRouting(options => options.LowercaseUrls = true)
-  .AddServices(); // ⭐ Auto-register services
+      return services
+  .AddPersistence()
+      .AddRouting(options => options.LowercaseUrls = true)
+         .AddServices(); // ⭐ Auto-register services
     }
 
-    // ... other methods ...
+    public static async Task InitializeDatabasesAsync(this IServiceProvider services, CancellationToken cancellationToken = default)
+    {
+        using var scope = services.CreateScope();
+        await scope.ServiceProvider.GetRequiredService<IDatabaseInitializer>()
+            .InitializeDatabasesAsync(cancellationToken);
+    }
+
+    public static IApplicationBuilder UseInfrastructure(this IApplicationBuilder builder, IConfiguration config) =>
+        builder
+            .UseRouting()
+        .UseHttpsRedirection()
+      .UseAuthentication()
+            .UseAuthorization();
+
+ public static IEndpointRouteBuilder MapEndpoints(this IEndpointRouteBuilder builder)
+    {
+builder.MapControllers().RequireAuthorization();
+        return builder;
+    }
 }
 ```
 
@@ -246,18 +218,20 @@ public static class Startup
 - Call `AddServices()` cuối cùng
 - Đảm bảo tất cả dependencies (DbContext, etc.) đã được register trước
 
+
+
 ---
 
 ## 6. Ví dụ Sử dụng
 
 ### Bước 6.1: Transient Service Example
 
-**File:** `src/Infrastructure/Infrastructure/Services/EmailService.cs`
+**File:** `src/Infrastructure/Services/EmailService.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
+using {ProjectName}.Application.Common.Interfaces;
 
-namespace ECO.WebApi.Infrastructure.Services;
+namespace {ProjectName}.Infrastructure.Services;
 
 public interface IEmailService
 {
@@ -270,7 +244,7 @@ internal class EmailService : IEmailService, ITransientService
     public async Task SendAsync(string to, string subject, string body)
     {
         // Send email implementation
-    await Task.CompletedTask;
+        await Task.CompletedTask;
     }
 }
 ```
@@ -284,12 +258,13 @@ services.AddTransient<IEmailService, EmailService>();
 
 ### Bước 6.2: Scoped Service Example
 
-**File:** `src/Infrastructure/Infrastructure/Services/CurrentUserService.cs`
+**File:** `src/Infrastructure/Services/CurrentUserService.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
+using {ProjectName}.Application.Common.Interfaces;
+using Microsoft.AspNetCore.Http;
 
-namespace ECO.WebApi.Infrastructure.Services;
+namespace {ProjectName}.Infrastructure.Services;
 
 public interface ICurrentUserService
 {
@@ -300,17 +275,17 @@ public interface ICurrentUserService
 // ⭐ Scoped per HTTP request
 internal class CurrentUserService : ICurrentUserService, IScopedService
 {
-  private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public CurrentUserService(IHttpContextAccessor httpContextAccessor)
     {
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public string? UserId => 
-   _httpContextAccessor.HttpContext?.User?.FindFirst("uid")?.Value;
+    public string? UserId =>
+        _httpContextAccessor.HttpContext?.User?.FindFirst("uid")?.Value;
 
-    public string? Email => 
+    public string? Email =>
         _httpContextAccessor.HttpContext?.User?.FindFirst("email")?.Value;
 }
 ```
@@ -321,7 +296,6 @@ services.AddScoped<ICurrentUserService, CurrentUserService>();
 ```
 
 ---
-
 ### Bước 6.3: Multiple Interfaces Example
 
 **File:** `src/Infrastructure/Infrastructure/Services/ProductService.cs`
@@ -370,6 +344,7 @@ services.AddTransient<IProductQueryService>(sp =>
 
 ---
 
+
 ## 7. Best Practices
 
 ### Bước 7.1: Service Conventions
@@ -409,14 +384,13 @@ internal class EmailService : ITransientService { } // Won't be registered!
 - ✅ Current user context
 - Examples: Repositories, UnitOfWork, CurrentUserService
 
-**Singleton (manual only):**
+**Singleton:**
 - ✅ Application-wide state
 - ✅ Expensive to create
 - ✅ Thread-safe
 - Examples: Configuration, Caching, Logging
 
 ---
-
 ### Bước 7.3: Testing
 
 **Unit Test Example:**
@@ -489,45 +463,32 @@ services.AddTransient<IEmailServiceFactory>(sp =>
     new EmailServiceFactory(sp));
 ```
 
----
+## 8. Summary
 
-## 9. Summary
-
-### ✅ Đã hoàn thành trong bước này:
+### ✅ Đã hoàn thành:
 
 **Marker Interfaces:**
-- ✅ ITransientService (for transient lifetime)
-- ✅ IScopedService (for scoped lifetime)
+- ✅ ITransientService
+- ✅ IScopedService
 
 **Auto-Registration:**
 - ✅ AddServices() extension method
 - ✅ Assembly scanning logic
 - ✅ Business interface detection
 
-**Infrastructure Setup:**
-- ✅ Integrated vào Infrastructure Startup
-- ✅ Auto-register tất cả services
-
 ### 📊 Registration Flow:
 
 ```
-Service class implements IXxxService + ITransientService
+Service implements IXxxService + ITransientService
     ↓
 AddServices() scans assemblies
-    ↓
+  ↓
 Detects marker interface
     ↓
 Gets business interface (IXxxService)
     ↓
 Registers: services.AddTransient<IXxxService, XxxService>()
 ```
-
-### 🎯 Benefits:
-
-- **No manual registration:** Không cần update Startup khi thêm service
-- **Convention-based:** Follow naming conventions
-- **Type-safe:** Compile-time checks
-- **Maintainable:** Clear service organization
 
 ### 💡 Key Takeaways:
 
@@ -536,18 +497,22 @@ Registers: services.AddTransient<IXxxService, XxxService>()
 3. **Marker is just a flag:** No methods, only for lifetime indication
 4. **Transient for stateless:** Scoped for per-request state
 
+### 📁 File Structure:
+
+```
+src\Application\Common\Interfaces\
+├── ITransientService.cs
+└── IScopedService.cs
+
+src\Infrastructure\Common\
+└── Startup.cs (AddServices extensions)
+```
+
 ---
 
-## 10. Next Steps
+## 9. Bước tiếp theo
 
-**Tiếp theo:** [BUILD_10 - Domain Base Entities](BUILD_10_Domain_Base_Entities.md)
-
-Trong bước tiếp theo, chúng ta sẽ:
-1. ✅ Tạo base entities (BaseEntity, AuditableEntity)
-2. ✅ Implement domain events
-3. ✅ Setup audit fields (CreatedBy, UpdatedBy, etc.)
-4. ✅ Value objects pattern
-5. ✅ Entity equality
+**Tiếp theo:** [BUILD_11 - Repository Pattern](BUILD_11_Repository_Pattern.md)
 
 ---
 
