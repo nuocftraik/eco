@@ -1,10 +1,8 @@
 ﻿# Template cho Module Documentation
 
-> 📚 **Mục đích:** Template này giúp viết documentation nhất quán cho mỗi module/feature trong ECO.WebApi solution.
-
+> 📚 **Mục đích:** Template này giúp viết documentation nhất quán cho mỗi module/feature trong `{ProjectName}` solution.
 
 ---
-
 
 ## 📖 Nguyên tắc Viết Docs
 
@@ -30,6 +28,30 @@
 - ✅ Có comments giải thích logic
 - ✅ Namespace đúng chuẩn project
 - ✅ Follow naming conventions
+
+### **5. Build Order & Dependency (Bắt buộc)**
+- ✅ Code ở bước sau chỉ được dùng thành phần đã tạo ở bước trước
+- ✅ Interface/contract phải xuất hiện trước implementation
+- ✅ Ví dụ: tạo `IRepository<T>` trước rồi mới implement `Repository<T>`
+- ✅ Không tham chiếu class chưa tồn tại trong chuỗi build
+
+---
+
+## 3) Quy tắc kiến trúc bắt buộc
+
+1. **Flat Folder Structure**
+   - ✅ `src/Domain/`
+   - ❌ `src/Core/Domain/`
+
+2. **Project name = Folder name**
+   - Ví dụ: `src/Domain/Domain.csproj`
+
+3. **Namespace chuẩn**
+   - `{ProjectName}.Shared`
+   - `{ProjectName}.Domain`
+   - `{ProjectName}.Application`
+   - `{ProjectName}.Infrastructure`
+   - `{ProjectName}.Host`
 
 ---
 
@@ -97,48 +119,6 @@ public class ExampleUsage
 }
 \```
 
----
-```
-
-**Ví dụ thực tế:**
-```markdown
-## 1. Overview
-
-**Làm gì:** Setup Repository Pattern với Specification để query linh hoạt và Domain Events tự động.
-
-**Tại sao cần:**
-- **Abstraction:** Tách Application khỏi Infrastructure (EF Core)
-- **Flexible Query:** Specification pattern cho complex queries
-- **Domain Events:** Tự động phát events khi entity thay đổi
-- **Testable:** Dễ mock repositories cho unit tests
-
-**Trong bước này chúng ta sẽ:**
-- ✅ Tạo Search/Filter models
-- ✅ Tạo Repository interfaces
-- ✅ Implement repositories với EF Core
-- ✅ Setup EventAddingRepositoryDecorator
-- ✅ Tạo Base Specifications để reuse
-
-**Real-world example:**
-```csharp
-// Controller
-public class ProductsController
-{
-    public async Task<ActionResult> Search([FromBody] SearchProductsRequest request)
-    {
-        // Specification tự động build query từ request
-        var spec = new ProductsBySearchSpec(request);
-   
-        var products = await _repository.ListAsync(spec);
-        var count = await _repository.CountAsync(spec);
-        
-        return Ok(new PaginatedResult(products, count));
-    }
-}
-\```
-
----
-```
 
 ---
 
@@ -271,10 +251,10 @@ public class ClassName
 
 **Tại sao:** Đánh dấu class là domain event, hỗ trợ generic handlers.
 
-**File:** `src/Core/Domain/Common/Contracts/IEvent.cs`
+**File:** `src/Domain/Domain.csproj`
 
 ```csharp
-namespace ECO.WebApi.Domain.Common.Contracts;
+namespace {ProjectName}.Domain.Common.Contracts;
 
 /// <summary>
 /// Marker interface for all domain events
@@ -595,7 +575,7 @@ Trong bước tiếp theo, chúng ta sẽ:
 // FULL CODE implementation
 using System;
 
-namespace ECO.WebApi.Application.Common.Specification;
+namespace {ProjectName}.Application.Common.Specification;
 
 public static class SpecificationBuilderExtensions
 {
@@ -623,9 +603,9 @@ public class Product
 **Correct:**
 ```markdown
 ```csharp
-using ECO.WebApi.Domain.Common.Contracts;
+using {ProjectName}.Domain.Common.Contracts;
 
-namespace ECO.WebApi.Domain.Catalog;
+namespace {ProjectName}.Domain.Catalog;
 
 public class Product : AuditableEntity, IAggregateRoot
 {
@@ -785,7 +765,7 @@ Examples:
 ```markdown
 ```csharp
 // FULL CODE với namespace đầy đủ
-namespace ECO.WebApi.Domain.Catalog;
+namespace {ProjectName}.Domain.Catalog;
 
 public class Product
 {
@@ -1037,87 +1017,11 @@ Trong bước tiếp theo:
 
 ---
 
-## 🤖 AI Generation Metadata (Advanced - Optional)
 
-> **For AI-Assisted Documentation:** Add metadata để AI agent hiểu context khi generate/review docs.
-
-### **Quick Start**
-
-Thêm section này **ngay sau header** của BUILD_XX file:
-
-```yaml
----
-ai_metadata:
-  generated_by: "human"           # or "ai_assisted" | "ai_generated"
-  reviewed_by: "vuongnv1206"
-  last_updated: "2026-01-29"
-  layer: "Application"            # Application | Infrastructure | Domain | Host | Shared
-  patterns_used:
-    - "CQRS with MediatR"
-    - "Repository Pattern"
-  dependencies:
-    - "BUILD_01_Solution_Setup"
-    - "BUILD_04_Application_Layer"
-  ai_instructions: |
-    Specific generation rules:
-    - Rule 1
-    - Rule 2
----
 ```
 
-### **Field Reference**
-
-| Field | Purpose | Example Values |
-|-------|---------|----------------|
-| `generated_by` | Track creation method | `human`, `ai_assisted`, `ai_generated` |
-| `reviewed_by` | Track reviewer | Username or name |
-| `last_updated` | Track freshness | `YYYY-MM-DD` |
-| `layer` | Target layer for code | `Application`, `Domain`, etc. |
-| `patterns_used` | Design patterns applied | `["CQRS", "Repository"]` |
-| `dependencies` | Required BUILD steps | `["BUILD_01", "BUILD_04"]` |
-| `ai_instructions` | Custom generation rules | Freeform text |
-
-### **Real Example - Product CRUD**
-
-```yaml
----
-ai_metadata:
-  generated_by: "ai_assisted"
-  reviewed_by: "vuongnv1206"
-  last_updated: "2026-01-29"
-  layer: "Application"
-  patterns_used:
-    - "CQRS with MediatR"
-    - "FluentValidation"
-    - "Specification Pattern"
-  dependencies:
-    - "BUILD_01_Solution_Setup"
-    - "BUILD_11_Repository_Pattern"
-  ai_instructions: |
-    For Product CRUD:
-    - Entity: Domain/Catalog/Product.cs
-    - CreateProductRequest returns Guid
-    - Use ProductDto for responses
-    - Validate CategoryId exists
-    - Route: api/catalog/products
----
 ```
 
-### **Benefits**
-
-**For AI Agents:**
-- ✅ Know target layer for generated files
-- ✅ Apply correct patterns automatically
-- ✅ Check dependencies before generation
-- ✅ Follow module-specific conventions
-
-**For Team:**
-- ✅ Quick context overview
-- ✅ Track who created/reviewed
-- ✅ Understand module dependencies
-- ✅ See design decisions at a glance
-
-**Note:** Metadata là **optional** nhưng recommended cho modules phức tạp hoặc khi dùng AI assistance.
 
 ---
 
@@ -1134,20 +1038,15 @@ ai_metadata:
 ### **Mục tiêu cuối cùng:**
 
 > **Documentation-Driven Development:**  
-> Bất kỳ developer nào đọc docs này đều có thể TẠO LẠI toàn bộ solution  
+> Bất kỳ developer nào đọc docs này đều có thể TẠO LẠI toàn bộ solution 
 > từ con số 0, chỉ cần follow từng bước trong docs.
 
 **Test để verify:** Delete solution, rebuild chỉ từ docs → `dotnet build` thành công! ✅
 
-### **Advanced Features:**
-
-- **AI Metadata:** Optional, dùng khi cần AI assistance (xem [section cuối](#ai-generation-metadata-advanced-optional))
-- **Automation:** Consider `validate_docs.py` để auto-check quality
-- **Visual Diagrams:** Mermaid cho complex flows, ASCII cho simple diagrams
 
 ---
 
-**Sử dụng template này để viết documentation nhất quán và chất lượng cao cho ECO.WebApi!** 📚
+**Sử dụng template này để viết documentation nhất quán và chất lượng cao cho {ProjectName}.WebApi!** 📚
 
 ☑️ Save files with a specific encoding
 Unicode (UTF-8 with signature) - Code page 65001

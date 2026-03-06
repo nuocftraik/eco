@@ -38,13 +38,14 @@ dotnet --version
 cd D:\MyCode\MyProject
 
 # Tạo solution
-dotnet new sln -n MyProject.WebApi
+# ⚠️ Luôn dùng placeholder tên solution trong docs
+dotnet new sln -n {ProjectName}
 ```
 
 **✅ Checkpoint:**
 ```powershell
 ls *.sln
-# Phải thấy: MyProject.WebApi.sln
+# Phải thấy: {ProjectName}.sln
 ```
 
 ---
@@ -55,13 +56,22 @@ ls *.sln
 
 **Tại sao?** Layer trong phải tồn tại trước khi layer ngoài reference.
 
+### ✅ Quy tắc kiến trúc áp dụng cho bước này
+
+1. **Flat Folder Structure**
+   - ✅ `src/Domain/`
+   - ❌ `src/Core/Domain/`
+
+2. **Project name = Folder name**
+   - Ví dụ: `src/Domain/Domain.csproj`
+
 ---
 
 ### 3.1: Shared (Layer 1)
 
 ```powershell
-dotnet new classlib -n Shared -o src\Core\Shared
-dotnet sln add src\Core\Shared\Shared.csproj
+dotnet new classlib -n Shared -o src\Shared
+dotnet sln {ProjectName}.sln add src\Shared\Shared.csproj
 ```
 
 **Dependency:** Không phụ thuộc gì ✅
@@ -71,9 +81,9 @@ dotnet sln add src\Core\Shared\Shared.csproj
 ### 3.2: Domain (Layer 2)
 
 ```powershell
-dotnet new classlib -n Domain -o src\Core\Domain
-dotnet sln add src\Core\Domain\Domain.csproj
-dotnet add src\Core\Domain\Domain.csproj reference src\Core\Shared\Shared.csproj
+dotnet new classlib -n Domain -o src\Domain
+dotnet sln {ProjectName}.sln add src\Domain\Domain.csproj
+dotnet add src\Domain\Domain.csproj reference src\Shared\Shared.csproj
 ```
 
 **Dependency:** Shared ✅
@@ -83,10 +93,10 @@ dotnet add src\Core\Domain\Domain.csproj reference src\Core\Shared\Shared.csproj
 ### 3.3: Application (Layer 3)
 
 ```powershell
-dotnet new classlib -n Application -o src\Core\Application
-dotnet sln add src\Core\Application\Application.csproj
-dotnet add src\Core\Application\Application.csproj reference src\Core\Domain\Domain.csproj
-dotnet add src\Core\Application\Application.csproj reference src\Core\Shared\Shared.csproj
+dotnet new classlib -n Application -o src\Application
+dotnet sln {ProjectName}.sln add src\Application\Application.csproj
+dotnet add src\Application\Application.csproj reference src\Domain\Domain.csproj
+dotnet add src\Application\Application.csproj reference src\Shared\Shared.csproj
 ```
 
 **Dependency:** Domain + Shared ✅
@@ -96,10 +106,10 @@ dotnet add src\Core\Application\Application.csproj reference src\Core\Shared\Sha
 ### 3.4: Infrastructure (Layer 4)
 
 ```powershell
-dotnet new classlib -n Infrastructure -o src\Infrastructure\Infrastructure
-dotnet sln add src\Infrastructure\Infrastructure\Infrastructure.csproj
-dotnet add src\Infrastructure\Infrastructure\Infrastructure.csproj reference src\Core\Application\Application.csproj
-dotnet add src\Infrastructure\Infrastructure\Infrastructure.csproj reference src\Core\Domain\Domain.csproj
+dotnet new classlib -n Infrastructure -o src\Infrastructure
+dotnet sln {ProjectName}.sln add src\Infrastructure\Infrastructure.csproj
+dotnet add src\Infrastructure\Infrastructure.csproj reference src\Application\Application.csproj
+dotnet add src\Infrastructure\Infrastructure.csproj reference src\Domain\Domain.csproj
 ```
 
 **Dependency:** Application + Domain ✅
@@ -109,10 +119,10 @@ dotnet add src\Infrastructure\Infrastructure\Infrastructure.csproj reference src
 ### 3.5: Host (Layer 5)
 
 ```powershell
-dotnet new webapi -n Host -o src\Host\Host
-dotnet sln add src\Host\Host\Host.csproj
-dotnet add src\Host\Host\Host.csproj reference src\Infrastructure\Infrastructure\Infrastructure.csproj
-dotnet add src\Host\Host\Host.csproj reference src\Core\Application\Application.csproj
+dotnet new webapi -n Host -o src\Host
+dotnet sln {ProjectName}.sln add src\Host\Host.csproj
+dotnet add src\Host\Host.csproj reference src\Infrastructure\Infrastructure.csproj
+dotnet add src\Host\Host.csproj reference src\Application\Application.csproj
 ```
 
 **Dependency:** Infrastructure + Application ✅
@@ -122,10 +132,10 @@ dotnet add src\Host\Host\Host.csproj reference src\Core\Application\Application.
 ### 3.6: Migrators
 
 ```powershell
-dotnet new classlib -n Migrators.MSSQL -o src\Migrators\Migrators.MSSQL
-dotnet sln add src\Migrators\Migrators.MSSQL\Migrators.MSSQL.csproj
-dotnet add src\Migrators\Migrators.MSSQL\Migrators.MSSQL.csproj reference src\Infrastructure\Infrastructure\Infrastructure.csproj
-dotnet add src\Migrators\Migrators.MSSQL\Migrators.MSSQL.csproj reference src\Core\Domain\Domain.csproj
+dotnet new classlib -n Migrators.MSSQL -o src\Migrators.MSSQL
+dotnet sln {ProjectName}.sln add src\Migrators.MSSQL\Migrators.MSSQL.csproj
+dotnet add src\Migrators.MSSQL\Migrators.MSSQL.csproj reference src\Infrastructure\Infrastructure.csproj
+dotnet add src\Migrators.MSSQL\Migrators.MSSQL.csproj reference src\Domain\Domain.csproj
 ```
 
 **Dependency:** Infrastructure + Domain ✅
@@ -134,7 +144,7 @@ dotnet add src\Migrators\Migrators.MSSQL\Migrators.MSSQL.csproj reference src\Co
 
 **✅ Checkpoint:**
 ```powershell
-dotnet build MyProject.WebApi.sln
+dotnet build {ProjectName}.sln
 # Kết quả: Build succeeded
 ```
 
@@ -224,7 +234,7 @@ dotnet build MyProject.WebApi.sln
 
 ---
 
-### 4.4: .editorconfig
+### 4.4: .editorconfig version mới nhất
 
 **File:** `.editorconfig` (root)
 
@@ -287,7 +297,7 @@ indent_size = 2
 **✅ Checkpoint:**
 ```powershell
 dotnet clean
-dotnet build MyProject.WebApi.sln -v detailed | Select-String "analyzer"
+dotnet build {ProjectName}.sln -v detailed | Select-String "analyzer"
 
 # Kết quả mong đợi:
 # Using analyzer: StyleCop.Analyzers
@@ -300,46 +310,42 @@ dotnet build MyProject.WebApi.sln -v detailed | Select-String "analyzer"
 
 ```
 D:\MyCode\MyProject\
-├── MyProject.WebApi.sln       ⭐ Solution
-├── Directory.Build.props ⭐ Build config
-├── Directory.Build.targets       ⭐ XML docs
-├── stylecop.json      ⭐ StyleCop rules
-├── .editorconfig   ⭐ Editor format
+├── {ProjectName}.sln            ⭐ Solution
+├── Directory.Build.props        ⭐ Build config
+├── Directory.Build.targets      ⭐ XML docs
+├── stylecop.json                ⭐ StyleCop rules
+├── .editorconfig                ⭐ Editor format
 │
 └── src\
-    ├── Core\
-    │   ├── Shared\
-    │   │   ├── Shared.csproj   ⭐ Layer 1
-    │   │   └── Class1.cs      (có thể xóa)
-  │   ├── Domain\
-    │   │   ├── Domain.csproj     ⭐ Layer 2
-    │   │   └── Class1.cs
-    │   └── Application\
-    │  ├── Application.csproj ⭐ Layer 3
-    │       └── Class1.cs
+    ├── Shared\
+    │   ├── Shared.csproj        ⭐ Layer 1
+    │   └── Class1.cs            (có thể xóa)
+    ├── Domain\
+    │   ├── Domain.csproj        ⭐ Layer 2
+    │   └── Class1.cs
+    ├── Application\
+    │   ├── Application.csproj   ⭐ Layer 3
+    │   └── Class1.cs
     ├── Infrastructure\
-    │   └── Infrastructure\
-    │     ├── Infrastructure.csproj ⭐ Layer 4
-    │  └── Class1.cs
+    │   ├── Infrastructure.csproj ⭐ Layer 4
+    │   └── Class1.cs
     ├── Host\
-    │   └── Host\
-    │       ├── Host.csproj     ⭐ Layer 5
-    │       ├── Program.cs
-    │       └── Controllers\
-    └── Migrators\
-        └── Migrators.MSSQL\
+    │   ├── Host.csproj          ⭐ Layer 5
+    │   ├── Program.cs
+    │   └── Controllers\
+    └── Migrators.MSSQL\
         ├── Migrators.MSSQL.csproj ⭐ DB tool
-    └── Class1.cs
+        └── Class1.cs
 ```
 
 **Cleanup (optional):**
 ```powershell
 # Xóa Class1.cs template files
-Remove-Item src\Core\Shared\Class1.cs -ErrorAction SilentlyContinue
-Remove-Item src\Core\Domain\Class1.cs -ErrorAction SilentlyContinue
-Remove-Item src\Core\Application\Class1.cs -ErrorAction SilentlyContinue
-Remove-Item src\Infrastructure\Infrastructure\Class1.cs -ErrorAction SilentlyContinue
-Remove-Item src\Migrators\Migrators.MSSQL\Class1.cs -ErrorAction SilentlyContinue
+Remove-Item src\Shared\Class1.cs -ErrorAction SilentlyContinue
+Remove-Item src\Domain\Class1.cs -ErrorAction SilentlyContinue
+Remove-Item src\Application\Class1.cs -ErrorAction SilentlyContinue
+Remove-Item src\Infrastructure\Class1.cs -ErrorAction SilentlyContinue
+Remove-Item src\Migrators.MSSQL\Class1.cs -ErrorAction SilentlyContinue
 ```
 
 ---
@@ -377,24 +383,24 @@ Tạo `setup-solution.ps1`:
 $root = "D:\MyCode\MyProject"
 cd $root
 
-dotnet new sln -n MyProject.WebApi
+dotnet new sln -n {ProjectName}
 
-dotnet new classlib -n Shared -o src\Core\Shared
-dotnet new classlib -n Domain -o src\Core\Domain
-dotnet new classlib -n Application -o src\Core\Application
-dotnet new classlib -n Infrastructure -o src\Infrastructure\Infrastructure
-dotnet new webapi -n Host -o src\Host\Host
-dotnet new classlib -n Migrators.MSSQL -o src\Migrators\Migrators.MSSQL
+dotnet new classlib -n Shared -o src\Shared
+dotnet new classlib -n Domain -o src\Domain
+dotnet new classlib -n Application -o src\Application
+dotnet new classlib -n Infrastructure -o src\Infrastructure
+dotnet new webapi -n Host -o src\Host
+dotnet new classlib -n Migrators.MSSQL -o src\Migrators.MSSQL
 
-Get-ChildItem -Recurse -Filter *.csproj | ForEach-Object { dotnet sln add $_.FullName }
+Get-ChildItem -Recurse -Filter *.csproj | ForEach-Object { dotnet sln {ProjectName}.sln add $_.FullName }
 
-dotnet add src\Core\Domain\Domain.csproj reference src\Core\Shared\Shared.csproj
-dotnet add src\Core\Application\Application.csproj reference src\Core\Domain\Domain.csproj src\Core\Shared\Shared.csproj
-dotnet add src\Infrastructure\Infrastructure\Infrastructure.csproj reference src\Core\Application\Application.csproj src\Core\Domain\Domain.csproj
-dotnet add src\Host\Host\Host.csproj reference src\Infrastructure\Infrastructure\Infrastructure.csproj src\Core\Application\Application.csproj
-dotnet add src\Migrators\Migrators.MSSQL\Migrators.MSSQL.csproj reference src\Infrastructure\Infrastructure\Infrastructure.csproj src\Core\Domain\Domain.csproj
+dotnet add src\Domain\Domain.csproj reference src\Shared\Shared.csproj
+dotnet add src\Application\Application.csproj reference src\Domain\Domain.csproj src\Shared\Shared.csproj
+dotnet add src\Infrastructure\Infrastructure.csproj reference src\Application\Application.csproj src\Domain\Domain.csproj
+dotnet add src\Host\Host.csproj reference src\Infrastructure\Infrastructure.csproj src\Application\Application.csproj
+dotnet add src\Migrators.MSSQL\Migrators.MSSQL.csproj reference src\Infrastructure\Infrastructure.csproj src\Domain\Domain.csproj
 
-dotnet build
+dotnet build {ProjectName}.sln
 
 Write-Host "✅ Setup hoàn thành!"
 ```
