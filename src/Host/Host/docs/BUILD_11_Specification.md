@@ -1,24 +1,24 @@
-# Specification Builder Extensions - Chi ti?t Implementation
+﻿# BUILD_11 - Specification Builder Extensions - Chi tiết Implementation
 
-> ?? [Quay l?i BUILD_11](BUILD_11_Repository_Pattern.md)
+> 📚 [Quay lại BUILD_11](BUILD_11_Repository_Pattern.md)
 
-Document n�y ch?a FULL CODE implementation c?a Specification Builder Extensions.  
-?�y l� ph?n ph?c t?p nh?t c?a Repository Pattern v?i Expression Trees, Reflection, v� Generic types.
+Document này chứa FULL CODE implementation của Specification Builder Extensions.  
+Đây là phần phức tạp nhất của Repository Pattern với Expression Trees, Reflection, và Generic types.
 
 ---
 
 ## 1. Overview
 
-**File n�y implement:**
+**File này implement:**
 - `SearchBy()` - Combine keyword search + advanced search + advanced filter
 - `PaginateBy()` - Apply pagination + sorting
 - `SearchByKeyword()` - Simple keyword search
-- `AdvancedSearch()` - Search v?i fields c? th?
-- `AdvancedFilter()` - Complex filtering v?i operators v� logic
+- `AdvancedSearch()` - Search với fields cụ thể
+- `AdvancedFilter()` - Complex filtering với operators và logic
 - `OrderBy()` - Multiple field sorting
 
 **Dependencies:**
-- Ardalis.Specification
+- Ardalis.Specification (đã có trong Application.csproj)
 - System.Linq.Expressions (Expression Trees)
 - System.Reflection
 - System.Text.Json
@@ -27,12 +27,12 @@ Document n�y ch?a FULL CODE implementation c?a Specification Builder Extensions.
 
 ## 2. Filter Constants
 
-### B??c 2.1: FilterOperator Constants
+### Bước 2.1: FilterOperator Constants
 
-**File:** `src/Core/Application/Common/Models/Filter.cs` (update)
+**File:** `src/Application/Common/Models/Filter.cs` (update)
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Models;
+namespace {ProjectName}.Application.Common.Models;
 
 // ... existing Filter class ...
 
@@ -50,21 +50,21 @@ public static class FilterOperator
     /// <summary>Less Than: &lt;</summary>
     public const string LT = "lt";
     
-    /// <summary>Less Than or Equal: &lt;=</summary>
+  /// <summary>Less Than or Equal: &lt;=</summary>
     public const string LTE = "lte";
     
     /// <summary>Greater Than: &gt;</summary>
     public const string GT = "gt";
     
-/// <summary>Greater Than or Equal: &gt;=</summary>
+    /// <summary>Greater Than or Equal: &gt;=</summary>
     public const string GTE = "gte";
-    
+  
     /// <summary>String Contains</summary>
     public const string CONTAINS = "contains";
     
     /// <summary>String Starts With</summary>
     public const string STARTSWITH = "startswith";
-  
+
     /// <summary>String Ends With</summary>
     public const string ENDSWITH = "endswith";
 }
@@ -75,7 +75,7 @@ public static class FilterOperator
 public static class FilterLogic
 {
     /// <summary>AND logic: &amp;&amp;</summary>
- public const string AND = "and";
+    public const string AND = "and";
     
     /// <summary>OR logic: ||</summary>
     public const string OR = "or";
@@ -89,42 +89,42 @@ public static class FilterLogic
 
 ## 3. SpecificationBuilderExtensions - Full Implementation
 
-### B??c 3.1: Core Extensions (SearchBy, PaginateBy)
+### Bước 3.1: Core Extensions (SearchBy, PaginateBy)
 
-**File:** `src/Core/Application/Common/Specification/SpecificationBuilderExtensions.cs`
+**File:** `src/Application/Common/Specification/SpecificationBuilderExtensions.cs`
 
 ```csharp
 using Ardalis.Specification;
-using ECO.WebApi.Application.Common.Exceptions;
-using ECO.WebApi.Application.Common.Models;
+using {ProjectName}.Application.Common.Exceptions;
+using {ProjectName}.Application.Common.Models;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
 
-namespace ECO.WebApi.Application.Common.Specification;
+namespace {ProjectName}.Application.Common.Specification;
 
 public static class SpecificationBuilderExtensions
 {
     #region SearchBy & PaginateBy (Entry Points)
 
     /// <summary>
-    /// Extension method ?? apply t?t c? search v� filter t? BaseFilter v�o specification.
+    /// Extension method để apply tất cả search và filter từ BaseFilter vào specification.
     /// </summary>
- public static ISpecificationBuilder<T> SearchBy<T>(this ISpecificationBuilder<T> query, BaseFilter filter) =>
+    public static ISpecificationBuilder<T> SearchBy<T>(this ISpecificationBuilder<T> query, BaseFilter filter) =>
      query
-        .SearchByKeyword(filter.Keyword)
-      .AdvancedSearch(filter.AdvancedSearch)
-   .AdvancedFilter(filter.AdvancedFilter);
+.SearchByKeyword(filter.Keyword)
+       .AdvancedSearch(filter.AdvancedSearch)
+     .AdvancedFilter(filter.AdvancedFilter);
 
     /// <summary>
-    /// Extension method ?? apply pagination v� ordering v�o specification.
+    /// Extension method để apply pagination và ordering vào specification.
     /// </summary>
     public static ISpecificationBuilder<T> PaginateBy<T>(this ISpecificationBuilder<T> query, PaginationFilter filter)
     {
-        // Validate v� set defaults
+        // Validate và set defaults
         if (filter.PageNumber <= 0)
-        {
-  filter.PageNumber = 1;
+   {
+     filter.PageNumber = 1;
         }
 
         if (filter.PageSize <= 0)
@@ -132,15 +132,15 @@ public static class SpecificationBuilderExtensions
             filter.PageSize = 10;
         }
 
-        // Calculate skip
+      // Calculate skip
         if (filter.PageNumber > 1)
-        {
+  {
             query = query.Skip((filter.PageNumber - 1) * filter.PageSize);
-        }
+      }
 
         return query
    .Take(filter.PageSize)
-            .OrderBy(filter.OrderBy);
+  .OrderBy(filter.OrderBy);
     }
 
     #endregion
@@ -148,15 +148,15 @@ public static class SpecificationBuilderExtensions
     #region Search Methods
 
     /// <summary>
-    /// Extension method ?? search ??n gi?n v?i keyword trong t?t c? fields.
+    /// Extension method để search đơn giản với keyword trong tất cả fields.
     /// </summary>
-    public static IOrderedSpecificationBuilder<T> SearchByKeyword<T>(
-        this ISpecificationBuilder<T> specificationBuilder,
+ public static IOrderedSpecificationBuilder<T> SearchByKeyword<T>(
+   this ISpecificationBuilder<T> specificationBuilder,
         string? keyword) =>
- specificationBuilder.AdvancedSearch(new Search { Keyword = keyword });
+        specificationBuilder.AdvancedSearch(new Search { Keyword = keyword });
 
     /// <summary>
-    /// Extension method ?? search n�ng cao v?i keyword trong c�c fields c? th? ho?c t?t c? fields.
+    /// Extension method để search nâng cao với keyword trong các fields cụ thể hoặc tất cả fields.
     /// </summary>
     public static IOrderedSpecificationBuilder<T> AdvancedSearch<T>(
         this ISpecificationBuilder<T> specificationBuilder,
@@ -164,37 +164,37 @@ public static class SpecificationBuilderExtensions
     {
         if (!string.IsNullOrEmpty(search?.Keyword))
         {
-      if (search.Fields?.Any() is true)
-  {
-                // Search trong c�c fields ???c ch? ??nh
-            foreach (string field in search.Fields)
-      {
+   if (search.Fields?.Any() is true)
+ {
+          // Search trong các fields được chỉ định
+        foreach (string field in search.Fields)
+           {
     var paramExpr = Expression.Parameter(typeof(T));
-   MemberExpression propertyExpr = GetPropertyExpression(field, paramExpr);
-     specificationBuilder.AddSearchPropertyByKeyword(propertyExpr, paramExpr, search.Keyword);
- }
+     MemberExpression propertyExpr = GetPropertyExpression(field, paramExpr);
+        specificationBuilder.AddSearchPropertyByKeyword(propertyExpr, paramExpr, search.Keyword);
+     }
             }
-            else
-     {
-     // Search trong T?T C? primitive fields
-         foreach (var property in typeof(T).GetProperties()
-          .Where(prop =>
-                (Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType) is { } propertyType
-      && !propertyType.IsEnum
-&& Type.GetTypeCode(propertyType) != TypeCode.Object))
-         {
-     var paramExpr = Expression.Parameter(typeof(T));
-      var propertyExpr = Expression.Property(paramExpr, property);
-     specificationBuilder.AddSearchPropertyByKeyword(propertyExpr, paramExpr, search.Keyword);
-    }
-      }
-    }
+     else
+        {
+         // Search trong TẤT CẢ primitive fields
+ foreach (var property in typeof(T).GetProperties()
+             .Where(prop =>
+   (Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType) is { } propertyType
+        && !propertyType.IsEnum
+ && Type.GetTypeCode(propertyType) != TypeCode.Object))
+   {
+ var paramExpr = Expression.Parameter(typeof(T));
+        var propertyExpr = Expression.Property(paramExpr, property);
+      specificationBuilder.AddSearchPropertyByKeyword(propertyExpr, paramExpr, search.Keyword);
+         }
+       }
+        }
 
-        return new OrderedSpecificationBuilder<T>(specificationBuilder.Specification);
+  return new OrderedSpecificationBuilder<T>(specificationBuilder.Specification);
     }
 
     /// <summary>
-    /// Private helper method ?? th�m search criteria cho m?t property c? th?.
+    /// Private helper method để thêm search criteria cho một property cụ thể.
     /// </summary>
     private static void AddSearchPropertyByKeyword<T>(
   this ISpecificationBuilder<T> specificationBuilder,
@@ -203,39 +203,39 @@ public static class SpecificationBuilderExtensions
         string keyword,
         string operatorSearch = FilterOperator.CONTAINS)
     {
-     if (propertyExpr is not MemberExpression memberExpr || memberExpr.Member is not PropertyInfo property)
-      {
-   throw new ArgumentException("propertyExpr must be a property expression.", nameof(propertyExpr));
+        if (propertyExpr is not MemberExpression memberExpr || memberExpr.Member is not PropertyInfo property)
+        {
+            throw new ArgumentException("propertyExpr must be a property expression.", nameof(propertyExpr));
     }
 
-        // T?o search pattern
-        string searchTerm = operatorSearch switch
+   // Tạo search pattern
+   string searchTerm = operatorSearch switch
         {
-        FilterOperator.STARTSWITH => $"{keyword.ToLower()}%",
-       FilterOperator.ENDSWITH => $"%{keyword.ToLower()}",
-      FilterOperator.CONTAINS => $"%{keyword.ToLower()}%",
-        _ => throw new ArgumentException("operatorSearch is not valid.", nameof(operatorSearch))
-};
+  FilterOperator.STARTSWITH => $"{keyword.ToLower()}%",
+  FilterOperator.ENDSWITH => $"%{keyword.ToLower()}",
+FilterOperator.CONTAINS => $"%{keyword.ToLower()}%",
+            _ => throw new ArgumentException("operatorSearch is not valid.", nameof(operatorSearch))
+        };
 
-        // Build selector expression
+    // Build selector expression
         Expression selectorExpr =
  property.PropertyType == typeof(string)
-? propertyExpr
-     : Expression.Condition(
-Expression.Equal(
-      Expression.Convert(propertyExpr, typeof(object)),
-     Expression.Constant(null, typeof(object))),
-              Expression.Constant(null, typeof(string)),
-  Expression.Call(propertyExpr, "ToString", null, null));
+ ? propertyExpr
+        : Expression.Condition(
+               Expression.Equal(
+     Expression.Convert(propertyExpr, typeof(object)),
+    Expression.Constant(null, typeof(object))),
+          Expression.Constant(null, typeof(string)),
+         Expression.Call(propertyExpr, "ToString", null, null));
 
-        // Convert to lowercase
+     // Convert to lowercase
         var toLowerMethod = typeof(string).GetMethod("ToLower", Type.EmptyTypes);
         Expression callToLowerMethod = Expression.Call(selectorExpr, toLowerMethod!);
-   var selector = Expression.Lambda<Func<T, string>>(callToLowerMethod, paramExpr);
+    var selector = Expression.Lambda<Func<T, string>>(callToLowerMethod, paramExpr);
 
-        // Add to SearchCriterias
-   ((List<SearchExpressionInfo<T>>)specificationBuilder.Specification.SearchCriterias)
-            .Add(new SearchExpressionInfo<T>(selector, searchTerm, 1));
+   // Add to SearchCriterias
+  ((List<SearchExpressionInfo<T>>)specificationBuilder.Specification.SearchCriterias)
+        .Add(new SearchExpressionInfo<T>(selector, searchTerm, 1));
     }
 
     #endregion
@@ -243,298 +243,298 @@ Expression.Equal(
     #region Filter Methods
 
     /// <summary>
-    /// Extension method ?? apply advanced filter v?i operators v� logic.
+    /// Extension method để apply advanced filter với operators và logic.
     /// </summary>
     public static IOrderedSpecificationBuilder<T> AdvancedFilter<T>(
- this ISpecificationBuilder<T> specificationBuilder,
-        Filter? filter)
+        this ISpecificationBuilder<T> specificationBuilder,
+ Filter? filter)
     {
-  if (filter is not null)
-    {
-          var parameter = Expression.Parameter(typeof(T));
-            Expression binaryExpresioFilter;
+     if (filter is not null)
+   {
+        var parameter = Expression.Parameter(typeof(T));
+   Expression binaryExpresioFilter;
 
-        if (!string.IsNullOrEmpty(filter.Logic))
-      {
+          if (!string.IsNullOrEmpty(filter.Logic))
+{
  if (filter.Filters is null)
-          throw new CustomException("The Filters attribute is required when declaring a logic");
+    throw new CustomException("The Filters attribute is required when declaring a logic");
 
-           binaryExpresioFilter = CreateFilterExpression(filter.Logic, filter.Filters, parameter);
-         }
-            else
-            {
-var filterValid = GetValidFilter(filter);
-                binaryExpresioFilter = CreateFilterExpression(
-      filterValid.Field!,
-  filterValid.Operator!,
-        filterValid.Value,
-     parameter);
-      }
+       binaryExpresioFilter = CreateFilterExpression(filter.Logic, filter.Filters, parameter);
+            }
+ else
+      {
+                var filterValid = GetValidFilter(filter);
+         binaryExpresioFilter = CreateFilterExpression(
+         filterValid.Field!,
+       filterValid.Operator!,
+    filterValid.Value,
+              parameter);
+            }
 
-   ((List<WhereExpressionInfo<T>>)specificationBuilder.Specification.WhereExpressions)
-           .Add(new WhereExpressionInfo<T>(
-            Expression.Lambda<Func<T, bool>>(binaryExpresioFilter, parameter)));
+            ((List<WhereExpressionInfo<T>>)specificationBuilder.Specification.WhereExpressions)
+      .Add(new WhereExpressionInfo<T>(
+          Expression.Lambda<Func<T, bool>>(binaryExpresioFilter, parameter)));
+        }
+
+   return new OrderedSpecificationBuilder<T>(specificationBuilder.Specification);
   }
 
-        return new OrderedSpecificationBuilder<T>(specificationBuilder.Specification);
-    }
-
     /// <summary>
-    /// Build filter expression t? Logic v� Filters (recursive).
+    /// Build filter expression từ Logic và Filters (recursive).
     /// </summary>
     private static Expression CreateFilterExpression(
         string logic,
-  IEnumerable<Filter> filters,
-    ParameterExpression parameter)
+        IEnumerable<Filter> filters,
+        ParameterExpression parameter)
     {
-        Expression filterExpression = default!;
+  Expression filterExpression = default!;
 
         foreach (var filter in filters)
         {
-Expression bExpresionFilter;
+ Expression bExpresionFilter;
 
-            if (!string.IsNullOrEmpty(filter.Logic))
-            {
-     if (filter.Filters is null)
-             throw new CustomException("The Filters attribute is required when declaring a logic");
+         if (!string.IsNullOrEmpty(filter.Logic))
+      {
+       if (filter.Filters is null)
+ throw new CustomException("The Filters attribute is required when declaring a logic");
 
-        bExpresionFilter = CreateFilterExpression(filter.Logic, filter.Filters, parameter);
+    bExpresionFilter = CreateFilterExpression(filter.Logic, filter.Filters, parameter);
             }
-            else
-     {
-        var filterValid = GetValidFilter(filter);
-  bExpresionFilter = CreateFilterExpression(
-            filterValid.Field!,
+       else
+            {
+                var filterValid = GetValidFilter(filter);
+      bExpresionFilter = CreateFilterExpression(
+                filterValid.Field!,
         filterValid.Operator!,
         filterValid.Value,
-  parameter);
+    parameter);
        }
 
-          filterExpression = filterExpression is null
- ? bExpresionFilter
-     : CombineFilter(logic, filterExpression, bExpresionFilter);
-        }
+            filterExpression = filterExpression is null
+       ? bExpresionFilter
+              : CombineFilter(logic, filterExpression, bExpresionFilter);
+     }
 
         return filterExpression;
     }
 
     /// <summary>
-    /// Build filter expression t? Field, Operator, Value.
+    /// Build filter expression từ Field, Operator, Value.
     /// </summary>
     private static Expression CreateFilterExpression(
         string field,
- string filterOperator,
- object? value,
-        ParameterExpression parameter)
+        string filterOperator,
+        object? value,
+ ParameterExpression parameter)
     {
         var propertyExpresion = GetPropertyExpression(field, parameter);
-        var valueExpresion = GeValuetExpression(field, value, propertyExpresion.Type);
+      var valueExpresion = GeValuetExpression(field, value, propertyExpresion.Type);
         return CreateFilterExpression(propertyExpresion, valueExpresion, filterOperator);
     }
 
     /// <summary>
-    /// Build binary expression t? member expression v� constant expression.
+    /// Build binary expression từ member expression và constant expression.
     /// </summary>
-    private static Expression CreateFilterExpression(
-   Expression memberExpression,
-Expression constantExpression,
+private static Expression CreateFilterExpression(
+        Expression memberExpression,
+        Expression constantExpression,
         string filterOperator)
     {
-        // Case-insensitive string comparison
-        if (memberExpression.Type == typeof(string))
+      // Case-insensitive string comparison
+     if (memberExpression.Type == typeof(string))
       {
-       constantExpression = Expression.Call(constantExpression, "ToLower", null);
-            memberExpression = Expression.Call(memberExpression, "ToLower", null);
+      constantExpression = Expression.Call(constantExpression, "ToLower", null);
+         memberExpression = Expression.Call(memberExpression, "ToLower", null);
         }
 
-        return filterOperator switch
-        {
-  FilterOperator.EQ => Expression.Equal(memberExpression, constantExpression),
-  FilterOperator.NEQ => Expression.NotEqual(memberExpression, constantExpression),
-         FilterOperator.LT => Expression.LessThan(memberExpression, constantExpression),
-      FilterOperator.LTE => Expression.LessThanOrEqual(memberExpression, constantExpression),
-     FilterOperator.GT => Expression.GreaterThan(memberExpression, constantExpression),
-            FilterOperator.GTE => Expression.GreaterThanOrEqual(memberExpression, constantExpression),
-       FilterOperator.CONTAINS => Expression.Call(memberExpression, "Contains", null, constantExpression),
-         FilterOperator.STARTSWITH => Expression.Call(memberExpression, "StartsWith", null, constantExpression),
+      return filterOperator switch
+  {
+    FilterOperator.EQ => Expression.Equal(memberExpression, constantExpression),
+     FilterOperator.NEQ => Expression.NotEqual(memberExpression, constantExpression),
+       FilterOperator.LT => Expression.LessThan(memberExpression, constantExpression),
+            FilterOperator.LTE => Expression.LessThanOrEqual(memberExpression, constantExpression),
+      FilterOperator.GT => Expression.GreaterThan(memberExpression, constantExpression),
+  FilterOperator.GTE => Expression.GreaterThanOrEqual(memberExpression, constantExpression),
+            FilterOperator.CONTAINS => Expression.Call(memberExpression, "Contains", null, constantExpression),
+        FilterOperator.STARTSWITH => Expression.Call(memberExpression, "StartsWith", null, constantExpression),
             FilterOperator.ENDSWITH => Expression.Call(memberExpression, "EndsWith", null, constantExpression),
- _ => throw new CustomException("Filter Operator is not valid."),
-      };
+     _ => throw new CustomException("Filter Operator is not valid."),
+        };
     }
 
     /// <summary>
-    /// K?t h?p hai expressions v?i logic operator.
+    /// Kết hợp hai expressions với logic operator.
     /// </summary>
     private static Expression CombineFilter(
-      string filterOperator,
-   Expression bExpresionBase,
+        string filterOperator,
+        Expression bExpresionBase,
         Expression bExpresion) => filterOperator switch
         {
-      FilterLogic.AND => Expression.And(bExpresionBase, bExpresion),
-    FilterLogic.OR => Expression.Or(bExpresionBase, bExpresion),
-  FilterLogic.XOR => Expression.ExclusiveOr(bExpresionBase, bExpresion),
-     _ => throw new ArgumentException("FilterLogic is not valid."),
- };
+            FilterLogic.AND => Expression.And(bExpresionBase, bExpresion),
+         FilterLogic.OR => Expression.Or(bExpresionBase, bExpresion),
+            FilterLogic.XOR => Expression.ExclusiveOr(bExpresionBase, bExpresion),
+            _ => throw new ArgumentException("FilterLogic is not valid."),
+        };
 
     #endregion
 
     #region OrderBy Methods
 
     /// <summary>
-    /// Extension method ?? apply ordering v�o specification.
+    /// Extension method để apply ordering vào specification.
     /// </summary>
     public static IOrderedSpecificationBuilder<T> OrderBy<T>(
-     this ISpecificationBuilder<T> specificationBuilder,
-        string[]? orderByFields)
+        this ISpecificationBuilder<T> specificationBuilder,
+    string[]? orderByFields)
     {
         if (orderByFields is not null)
         {
-      foreach (var field in ParseOrderBy(orderByFields))
-       {
-             var paramExpr = Expression.Parameter(typeof(T));
+            foreach (var field in ParseOrderBy(orderByFields))
+    {
+        var paramExpr = Expression.Parameter(typeof(T));
 
-    Expression propertyExpr = paramExpr;
-   foreach (string member in field.Key.Split('.'))
-        {
-  propertyExpr = Expression.PropertyOrField(propertyExpr, member);
-     }
-
-       var keySelector = Expression.Lambda<Func<T, object?>>(
-         Expression.Convert(propertyExpr, typeof(object)),
- paramExpr);
-
-    ((List<OrderExpressionInfo<T>>)specificationBuilder.Specification.OrderExpressions)
-               .Add(new OrderExpressionInfo<T>(keySelector, field.Value));
-       }
+     Expression propertyExpr = paramExpr;
+             foreach (string member in field.Key.Split('.'))
+{
+          propertyExpr = Expression.PropertyOrField(propertyExpr, member);
         }
 
-        return new OrderedSpecificationBuilder<T>(specificationBuilder.Specification);
+  var keySelector = Expression.Lambda<Func<T, object?>>(
+      Expression.Convert(propertyExpr, typeof(object)),
+   paramExpr);
+
+    ((List<OrderExpressionInfo<T>>)specificationBuilder.Specification.OrderExpressions)
+       .Add(new OrderExpressionInfo<T>(keySelector, field.Value));
+}
+        }
+
+    return new OrderedSpecificationBuilder<T>(specificationBuilder.Specification);
     }
 
- /// <summary>
-    /// Parse orderByFields array th�nh Dictionary.
+    /// <summary>
+    /// Parse orderByFields array thành Dictionary.
     /// </summary>
     private static Dictionary<string, OrderTypeEnum> ParseOrderBy(string[] orderByFields) =>
         new(orderByFields.Select((orderByfield, index) =>
         {
-      string[] fieldParts = orderByfield.Split(' ');
-    string field = fieldParts[0];
-       bool descending = fieldParts.Length > 1 &&
-    fieldParts[1].StartsWith("Desc", StringComparison.OrdinalIgnoreCase);
+        string[] fieldParts = orderByfield.Split(' ');
+     string field = fieldParts[0];
+     bool descending = fieldParts.Length > 1 &&
+         fieldParts[1].StartsWith("Desc", StringComparison.OrdinalIgnoreCase);
 
         var orderBy = index == 0
-      ? descending ? OrderTypeEnum.OrderByDescending : OrderTypeEnum.OrderBy
+             ? descending ? OrderTypeEnum.OrderByDescending : OrderTypeEnum.OrderBy
   : descending ? OrderTypeEnum.ThenByDescending : OrderTypeEnum.ThenBy;
 
-       return new KeyValuePair<string, OrderTypeEnum>(field, orderBy);
-      }));
+    return new KeyValuePair<string, OrderTypeEnum>(field, orderBy);
+  }));
 
     #endregion
 
     #region Helper Methods
 
     /// <summary>
-    /// Build property expression t? property name (support nested properties).
+    /// Build property expression từ property name (support nested properties).
     /// </summary>
     private static MemberExpression GetPropertyExpression(
-      string propertyName,
+        string propertyName,
         ParameterExpression parameter)
     {
-   Expression propertyExpression = parameter;
+      Expression propertyExpression = parameter;
 
-    foreach (string member in propertyName.Split('.'))
+        foreach (string member in propertyName.Split('.'))
         {
     propertyExpression = Expression.PropertyOrField(propertyExpression, member);
-        }
+ }
 
-return (MemberExpression)propertyExpression;
+        return (MemberExpression)propertyExpression;
     }
 
     /// <summary>
-    /// Extract string t? JsonElement.
+    /// Extract string từ JsonElement.
     /// </summary>
-    private static string GetStringFromJsonElement(object value)
+private static string GetStringFromJsonElement(object value)
         => ((JsonElement)value).GetString()!;
 
     /// <summary>
-  /// Convert value th�nh ConstantExpression v?i type ph� h?p.
+ /// Convert value thành ConstantExpression với type phù hợp.
     /// </summary>
     private static ConstantExpression GeValuetExpression(
-   string field,
+        string field,
         object? value,
         Type propertyType)
     {
         if (value == null)
-            return Expression.Constant(null, propertyType);
+    return Expression.Constant(null, propertyType);
 
-        // Handle Enum
- if (propertyType.IsEnum)
-    {
+    // Handle Enum
+        if (propertyType.IsEnum)
+      {
             string? stringEnum = GetStringFromJsonElement(value);
-        if (!Enum.TryParse(propertyType, stringEnum, true, out object? valueparsed))
-    throw new CustomException($"Value {value} is not valid for {field}");
-      return Expression.Constant(valueparsed, propertyType);
+  if (!Enum.TryParse(propertyType, stringEnum, true, out object? valueparsed))
+          throw new CustomException($"Value {value} is not valid for {field}");
+        return Expression.Constant(valueparsed, propertyType);
         }
 
-        // Handle Guid
-     if (propertyType == typeof(Guid))
-        {
-    string? stringGuid = GetStringFromJsonElement(value);
-  if (!Guid.TryParse(stringGuid, out Guid valueparsed))
-                throw new CustomException($"Value {value} is not valid for {field}");
+      // Handle Guid
+        if (propertyType == typeof(Guid))
+    {
+            string? stringGuid = GetStringFromJsonElement(value);
+            if (!Guid.TryParse(stringGuid, out Guid valueparsed))
+              throw new CustomException($"Value {value} is not valid for {field}");
             return Expression.Constant(valueparsed, propertyType);
-        }
+      }
 
         // Handle String
      if (propertyType == typeof(string))
-        {
-    string? text = GetStringFromJsonElement(value);
-         return Expression.Constant(text, propertyType);
-     }
-
-     // Handle DateTime
-        if (propertyType == typeof(DateTime) || propertyType == typeof(DateTime?))
-    {
-     string? text = GetStringFromJsonElement(value);
-   return Expression.Constant(ChangeType(text, propertyType), propertyType);
+  {
+            string? text = GetStringFromJsonElement(value);
+     return Expression.Constant(text, propertyType);
         }
 
-        // Handle other types
-     return Expression.Constant(
-         ChangeType(((JsonElement)value).GetRawText(), propertyType),
-        propertyType);
+        // Handle DateTime
+        if (propertyType == typeof(DateTime) || propertyType == typeof(DateTime?))
+      {
+            string? text = GetStringFromJsonElement(value);
+            return Expression.Constant(ChangeType(text, propertyType), propertyType);
+        }
+
+ // Handle other types
+        return Expression.Constant(
+            ChangeType(((JsonElement)value).GetRawText(), propertyType),
+       propertyType);
     }
 
     /// <summary>
-    /// Convert value sang type kh�c (handle Nullable types).
+    /// Convert value sang type khác (handle Nullable types).
     /// </summary>
     public static dynamic? ChangeType(object value, Type conversion)
     {
-        var t = conversion;
+    var t = conversion;
 
         if (t.IsGenericType && t.GetGenericTypeDefinition().Equals(typeof(Nullable<>)))
         {
-            if (value == null)
-        {
-         return null;
-     }
+  if (value == null)
+    {
+          return null;
+  }
 
-            t = Nullable.GetUnderlyingType(t);
+ t = Nullable.GetUnderlyingType(t);
         }
 
-        return Convert.ChangeType(value, t!);
+  return Convert.ChangeType(value, t!);
     }
 
     /// <summary>
     /// Validate Filter object.
     /// </summary>
     private static Filter GetValidFilter(Filter filter)
-    {
-     if (string.IsNullOrEmpty(filter.Field))
-         throw new CustomException("The field attribute is required when declaring a filter");
+  {
+        if (string.IsNullOrEmpty(filter.Field))
+            throw new CustomException("The field attribute is required when declaring a filter");
 
         if (string.IsNullOrEmpty(filter.Operator))
-       throw new CustomException("The Operator attribute is required when declaring a filter");
+            throw new CustomException("The Operator attribute is required when declaring a filter");
 
         return filter;
     }
@@ -545,18 +545,18 @@ return (MemberExpression)propertyExpression;
 
 ---
 
-## 4. Gi?i th�ch Chi ti?t
+## 4. Giải thích Chi tiết
 
 ### 4.1: Expression Trees
 
-**Expression Trees l� g�?**
-- C?u tr�c data ?? represent code as data
-- C� th? build, modify, compile runtime
-- D�ng ?? t?o dynamic LINQ queries
+**Expression Trees là gì?**
+- Cấu trúc data để represent code as data
+- Có thể build, modify, compile runtime
+- Dùng để tạo dynamic LINQ queries
 
 **Example:**
 ```csharp
-// Thay v� vi?t:
+// Thay vì viết:
 Func<Product, bool> lambda = p => p.Price > 100;
 
 // Ta build Expression Tree:
@@ -574,24 +574,24 @@ var lambda = Expression.Lambda<Func<Product, bool>>(greaterThan, parameter);
 
 ```
 SearchBy(filter)
-    ?
+    ↓
 SearchByKeyword(filter.Keyword)
-    ? AdvancedSearch v?i Search { Keyword = keyword }
-    ? Loop primitive fields
-    ? AddSearchPropertyByKeyword cho m?i field
-    ? Build Expression: x => x.Property.ToLower().Contains(keyword)
-        ? Add v�o SearchCriterias
-    ?
+  → AdvancedSearch với Search { Keyword = keyword }
+    → Loop primitive fields
+    → AddSearchPropertyByKeyword cho mỗi field
+    → Build Expression: x => x.Property.ToLower().Contains(keyword)
+    → Add vào SearchCriterias
+ ↓
 AdvancedSearch(filter.AdvancedSearch)
-    ? N?u c� Fields: Loop fields ch? ??nh
-    ? N?u kh�ng: Loop t?t c? primitive fields
-    ? AddSearchPropertyByKeyword cho m?i field
-    ?
+    → Nếu có Fields: Loop fields chỉ định
+    → Nếu không: Loop tất cả primitive fields
+    → AddSearchPropertyByKeyword cho mỗi field
+    ↓
 AdvancedFilter(filter.AdvancedFilter)
-    ? N?u c� Logic: CreateFilterExpression (recursive)
-    ? N?u kh�ng: CreateFilterExpression ??n gi?n
-    ? Build Expression: x => x.Field Operator Value
-  ? Add v�o WhereExpressions
+    → Nếu có Logic: CreateFilterExpression (recursive)
+    → Nếu không: CreateFilterExpression đơn giản
+    → Build Expression: x => x.Field Operator Value
+    → Add vào WhereExpressions
 ```
 
 ---
@@ -605,36 +605,36 @@ AdvancedFilter(filter.AdvancedFilter)
 
 **Flow:**
 ```
-1. GetValidFilter ? Validate Field v� Operator
+1. GetValidFilter → Validate Field và Operator
 2. GetPropertyExpression("Price", parameter)
-   ? x.Price (MemberExpression)
+   → x.Price (MemberExpression)
 3. GeValuetExpression("Price", 1000, typeof(decimal))
-   ? Expression.Constant(1000m, typeof(decimal))
+   → Expression.Constant(1000m, typeof(decimal))
 4. CreateFilterExpression(x.Price, 1000m, "gte")
-   ? Expression.GreaterThanOrEqual(x.Price, 1000m)
+   → Expression.GreaterThanOrEqual(x.Price, 1000m)
 5. Wrap trong lambda: x => x.Price >= 1000m
-6. Add v�o WhereExpressions
+6. Add vào WhereExpressions
 ```
 
-**Complex filter v?i logic:**
+**Complex filter với logic:**
 ```json
 {
   "logic": "and",
   "filters": [
     { "field": "Price", "operator": "gte", "value": 1000 },
-{ "field": "Stock", "operator": "gt", "value": 0 }
+    { "field": "Stock", "operator": "gt", "value": 0 }
   ]
 }
 ```
 
 **Flow:**
 ```
-1. Detect Logic="and" ? Recursive call
+1. Detect Logic="and" → Recursive call
 2. Loop filters:
    a) Filter 1: x.Price >= 1000
    b) Filter 2: x.Stock > 0
 3. CombineFilter("and", filter1Expression, filter2Expression)
-   ? Expression.And(x.Price >= 1000, x.Stock > 0)
+   → Expression.And(x.Price >= 1000, x.Stock > 0)
 4. Result: x => (x.Price >= 1000) && (x.Stock > 0)
 ```
 
@@ -649,9 +649,9 @@ orderBy = ["Name", "Price Desc", "Category.Name"]
 
 **ParseOrderBy:**
 ```
-"Name"     ? (Name, OrderBy)          // First field, ascending
-"Price Desc" ? (Price, ThenByDescending) // Second field, descending
-"Category.Name" ? (Category.Name, ThenBy)     // Third field, ascending
+"Name"           → (Name, OrderBy)              // First field, ascending
+"Price Desc"→ (Price, ThenByDescending)    // Second field, descending
+"Category.Name"  → (Category.Name, ThenBy)      // Third field, ascending
 ```
 
 **Build Expressions:**
@@ -683,7 +683,7 @@ spec.Query.SearchByKeyword("iphone");
 // SQL: WHERE Name LIKE '%iphone%' OR Description LIKE '%iphone%' OR ...
 ```
 
-### Example 2: Advanced search v?i fields
+### Example 2: Advanced search với fields
 ```csharp
 var search = new Search
 {
@@ -705,15 +705,15 @@ var filter = new Filter
     Filters = new List<Filter>
     {
         new() { Field = "Price", Operator = "gte", Value = 1000 },
-  new() { Field = "Price", Operator = "lte", Value = 5000 },
-      new()
-        {
-            Logic = "or",
-   Filters = new List<Filter>
+        new() { Field = "Price", Operator = "lte", Value = 5000 },
+  new()
 {
-    new() { Field = "Brand.Name", Operator = "eq", Value = "Apple" },
-    new() { Field = "Brand.Name", Operator = "eq", Value = "Samsung" }
- }
+       Logic = "or",
+          Filters = new List<Filter>
+     {
+new() { Field = "Brand.Name", Operator = "eq", Value = "Apple" },
+        new() { Field = "Brand.Name", Operator = "eq", Value = "Samsung" }
+            }
         }
     }
 };
@@ -731,12 +731,12 @@ var request = new PaginationFilter
 {
     PageNumber = 2,
     PageSize = 10,
-    Keyword = "phone",
-  OrderBy = new[] { "Name", "Price Desc" },
+ Keyword = "phone",
+    OrderBy = new[] { "Name", "Price Desc" },
     AdvancedFilter = new Filter
     {
-   Field = "IsActive",
-    Operator = "eq",
+        Field = "IsActive",
+        Operator = "eq",
         Value = true
     }
 };
@@ -747,7 +747,7 @@ spec.Query
     .PaginateBy(request);
 
 // SQL: WHERE (Name LIKE '%phone%' OR ...) AND IsActive = 1
-//      ORDER BY Name ASC, Price DESC
+// ORDER BY Name ASC, Price DESC
 //      OFFSET 10 ROWS FETCH NEXT 10 ROWS ONLY
 ```
 
@@ -755,16 +755,16 @@ spec.Query
 
 ## 6. Common Pitfalls
 
-### Issue 1: Nested property kh�ng t?n t?i
+### Issue 1: Nested property không tồn tại
 ```json
 {
-  "field": "Category.Name",  // Category c� th? null!
+  "field": "Category.Name",  // Category có thể null!
   "operator": "eq",
   "value": "Electronics"
 }
 ```
 
-**Solution:** Include Category tr??c khi filter:
+**Solution:** Include Category trước khi filter:
 ```csharp
 Query.Include(p => p.Category)
      .AdvancedFilter(filter);
@@ -777,13 +777,13 @@ Query.Include(p => p.Category)
 {
   "field": "Price",
   "operator": "gte",
-  "value": "1000"  // String thay v� number!
+  "value": "1000"  // String thay vì number!
 }
 ```
 
-**Solution:** `GeValuetExpression` t? ??ng parse:
+**Solution:** `GeValuetExpression` tự động parse:
 ```csharp
-// "1000" ? Convert.ChangeType("1000", typeof(decimal)) ? 1000m
+// "1000" → Convert.ChangeType("1000", typeof(decimal)) → 1000m
 ```
 
 ---
@@ -793,28 +793,28 @@ Query.Include(p => p.Category)
 {
   "field": "Status",
   "operator": "eq",
-  "value": "InvalidStatus"  // Enum kh�ng c� value n�y!
+  "value": "InvalidStatus"  // Enum không có value này!
 }
 ```
 
 **Error:** `CustomException: Value InvalidStatus is not valid for Status`
 
-**Solution:** Validate enum values tr??c khi g?i request.
+**Solution:** Validate enum values trước khi gọi request.
 
 ---
 
 ## 7. Performance Considerations
 
-### 7.1: Search trong t?t c? fields
+### 7.1: Search trong tất cả fields
 ```csharp
-// ? Slow: Search 20 fields
+// ❌ Slow: Search 20 fields
 Query.SearchByKeyword("test");
 
-// ? Faster: Ch? ??nh fields c?n search
+// ✅ Faster: Chỉ định fields cần search
 Query.AdvancedSearch(new Search 
 { 
-    Keyword = "test", 
- Fields = new[] { "Name", "Description" } 
+ Keyword = "test", 
+    Fields = new[] { "Name", "Description" } 
 });
 ```
 
@@ -822,32 +822,32 @@ Query.AdvancedSearch(new Search
 
 ### 7.2: Complex nested filters
 ```csharp
-// ? Deep nesting = complex SQL
+// ❌ Deep nesting = complex SQL
 {
   "logic": "and",
   "filters": [
     { "logic": "or", "filters": [...] },
- { "logic": "or", "filters": [...] },
-    { "logic": "or", "filters": [...] }
+  { "logic": "or", "filters": [...] },
+{ "logic": "or", "filters": [...] }
   ]
 }
 
-// ? Flatten n?u c� th?
+// ✅ Flatten nếu có thể
 ```
 
 ---
 
 ### 7.3: Include related entities
 ```csharp
-// ?? Filtering nested properties REQUIRES Include
+// ⚠️ Filtering nested properties REQUIRES Include
 Query
-    .Include(p => p.Category)        // Required!
+    .Include(p => p.Category)// Required!
     .AdvancedFilter(new Filter 
     { 
         Field = "Category.Name", 
         Operator = "eq", 
-        Value = "Electronics" 
-    });
+Value = "Electronics" 
+ });
 ```
 
 ---
@@ -861,10 +861,10 @@ public async Task SearchBy_WithKeyword_ShouldFilter()
 {
     // Arrange
     var filter = new PaginationFilter
-    {
-        Keyword = "iphone",
-     PageNumber = 1,
-      PageSize = 10
+  {
+   Keyword = "iphone",
+        PageNumber = 1,
+        PageSize = 10
     };
 
     var spec = new Specification<Product>();
@@ -875,7 +875,7 @@ public async Task SearchBy_WithKeyword_ShouldFilter()
 
     // Assert
     Assert.All(products, p =>
-    Assert.Contains("iphone", p.Name, StringComparison.OrdinalIgnoreCase));
+      Assert.Contains("iphone", p.Name, StringComparison.OrdinalIgnoreCase));
 }
 
 [Fact]
@@ -886,14 +886,14 @@ public void AdvancedFilter_WithLogic_ShouldBuildCorrectExpression()
     {
         Logic = "and",
         Filters = new List<Filter>
-    {
-            new() { Field = "Price", Operator = "gte", Value = 1000 },
-            new() { Field = "Stock", Operator = "gt", Value = 0 }
+     {
+      new() { Field = "Price", Operator = "gte", Value = 1000 },
+      new() { Field = "Stock", Operator = "gt", Value = 0 }
         }
     };
 
-    var spec = new Specification<Product>();
- spec.Query.AdvancedFilter(filter);
+var spec = new Specification<Product>();
+    spec.Query.AdvancedFilter(filter);
 
     // Act
     var expression = spec.WhereExpressions.First();
@@ -908,12 +908,12 @@ public void AdvancedFilter_WithLogic_ShouldBuildCorrectExpression()
 
 ## 9. Summary
 
-### ?? Key Points:
+### ✅ Key Points:
 
 **Expression Trees:**
 - Build dynamic LINQ queries runtime
-- Type-safe v� compile-time checked
-- D? debug v?i Expression.ToString()
+- Type-safe và compile-time checked
+- Dễ debug với Expression.ToString()
 
 **SearchBy:**
 - Keyword search (simple)
@@ -933,16 +933,16 @@ public void AdvancedFilter_WithLogic_ShouldBuildCorrectExpression()
 - AND, OR, XOR
 - Recursive nesting support
 
-### ?? Files Created:
+### 📁 Files Created:
 
 ```
-src/Core/Application/Common/
-??? Models/
-?   ??? Filter.cs (updated with FilterOperator & FilterLogic)
-??? Specification/
-    ??? SpecificationBuilderExtensions.cs (full code)
+src/Application/Common/
+├── Models/
+│   └── Filter.cs (updated with FilterOperator & FilterLogic)
+└── Specification/
+└── SpecificationBuilderExtensions.cs (full code)
 ```
 
 ---
 
-**Quay l?i:** [BUILD_11 - Repository Pattern](BUILD_11_Repository_Pattern.md)
+**Quay lại:** [BUILD_11 - Repository Pattern](BUILD_11_Repository_Pattern.md)

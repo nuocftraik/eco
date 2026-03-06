@@ -91,12 +91,12 @@ var newTokens = await httpClient.PostAsync("/api/tokens/refresh", new
 
 **Tại sao:** Type-safe configuration với validation, dễ inject vào services.
 
-**File:** `src/Infrastructure/Infrastructure/Auth/Jwt/JwtSettings.cs`
+**File:** `src/Infrastructure/Auth/Jwt/JwtSettings.cs`
 
 ```csharp
 using System.ComponentModel.DataAnnotations;
 
-namespace ECO.WebApi.Infrastructure.Auth.Jwt;
+namespace {ProjectName}.Infrastructure.Auth.Jwt;
 
 /// <summary>
 /// JWT authentication settings
@@ -159,10 +159,10 @@ public class JwtSettings : IValidatableObject
 
 **Tại sao:** Quản lý authentication provider và security policies.
 
-**File:** `src/Infrastructure/Infrastructure/Auth/SecuritySettings.cs`
+**File:** `src/Infrastructure/Auth/SecuritySettings.cs`
 
 ```csharp
-namespace ECO.WebApi.Infrastructure.Auth;
+namespace {ProjectName}.Infrastructure.Auth;
 
 /// <summary>
 /// Security configuration settings
@@ -255,12 +255,12 @@ openssl rand -base64 32
 
 **Tại sao:** Type-safe request model với FluentValidation.
 
-**File:** `src/Core/Application/Identity/Tokens/TokenRequest.cs`
+**File:** `src/Application/Identity/Tokens/TokenRequest.cs`
 
 ```csharp
 using FluentValidation;
 
-namespace ECO.WebApi.Application.Identity.Tokens;
+namespace {ProjectName}.Application.Identity.Tokens;
 
 /// <summary>
 /// Request để lấy access token (login)
@@ -309,10 +309,10 @@ public class TokenRequestValidator : AbstractValidator<TokenRequest>
 
 **Tại sao:** Return multiple values từ token generation.
 
-**File:** `src/Core/Application/Identity/Tokens/TokenResponse.cs`
+**File:** `src/Application/Identity/Tokens/TokenResponse.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Identity.Tokens;
+namespace {ProjectName}.Application.Identity.Tokens;
 
 /// <summary>
 /// Response chứa access token và refresh token
@@ -321,8 +321,8 @@ namespace ECO.WebApi.Application.Identity.Tokens;
 /// <param name="refreshToken">Refresh token (long-lived)</param>
 /// <param name="RefreshTokenExpiryTime">Thời điểm refresh token hết hạn</param>
 public record TokenResponse(
- string accessToken, 
-    string refreshToken, 
+    string accessToken, 
+string refreshToken, 
     DateTime RefreshTokenExpiryTime);
 ```
 
@@ -348,10 +348,10 @@ public record TokenResponse(
 
 **Tại sao:** Renew access token khi hết hạn.
 
-**File:** `src/Core/Application/Identity/Tokens/RefreshTokenRequest.cs`
+**File:** `src/Application/Identity/Tokens/RefreshTokenRequest.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Identity.Tokens;
+namespace {ProjectName}.Application.Identity.Tokens;
 
 /// <summary>
 /// Request để refresh access token
@@ -387,12 +387,13 @@ public record RefreshTokenRequest(string Token, string RefreshToken);
 
 **Tại sao:** Abstraction, dễ test, dễ swap implementations.
 
-**File:** `src/Core/Application/Identity/Tokens/ITokenService.cs`
+**File:** `src/Application/Identity/Tokens/ITokenService.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Identity;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Domain.Identity;
 
-namespace ECO.WebApi.Application.Identity.Tokens;
+namespace {ProjectName}.Application.Identity.Tokens;
 
 /// <summary>
 /// Service xử lý JWT token operations
@@ -407,9 +408,9 @@ public interface ITokenService : ITransientService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>TokenResponse chứa access token và refresh token</returns>
     Task<TokenResponse> GetTokenAsync(
-      TokenRequest request, 
-     string ipAddress, 
-        CancellationToken cancellationToken);
+        TokenRequest request, 
+   string ipAddress, 
+    CancellationToken cancellationToken);
 
     /// <summary>
     /// Refresh access token bằng refresh token
@@ -417,18 +418,19 @@ public interface ITokenService : ITransientService
     /// <param name="request">Expired access token và refresh token</param>
     /// <param name="ipAddress">Client IP address</param>
     /// <returns>TokenResponse chứa tokens mới</returns>
-        Task<TokenResponse> RefreshTokenAsync(
+ Task<TokenResponse> RefreshTokenAsync(
         RefreshTokenRequest request, 
-        string ipAddress);
+      string ipAddress);
 
     /// <summary>
     /// Generate tokens và update user refresh token trong database
     /// </summary>
     /// <param name="user">ApplicationUser</param>
     /// <param name="ipAddress">Client IP address</param>
-    /// <returns>TokenResponse</returns>
+  /// <returns>TokenResponse</returns>
     Task<TokenResponse> GenerateTokensAndUpdateUser(
-    ApplicationUser user,string ipAddress);
+    ApplicationUser user,
+        string ipAddress);
 }
 ```
 
@@ -453,15 +455,15 @@ public interface ITokenService : ITransientService
 
 **Tại sao:** Core logic cho authentication system.
 
-**File:** `src/Infrastructure/Infrastructure/Identity/TokenService.cs`
+**File:** `src/Infrastructure/Identity/TokenService.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Exceptions;
-using ECO.WebApi.Application.Identity.Tokens;
-using ECO.WebApi.Domain.Identity;
-using ECO.WebApi.Infrastructure.Auth;
-using ECO.WebApi.Infrastructure.Auth.Jwt;
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Application.Common.Exceptions;
+using {ProjectName}.Application.Identity.Tokens;
+using {ProjectName}.Domain.Identity;
+using {ProjectName}.Infrastructure.Auth;
+using {ProjectName}.Infrastructure.Auth.Jwt;
+using {ProjectName}.Shared.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -470,7 +472,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace ECO.WebApi.Infrastructure.Identity;
+namespace {ProjectName}.Infrastructure.Identity;
 
 /// <summary>
 /// Service xử lý JWT token generation và validation
@@ -483,8 +485,8 @@ internal class TokenService : ITokenService
 
     public TokenService(
         UserManager<ApplicationUser> userManager,
-        IOptions<JwtSettings> jwtSettings,
-        IOptions<SecuritySettings> securitySettings)
+  IOptions<JwtSettings> jwtSettings,
+ IOptions<SecuritySettings> securitySettings)
     {
         _userManager = userManager;
         _jwtSettings = jwtSettings.Value;
@@ -492,36 +494,36 @@ internal class TokenService : ITokenService
     }
 
     /// <summary>
-    /// Generate tokens khi user login (email + password)
-    /// </summary>
+/// Generate tokens khi user login (email + password)
+/// </summary>
     public async Task<TokenResponse> GetTokenAsync(
         TokenRequest request, 
   string ipAddress, 
     CancellationToken cancellationToken)
     {
    // Find user by email
-        var user = await _userManager.FindByEmailAsync(request.Email.Trim().Normalize());
+      var user = await _userManager.FindByEmailAsync(request.Email.Trim().Normalize());
         
    // Validate credentials
-        if (user is null || !await _userManager.CheckPasswordAsync(user, request.Password))
+     if (user is null || !await _userManager.CheckPasswordAsync(user, request.Password))
         {
             throw new UnauthorizedException("Authentication Failed.");
-        }
+    }
 
         // Check if user is active
         if (!user.IsActive)
-        {
+     {
             throw new UnauthorizedException("User Not Active. Please contact the administrator.");
         }
 
         // Check email confirmation nếu required
         if (_securitySettings.RequireConfirmedAccount && !user.EmailConfirmed)
-        {
+ {
             throw new UnauthorizedException("E-Mail not confirmed.");
-        }
+  }
 
         // Generate tokens
-        return await GenerateTokensAndUpdateUser(user, ipAddress);
+      return await GenerateTokensAndUpdateUser(user, ipAddress);
     }
 
     /// <summary>
@@ -532,14 +534,14 @@ internal class TokenService : ITokenService
     string ipAddress)
     {
     // Extract claims từ expired token (không validate expiration)
-        var userPrincipal = GetPrincipalFromExpiredToken(request.Token);
+ var userPrincipal = GetPrincipalFromExpiredToken(request.Token);
         string? userEmail = userPrincipal.GetEmail();
         
-        // Find user
-        var user = await _userManager.FindByEmailAsync(userEmail!) 
-            ?? throw new UnauthorizedException("Authentication Failed.");
+ // Find user
+    var user = await _userManager.FindByEmailAsync(userEmail!) 
+ ?? throw new UnauthorizedException("Authentication Failed.");
 
-// Validate refresh token
+        // Validate refresh token
         if (user.RefreshToken != request.RefreshToken || 
              user.RefreshTokenExpiryTime <= DateTime.UtcNow)
         {
@@ -547,22 +549,22 @@ internal class TokenService : ITokenService
         }
 
         // Generate new tokens
-        return await GenerateTokensAndUpdateUser(user, ipAddress);
+   return await GenerateTokensAndUpdateUser(user, ipAddress);
     }
 
     /// <summary>
     /// Generate tokens và update user refresh token trong database
-    /// </summary>
+/// </summary>
     public async Task<TokenResponse> GenerateTokensAndUpdateUser(
      ApplicationUser user, 
      string ipAddress)
     {
         // Generate JWT access token
-        string token = GenerateJwt(user, ipAddress);
+    string token = GenerateJwt(user, ipAddress);
 
         // Generate refresh token (cryptographically random)
-        user.RefreshToken = GenerateRefreshToken();
-        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(
+    user.RefreshToken = GenerateRefreshToken();
+    user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(
             _jwtSettings.RefreshTokenExpirationInDays);
 
         // Update user trong database
@@ -583,15 +585,15 @@ internal class TokenService : ITokenService
     /// Build user claims cho JWT
     /// </summary>
     private IEnumerable<Claim> GetClaims(ApplicationUser user, string ipAddress) =>
-     new List<Claim>
+new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id),
-            new(ClaimTypes.Email, user.Email!),
-            new(ECOClaims.Fullname, $"{user.FirstName} {user.LastName}"),
+          new(ClaimTypes.Email, user.Email!),
+       new(AppClaims.Fullname, $"{user.FirstName} {user.LastName}"),
             new(ClaimTypes.Name, user.FirstName ?? string.Empty),
-            new(ClaimTypes.Surname, user.LastName ?? string.Empty),
-            new(ECOClaims.IpAddress, ipAddress),
-            new(ECOClaims.ImageUrl, user.ImageUrl ?? string.Empty),
+ new(ClaimTypes.Surname, user.LastName ?? string.Empty),
+            new(AppClaims.IpAddress, ipAddress),
+ new(AppClaims.ImageUrl, user.ImageUrl ?? string.Empty),
             new(ClaimTypes.MobilePhone, user.PhoneNumber ?? string.Empty)
         };
 
@@ -604,7 +606,7 @@ internal class TokenService : ITokenService
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(randomNumber);
         return Convert.ToBase64String(randomNumber);
-    }
+  }
 
  /// <summary>
     /// Generate JWT token với signing credentials và claims
@@ -615,7 +617,7 @@ internal class TokenService : ITokenService
     {
      var token = new JwtSecurityToken(
  claims: claims,
-           expires: DateTime.UtcNow.AddMinutes(_jwtSettings.TokenExpirationInMinutes),
+        expires: DateTime.UtcNow.AddMinutes(_jwtSettings.TokenExpirationInMinutes),
  signingCredentials: signingCredentials);
    
         var tokenHandler = new JwtSecurityTokenHandler();
@@ -627,30 +629,30 @@ internal class TokenService : ITokenService
     /// </summary>
     private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
     {
-        var tokenValidationParameters = new TokenValidationParameters
+    var tokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_jwtSettings.Key)),
+   Encoding.UTF8.GetBytes(_jwtSettings.Key)),
             ValidateIssuer = false,
-            ValidateAudience = false,
-            RoleClaimType = ClaimTypes.Role,
-            ClockSkew = TimeSpan.Zero,
-            ValidateLifetime = false // KHÔNG validate expiration
-        };
+         ValidateAudience = false,
+          RoleClaimType = ClaimTypes.Role,
+  ClockSkew = TimeSpan.Zero,
+   ValidateLifetime = false // KHÔNG validate expiration
+    };
         
-        var tokenHandler = new JwtSecurityTokenHandler();
+     var tokenHandler = new JwtSecurityTokenHandler();
         var principal = tokenHandler.ValidateToken(
-                        token, 
-                        tokenValidationParameters, 
-                        out var securityToken);
-          
+                 token, 
+         tokenValidationParameters, 
+  out var securityToken);
+      
         // Verify algorithm (phải là HMAC-SHA256)
-        if (securityToken is not JwtSecurityToken jwtSecurityToken ||
-            !jwtSecurityToken.Header.Alg.Equals(
-            SecurityAlgorithms.HmacSha256,
+     if (securityToken is not JwtSecurityToken jwtSecurityToken ||
+ !jwtSecurityToken.Header.Alg.Equals(
+       SecurityAlgorithms.HmacSha256,
             StringComparison.InvariantCultureIgnoreCase))
-        {
+  {
             throw new UnauthorizedException("Invalid Token.");
         }
 
@@ -663,9 +665,9 @@ internal class TokenService : ITokenService
   private SigningCredentials GetSigningCredentials()
     {
          byte[] secret = Encoding.UTF8.GetBytes(_jwtSettings.Key);
-            return new SigningCredentials(
+    return new SigningCredentials(
             new SymmetricSecurityKey(secret), 
-            SecurityAlgorithms.HmacSha256);
+       SecurityAlgorithms.HmacSha256);
     }
 
     #endregion
@@ -717,16 +719,17 @@ internal class TokenService : ITokenService
 
 **Tại sao:** Customize token validation và error handling.
 
-**File:** `src/Infrastructure/Infrastructure/Auth/Jwt/ConfigureJwtBearerOptions.cs`
+**File:** `src/Infrastructure/Auth/Jwt/ConfigureJwtBearerOptions.cs`
 
 ```csharp
+using {ProjectName}.Application.Common.Exceptions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
 
-namespace ECO.WebApi.Infrastructure.Auth.Jwt;
+namespace {ProjectName}.Infrastructure.Auth.Jwt;
 
 /// <summary>
 /// Configure JWT Bearer authentication options
@@ -740,61 +743,63 @@ public class ConfigureJwtBearerOptions : IConfigureNamedOptions<JwtBearerOptions
       _jwtSettings = jwtSettings.Value;
     }
 
-    public void Configure(JwtBearerOptions options)
-    {
-        Configure(string.Empty, options);
+  public void Configure(JwtBearerOptions options)
+  {
+     Configure(string.Empty, options);
     }
 
     public void Configure(string? name, JwtBearerOptions options)
     {
         if (name != JwtBearerDefaults.AuthenticationScheme)
         {
-             return;
+      return;
         }
 
-        byte[] key = Encoding.ASCII.GetBytes(_jwtSettings.Key);
+   byte[] key = Encoding.ASCII.GetBytes(_jwtSettings.Key);
 
-        options.RequireHttpsMetadata = false; // Allow HTTP trong development
+  options.RequireHttpsMetadata = false; // Allow HTTP trong development
         options.SaveToken = true; // Save token trong AuthenticationProperties
         options.TokenValidationParameters = new TokenValidationParameters
       {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(key),
-            ValidateIssuer = false, // Không validate issuer
-            ValidateLifetime = true, // Validate token expiration
-            ValidateAudience = false, // Không validate audience
-            RoleClaimType = ClaimTypes.Role,
-            ClockSkew = TimeSpan.Zero // Không có clock skew tolerance
+          ValidateIssuerSigningKey = true,
+     IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = false, // Không validate issuer
+    ValidateLifetime = true, // Validate token expiration
+     ValidateAudience = false, // Không validate audience
+       RoleClaimType = ClaimTypes.Role,
+      ClockSkew = TimeSpan.Zero // Không có clock skew tolerance
         };
         
-        // Custom events
-        options.Events = new JwtBearerEvents
+     // Custom events
+    options.Events = new JwtBearerEvents
         {
-             OnChallenge = context => { 
-                context.HandleResponse();
-                if (!context.Response.HasStarted)
-                {
-                    throw new UnauthorizedException("Authentication Failed.");
-                }
-                    return Task.CompletedTask;
-            },
-            
-        OnForbidden = _ => throw new ForbiddenException(
-       "You are not authorized to access this resource."),
+           OnChallenge = context => { 
+ context.HandleResponse();
+          if (!context.Response.HasStarted)
+        {
+  throw new UnauthorizedException("Authentication Failed.");
+ }
+        return Task.CompletedTask;
+   },
+    
+ OnForbidden = _ => throw new ForbiddenException(
+  "You are not authorized to access this resource."),
      
         OnMessageReceived = context =>
         {
         // Support SignalR authentication từ query string
         var accessToken = context.Request.Query["access_token"];
 
-          if (!string.IsNullOrEmpty(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/notifications"))
-            {
-                context.Token = accessToken;
-            }
+if (!string.IsNullOrEmpty(accessToken) && 
+         context.HttpContext.Request.Path.StartsWithSegments("/notifications"))
+     {
+    context.Token = accessToken;
+  }
 
             return Task.CompletedTask;
-        }
+  }
     };
+    }
 }
 ```
 
@@ -831,58 +836,46 @@ public class ConfigureJwtBearerOptions : IConfigureNamedOptions<JwtBearerOptions
 
 **Tại sao:** Modular startup pattern (BUILD_05).
 
-**File:** `src/Infrastructure/Infrastructure/Auth/Jwt/Startup.cs`
+**File:** `src/Infrastructure/Auth/Jwt/Startup.cs`
 
 ```csharp
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace ECO.WebApi.Infrastructure.Auth.Jwt;
+namespace {ProjectName}.Infrastructure.Auth.Jwt;
 
 /// <summary>
 /// JWT authentication startup configuration
 /// </summary>
 internal static class Startup
 {
-    /// <summary>
+ /// <summary>
     /// Add JWT authentication services
-    /// </summary>
+  /// </summary>
     internal static IServiceCollection AddJwtAuth(this IServiceCollection services)
     {
     // Bind JwtSettings từ configuration
         services.AddOptions<JwtSettings>()
-            .BindConfiguration($"SecuritySettings:{nameof(JwtSettings)}")
-            .ValidateDataAnnotations() // Validate với IValidatableObject
-            .ValidateOnStart(); // Validate khi app start (fail fast)
+       .BindConfiguration($"SecuritySettings:{nameof(JwtSettings)}")
+       .ValidateDataAnnotations() // Validate với IValidatableObject
+       .ValidateOnStart(); // Validate khi app start (fail fast)
 
         // Register ConfigureJwtBearerOptions
-        services.AddSingleton<IConfigureOptions<JwtBearerOptions>, ConfigureJwtBearerOptions>();
+     services.AddSingleton<IConfigureOptions<JwtBearerOptions>, ConfigureJwtBearerOptions>();
 
     // Add JWT Bearer authentication
         return services
-            .AddAuthentication(authentication =>
-            {
+    .AddAuthentication(authentication =>
+     {
                 authentication.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                authentication.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+   authentication.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, null!) // Configure bởi ConfigureJwtBearerOptions
-            .Services;
+     .Services;
     }
 }
 ```
-
-**Giải thích:**
-- **BindConfiguration:** Bind từ `SecuritySettings:JwtSettings` trong config
-- **ValidateDataAnnotations:** Validate với `IValidatableObject.Validate()`
-- **ValidateOnStart:** Fail fast nếu config invalid
-- **AddAuthentication:** Set default scheme = JwtBearer
-- **AddJwtBearer:** Add JWT Bearer handler (configured bởi ConfigureJwtBearerOptions)
-
-**Tại sao ValidateOnStart:**
-- Catch config errors at startup
-- Không cần wait đến runtime
-- Better developer experience
 
 ---
 
@@ -892,15 +885,15 @@ internal static class Startup
 
 **Tại sao:** Integrate JWT authentication vào modular startup.
 
-**File:** `src/Infrastructure/Infrastructure/Auth/Startup.cs`
+**File:** `src/Infrastructure/Auth/Startup.cs`
 
 ```csharp
-using ECO.WebApi.Infrastructure.Auth.Jwt;
+using {ProjectName}.Infrastructure.Auth.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Infrastructure.Auth;
+namespace {ProjectName}.Infrastructure.Auth;
 
 /// <summary>
 /// Auth module startup configuration
@@ -908,21 +901,21 @@ namespace ECO.WebApi.Infrastructure.Auth;
 internal static class Startup
 {
     internal static IServiceCollection AddAuth(this IServiceCollection services)
-    {
+ {
         services
             .AddCurrentUser()
-            .AddPermissions()
+    .AddPermissions()
     // JWT Authentication
         .AddJwtAuth();
-            
+         
   return services;
     }
 
     internal static IApplicationBuilder UseAuth(this IApplicationBuilder app)
     {
-        return app
-         .UseCurrentUser()
-     .UseAuthentication()
+     return app
+ .UseCurrentUser()
+  .UseAuthentication()
      .UseAuthorization();
     }
 }
@@ -952,13 +945,15 @@ UseEndpoints()
 
 **Tại sao:** RESTful API endpoints cho authentication.
 
-**File:** `src/Host/Host/Controllers/Identity/TokensController.cs`
+**File:** `src/Host/Controllers/Identity/TokensController.cs`
 
 ```csharp
-using ECO.WebApi.Application.Identity.Tokens;
+using {ProjectName}.Application.Identity.Tokens;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NSwag.Annotations;
 
-namespace ECO.WebApi.Host.Controllers.Identity;
+namespace {ProjectName}.Host.Controllers.Identity;
 
 /// <summary>
 /// Token management APIs
@@ -970,7 +965,7 @@ public sealed class TokensController : BaseApiController
     public TokensController(ITokenService tokenService) => _tokenService = tokenService;
 
     /// <summary>
-    /// Login và lấy access token
+  /// Login và lấy access token
     /// </summary>
     /// <param name="request">Email và Password</param>
 /// <param name="cancellationToken">Cancellation token</param>
@@ -979,10 +974,10 @@ public sealed class TokensController : BaseApiController
     [AllowAnonymous]
     [OpenApiOperation("Request an access token using credentials.", "")]
     public Task<TokenResponse> GetTokenAsync(
-        TokenRequest request, 
-        CancellationToken cancellationToken)
+     TokenRequest request, 
+  CancellationToken cancellationToken)
     {
-        return _tokenService.GetTokenAsync(request, GetIpAddress()!, cancellationToken);
+     return _tokenService.GetTokenAsync(request, GetIpAddress()!, cancellationToken);
     }
 
     /// <summary>
@@ -1003,7 +998,7 @@ public sealed class TokensController : BaseApiController
     /// </summary>
     private string? GetIpAddress() =>
         Request.Headers.ContainsKey("X-Forwarded-For")
-            ? Request.Headers["X-Forwarded-For"]
+   ? Request.Headers["X-Forwarded-For"]
     : HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "N/A";
 }
 ```
@@ -1027,29 +1022,25 @@ public sealed class TokensController : BaseApiController
 - Fallback to `RemoteIpAddress`
 - Log IP trong token claims (audit trail)
 
-**⚠️ Security Note:**
-- `[AllowAnonymous]` là required cho login/refresh endpoints
-- Tất cả endpoints khác require authentication by default
-
 ---
 
 ## 9. Update Shared Layer Claims
 
-### Bước 9.1: ECOClaims Constants
+### Bước 9.1: AppClaims Constants
 
 **Làm gì:** Define custom claim types.
 
 **Tại sao:** Type-safe claim names, dễ refactor.
 
-**File:** `src/Core/Shared/Authorization/ECOClaims.cs`
+**File:** `src/Core/Shared/Authorization/AppClaims.cs`
 
 ```csharp
-namespace ECO.WebApi.Shared.Authorization;
+namespace {ProjectName}.Shared.Authorization;
 
 /// <summary>
-/// Custom claim types cho ECO.WebApi
+/// Custom claim types cho {ProjectName}
 /// </summary>
-public static class ECOClaims
+public static class AppClaims
 {
     /// <summary>
     /// Full name claim (FirstName + LastName)
@@ -1098,7 +1089,7 @@ public static class ECOClaims
 ```csharp
 using System.Security.Claims;
 
-namespace ECO.WebApi.Shared.Authorization;
+namespace {ProjectName}.Shared.Authorization;
 
 /// <summary>
 /// Extension methods cho ClaimsPrincipal
@@ -1121,7 +1112,7 @@ public static class ClaimsPrincipalExtensions
     /// Get user full name từ claims
     /// </summary>
     public static string? GetFullName(this ClaimsPrincipal principal)
-        => principal.FindFirstValue(ECOClaims.Fullname);
+        => principal.FindFirstValue(AppClaims.Fullname);
 
     /// <summary>
     /// Get user first name từ claims
@@ -1145,13 +1136,13 @@ public static class ClaimsPrincipalExtensions
   /// Get user image URL từ claims
     /// </summary>
     public static string? GetImageUrl(this ClaimsPrincipal principal)
-     => principal.FindFirstValue(ECOClaims.ImageUrl);
+     => principal.FindFirstValue(AppClaims.ImageUrl);
 
  /// <summary>
     /// Get IP address từ claims
     /// </summary>
     public static string? GetIpAddress(this ClaimsPrincipal principal)
-        => principal.FindFirstValue(ECOClaims.IpAddress);
+        => principal.FindFirstValue(AppClaims.IpAddress);
 
     /// <summary>
     /// Find first claim value by type
@@ -1196,12 +1187,12 @@ public class MyService
 
 **Tại sao:** Lưu refresh token trong database.
 
-**File:** `src/Core/Domain/Identity/ApplicationUser.cs`
+**File:** `src/Domain/Identity/ApplicationUser.cs`
 
 ```csharp
 using Microsoft.AspNetCore.Identity;
 
-namespace ECO.WebApi.Domain.Identity;
+namespace {ProjectName}.Domain.Identity;
 
 /// <summary>
 /// Application user entity (extends IdentityUser)
@@ -1421,9 +1412,7 @@ curl -X POST https://localhost:7001/api/tokens/refresh \
 - ✅ TokensController (login, refresh)
 - ✅ IP address tracking
 
-**Shared Layer:**
-- ✅ ECOClaims constants
-- ✅ ClaimsPrincipal extensions
+
 
 ### 📊 Authentication Flow:
 
@@ -1535,7 +1524,7 @@ src/
 │   │       └── ApplicationUser.cs (RefreshToken fields)
 │   └── Shared/
 │       └── Authorization/
-│     ├── ECOClaims.cs
+│     ├── AppClaims.cs
 │  └── ClaimsPrincipalExtensions.cs
 ├── Infrastructure/
 │   └── Infrastructure/

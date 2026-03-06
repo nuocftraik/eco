@@ -109,13 +109,13 @@ Packages đã có từ BUILD_04 (không cần add thêm):
 - Fail fast nếu validation errors
 - Không cần manual validation trong handlers
 
-**File:** `src/Core/Application/Common/Behaviors/ValidationBehavior.cs`
+**File:** `src/Application/Common/Behaviors/ValidationBehavior.cs`
 
 ```csharp
 using FluentValidation;
 using MediatR;
 
-namespace ECO.WebApi.Application.Common.Behaviors;
+namespace {ProjectName}.Application.Common.Behaviors;
 
 /// <summary>
 /// MediatR pipeline behavior để tự động validate requests
@@ -141,37 +141,37 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
     /// Handle method - được gọi bởi MediatR pipeline
     /// </summary>
     public async Task<TResponse> Handle(
-        TRequest request,
+      TRequest request,
         RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
+      CancellationToken cancellationToken)
     {
         // 1. Nếu không có validators, skip validation
         if (!_validators.Any())
-            {
-                return await next();
-            }
+  {
+         return await next();
+          }
 
-        // 2. Tạo validation context
+   // 2. Tạo validation context
         var context = new ValidationContext<TRequest>(request);
 
         // 3. Chạy tất cả validators song song
         var validationResults = await Task.WhenAll(
-        _validators.Select(v => v.ValidateAsync(context, cancellationToken)));
+    _validators.Select(v => v.ValidateAsync(context, cancellationToken)));
 
         // 4. Lấy tất cả validation failures
-        var failures = validationResults
-                            .Where(r => r.Errors.Any())
-                            .SelectMany(r => r.Errors)
-                             .ToList();
+  var failures = validationResults
+     .Where(r => r.Errors.Any())
+            .SelectMany(r => r.Errors)
+   .ToList();
 
         // 5. Nếu có lỗi, throw ValidationException
         if (failures.Any())
-        {
+  {
             throw new ValidationException(failures);
         }
 
         // 6. Validation passed - tiếp tục vào handler
-                return await next();
+    return await next();
     }
 }
 ```
@@ -228,36 +228,36 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
 
 **Tại sao:** MediatR cần biết về behavior để execute nó trước handlers.
 
-**File:** `src/Core/Application/Startup.cs`
+**File:** `src/Application/Startup.cs`
 
 ```csharp
 using System.Reflection;
-using ECO.WebApi.Application.Common.Behaviors;
+using {ProjectName}.Application.Common.Behaviors;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Application;
+namespace {ProjectName}.Application;
 
 public static class Startup
 {
     /// <summary>
     /// Add Application services
     /// </summary>
-    public static IServiceCollection AddApplication(this IServiceCollection services)
+ public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        var assembly = Assembly.GetExecutingAssembly();
+    var assembly = Assembly.GetExecutingAssembly();
 
         return services.AddMediatR(cfg =>
-         {
-            cfg.RegisterServicesFromAssembly(assembly);
-                
+   {
+   cfg.RegisterServicesFromAssembly(assembly);
+        
         // Add ValidationBehavior vào pipeline
-         cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-            })
-      
-            // FluentValidation - Auto-discover validators
-            .AddValidatorsFromAssembly(assembly);
+     cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+         })
+
+  // FluentValidation - Auto-discover validators
+       .AddValidatorsFromAssembly(assembly);
     }
 }
 ```
@@ -301,12 +301,12 @@ Response
 
 **Tại sao:** Reuse common validations, consistent error messages.
 
-**File:** `src/Core/Application/Common/Validation/CustomValidator.cs`
+**File:** `src/Application/Common/Validation/CustomValidator.cs`
 
 ```csharp
 using FluentValidation;
 
-namespace ECO.WebApi.Application.Common.Validation;
+namespace {ProjectName}.Application.Common.Validation;
 
 /// <summary>
 /// Base validator class với common validation rules
@@ -321,7 +321,7 @@ public abstract class CustomValidator<T> : AbstractValidator<T>
     {
         return ruleBuilder
         .NotEmpty()
-        .WithMessage("{PropertyName} is required.");
+     .WithMessage("{PropertyName} is required.");
     }
 
     /// <summary>
@@ -332,10 +332,10 @@ public abstract class CustomValidator<T> : AbstractValidator<T>
         int maxLength = 255)
     {
       return ruleBuilder
-            .NotEmpty()
-            .WithMessage("{PropertyName} is required.")
-            .MaximumLength(maxLength)
-            .WithMessage("{PropertyName} must not exceed {MaxLength} characters.");
+         .NotEmpty()
+       .WithMessage("{PropertyName} is required.")
+         .MaximumLength(maxLength)
+    .WithMessage("{PropertyName} must not exceed {MaxLength} characters.");
     }
 
     /// <summary>
@@ -343,24 +343,24 @@ public abstract class CustomValidator<T> : AbstractValidator<T>
     /// </summary>
     protected IRuleBuilderOptions<T, string> MustBeValidEmail(IRuleBuilder<T, string> ruleBuilder)
     {
-        return ruleBuilder
-            .NotEmpty()
-            .WithMessage("Email is required.")
-            .EmailAddress()
+     return ruleBuilder
+   .NotEmpty()
+  .WithMessage("Email is required.")
+        .EmailAddress()
             .WithMessage("Invalid email format.")
-            .MaximumLength(255)
-            .WithMessage("Email must not exceed 255 characters.");
+   .MaximumLength(255)
+        .WithMessage("Email must not exceed 255 characters.");
     }
 
     /// <summary>
     /// Validate phone number format
     /// </summary>
     protected IRuleBuilderOptions<T, string?> MustBeValidPhoneNumber(IRuleBuilder<T, string?> ruleBuilder)
-    {
+ {
         return ruleBuilder
-            .Matches(@"^\+?[1-9]\d{1,14}$")
+       .Matches(@"^\+?[1-9]\d{1,14}$")
             .When(x => !string.IsNullOrEmpty(ruleBuilder.ToString()))
-            .WithMessage("Invalid phone number format.");
+        .WithMessage("Invalid phone number format.");
     }
 
     /// <summary>
@@ -370,36 +370,36 @@ public abstract class CustomValidator<T> : AbstractValidator<T>
     {
      return ruleBuilder
         .NotEmpty()
-        .WithMessage("Password is required.")
+     .WithMessage("Password is required.")
         .MinimumLength(8)
-        .WithMessage("Password must be at least 8 characters.")
-        .Matches(@"[A-Z]")
-        .WithMessage("Password must contain at least one uppercase letter.")
+    .WithMessage("Password must be at least 8 characters.")
+   .Matches(@"[A-Z]")
+  .WithMessage("Password must contain at least one uppercase letter.")
         .Matches(@"[a-z]")
-            .WithMessage("Password must contain at least one lowercase letter.")
-      .Matches(@"[0-9]")
-    .WithMessage("Password must contain at least one number.")
-            .Matches(@"[\W_]")
+        .WithMessage("Password must contain at least one lowercase letter.")
+    .Matches(@"[0-9]")
+  .WithMessage("Password must contain at least one number.")
+.Matches(@"[\W_])
        .WithMessage("Password must contain at least one special character.");
     }
 
-    /// <summary>
+  /// <summary>
     /// Validate decimal greater than zero
     /// </summary>
     protected IRuleBuilderOptions<T, decimal> MustBeGreaterThanZero(IRuleBuilder<T, decimal> ruleBuilder)
     {
-        return ruleBuilder
-            .GreaterThan(0)
+   return ruleBuilder
+    .GreaterThan(0)
        .WithMessage("{PropertyName} must be greater than 0.");
     }
 
-    /// <summary>
+  /// <summary>
     /// Validate int greater than or equal to zero
     /// </summary>
     protected IRuleBuilderOptions<T, int> MustNotBeNegative(IRuleBuilder<T, int> ruleBuilder)
     {
         return ruleBuilder
-            .GreaterThanOrEqualTo(0)
+   .GreaterThanOrEqualTo(0)
             .WithMessage("{PropertyName} cannot be negative.");
  }
 }
@@ -448,11 +448,11 @@ public class CreateUserValidator : CustomValidator<CreateUserRequest>
 **File:** `src/Core/Application/Identity/Users/CreateUserRequest.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Validation;
+using {ProjectName}.Application.Common.Validation;
 using FluentValidation;
 using MediatR;
 
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 /// <summary>
 /// Request DTO để tạo user mới
@@ -503,7 +503,7 @@ public class CreateUserRequestValidator : CustomValidator<CreateUserRequest>
       {
 RuleFor(x => x.PhoneNumber)
     .MustBeValidPhoneNumber(RuleFor(x => x.PhoneNumber));
-        });
+      });
  }
 }
 ```
@@ -560,14 +560,14 @@ public class CreateUserHandler : IRequestHandler<CreateUserRequest, Guid>
 **File:** `src/Core/Application/Catalog/Products/UpdateProductRequest.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Application.Common.Specification;
-using ECO.WebApi.Application.Common.Validation;
-using ECO.WebApi.Domain.Catalog;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Application.Common.Specification;
+using {ProjectName}.Application.Common.Validation;
+using {ProjectName}.Domain.Catalog;
 using FluentValidation;
 using MediatR;
 
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 /// <summary>
 /// Request DTO để update product
@@ -575,7 +575,7 @@ namespace ECO.WebApi.Application.Catalog.Products;
 public class UpdateProductRequest : IRequest<Guid>
 {
     public Guid Id { get; set; }
-    public string Name { get; set; } = default!;
+  public string Name { get; set; } = default!;
     public string Description { get; set; } = default!;
     public decimal Price { get; set; }
     public int Stock { get; set; }
@@ -592,39 +592,39 @@ public class UpdateProductRequestValidator : CustomValidator<UpdateProductReques
     private readonly IRepository<Category> _categoryRepository;
 
  public UpdateProductRequestValidator(
-        IRepository<Product> productRepository,
-        IRepository<Category> categoryRepository)
+ IRepository<Product> productRepository,
+  IRepository<Category> categoryRepository)
     {
         _productRepository = productRepository;
         _categoryRepository = categoryRepository;
 
         // Id validation
         RuleFor(x => x.Id)
-            .MustNotBeEmpty(RuleFor(x => x.Id))
-         .MustAsync(ProductMustExist)
-            .WithMessage("Product with ID {PropertyValue} does not exist.");
+     .MustNotBeEmpty(RuleFor(x => x.Id))
+    .MustAsync(ProductMustExist)
+   .WithMessage("Product with ID {PropertyValue} does not exist.");
 
-    // Name validation
+  // Name validation
     RuleFor(x => x.Name)
-            .MustNotBeEmpty(RuleFor(x => x.Name), maxLength: 200);
+        .MustNotBeEmpty(RuleFor(x => x.Name), maxLength: 200);
 
-        // Description validation
-        RuleFor(x => x.Description)
-       .MustNotBeEmpty(RuleFor(x => x.Description), maxLength: 2000);
+  // Description validation
+     RuleFor(x => x.Description)
+      .MustNotBeEmpty(RuleFor(x => x.Description), maxLength: 2000);
 
-        // Price validation
+    // Price validation
    RuleFor(x => x.Price)
      .MustBeGreaterThanZero(RuleFor(x => x.Price))
      .LessThan(1000000)
-    .WithMessage("Price must be less than 1,000,000.");
+  .WithMessage("Price must be less than 1,000,000.");
 
-        // Stock validation
-        RuleFor(x => x.Stock)
-            .MustNotBeNegative(RuleFor(x => x.Stock))
+    // Stock validation
+     RuleFor(x => x.Stock)
+        .MustNotBeNegative(RuleFor(x => x.Stock))
    .LessThan(100000)
-        .WithMessage("Stock must be less than 100,000.");
+  .WithMessage("Stock must be less than 100,000.");
 
-        // CategoryId validation
+   // CategoryId validation
         RuleFor(x => x.CategoryId)
       .MustNotBeEmpty(RuleFor(x => x.CategoryId))
 .MustAsync(CategoryMustExist)
@@ -635,14 +635,14 @@ public class UpdateProductRequestValidator : CustomValidator<UpdateProductReques
     /// Async validation: Check product tồn tại
     /// </summary>
 private async Task<bool> ProductMustExist(Guid id, CancellationToken ct)
-    {
+{
   var product = await _productRepository.GetByIdAsync(id, ct);
         return product != null;
     }
 
     /// <summary>
     /// Async validation: Check category tồn tại
-    /// </summary>
+/// </summary>
     private async Task<bool> CategoryMustExist(Guid id, CancellationToken ct)
     {
     var category = await _categoryRepository.GetByIdAsync(id, ct);
@@ -682,15 +682,15 @@ private async Task<bool> ProductMustExist(Guid id, CancellationToken ct)
 
 **Làm gì:** Validator cho search/filter requests.
 
-**File:** `src/Core/Application/Catalog/Products/SearchProductsRequest.cs`
+**File:** `src/Application/Catalog/Products/SearchProductsRequest.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Models;
-using ECO.WebApi.Application.Common.Validation;
+using {ProjectName}.Application.Common.Models;
+using {ProjectName}.Application.Common.Validation;
 using FluentValidation;
 using MediatR;
 
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 /// <summary>
 /// Request DTO để search products
@@ -699,7 +699,7 @@ public class SearchProductsRequest : PaginationFilter, IRequest<PaginatedResult<
 {
     public string? Keyword { get; set; }
     public decimal? MinPrice { get; set; }
-    public decimal? MaxPrice { get; set; }
+  public decimal? MaxPrice { get; set; }
     public Guid? CategoryId { get; set; }
 }
 
@@ -711,39 +711,39 @@ public class SearchProductsRequestValidator : CustomValidator<SearchProductsRequ
 {
     public SearchProductsRequestValidator()
     {
-        // PageNumber validation
+     // PageNumber validation
         RuleFor(x => x.PageNumber)
       .GreaterThanOrEqualTo(1)
-            .WithMessage("Page number must be at least 1.");
+   .WithMessage("Page number must be at least 1.");
 
         // PageSize validation
  RuleFor(x => x.PageSize)
-    .GreaterThanOrEqualTo(1)
+  .GreaterThanOrEqualTo(1)
       .WithMessage("Page size must be at least 1.")
-            .LessThanOrEqualTo(100)
+       .LessThanOrEqualTo(100)
      .WithMessage("Page size must not exceed 100.");
 
    // MinPrice validation (nếu có)
 When(x => x.MinPrice.HasValue, () =>
-        {
-            RuleFor(x => x.MinPrice!.Value)
-          .GreaterThanOrEqualTo(0)
-          .WithMessage("Minimum price cannot be negative.");
+  {
+  RuleFor(x => x.MinPrice!.Value)
+     .GreaterThanOrEqualTo(0)
+        .WithMessage("Minimum price cannot be negative.");
  });
 
-        // MaxPrice validation (nếu có)
+    // MaxPrice validation (nếu có)
         When(x => x.MaxPrice.HasValue, () =>
       {
        RuleFor(x => x.MaxPrice!.Value)
        .GreaterThanOrEqualTo(0)
-                .WithMessage("Maximum price cannot be negative.");
+      .WithMessage("Maximum price cannot be negative.");
     });
 
    // Price range validation (nếu có cả min và max)
-        When(x => x.MinPrice.HasValue && x.MaxPrice.HasValue, () =>
-        {
-            RuleFor(x => x)
-                .Must(x => x.MinPrice!.Value <= x.MaxPrice!.Value)
+     When(x => x.MinPrice.HasValue && x.MaxPrice.HasValue, () =>
+  {
+  RuleFor(x => x)
+       .Must(x => x.MinPrice!.Value <= x.MaxPrice!.Value)
    .WithMessage("Minimum price must be less than or equal to maximum price.");
         });
 
@@ -751,9 +751,9 @@ When(x => x.MinPrice.HasValue, () =>
         When(x => !string.IsNullOrEmpty(x.Keyword), () =>
         {
             RuleFor(x => x.Keyword)
-                .MaximumLength(100)
-         .WithMessage("Keyword must not exceed 100 characters.");
-    });
+  .MaximumLength(100)
+      .WithMessage("Keyword must not exceed 100 characters.");
+ });
     }
 }
 ```
@@ -789,12 +789,12 @@ When(x => x.MinPrice.HasValue, () =>
 
 **Làm gì:** Tạo custom validation rules có thể reuse.
 
-**File:** `src/Core/Application/Common/Validation/ValidatorExtensions.cs`
+**File:** `src/Application/Common/Validation/ValidatorExtensions.cs`
 
 ```csharp
 using FluentValidation;
 
-namespace ECO.WebApi.Application.Common.Validation;
+namespace {ProjectName}.Application.Common.Validation;
 
 /// <summary>
 /// Extension methods cho custom validation rules
@@ -805,24 +805,24 @@ public static class ValidatorExtensions
     /// Validate list không empty
     /// </summary>
     public static IRuleBuilderOptions<T, IList<TElement>> NotEmptyList<T, TElement>(
-        this IRuleBuilder<T, IList<TElement>> ruleBuilder)
+  this IRuleBuilder<T, IList<TElement>> ruleBuilder)
     {
    return ruleBuilder
-            .NotNull()
+       .NotNull()
    .WithMessage("{PropertyName} is required.")
    .Must(list => list.Any())
       .WithMessage("{PropertyName} must contain at least one item.");
  }
 
-    /// <summary>
+ /// <summary>
     /// Validate list max count
     /// </summary>
     public static IRuleBuilderOptions<T, IList<TElement>> MaximumCount<T, TElement>(
         this IRuleBuilder<T, IList<TElement>> ruleBuilder, 
-        int max)
+     int max)
   {
         return ruleBuilder
-            .Must(list => list == null || list.Count <= max)
+      .Must(list => list == null || list.Count <= max)
      .WithMessage($"{{PropertyName}} must not exceed {max} items.");
     }
 
@@ -830,43 +830,43 @@ public static class ValidatorExtensions
     /// Validate date không trong quá khứ
     /// </summary>
     public static IRuleBuilderOptions<T, DateTime> NotInThePast<T>(
-        this IRuleBuilder<T, DateTime> ruleBuilder)
+  this IRuleBuilder<T, DateTime> ruleBuilder)
     {
      return ruleBuilder
-        .Must(date => date >= DateTime.UtcNow)
-     .WithMessage("{PropertyName} must not be in the past.");
+   .Must(date => date >= DateTime.UtcNow)
+  .WithMessage("{PropertyName} must not be in the past.");
     }
 
     /// <summary>
-    /// Validate date không trong tương lai
+/// Validate date không trong tương lai
     /// </summary>
     public static IRuleBuilderOptions<T, DateTime> NotInTheFuture<T>(
         this IRuleBuilder<T, DateTime> ruleBuilder)
-    {
+ {
   return ruleBuilder
     .Must(date => date <= DateTime.UtcNow)
-         .WithMessage("{PropertyName} must not be in the future.");
+      .WithMessage("{PropertyName} must not be in the future.");
     }
 
     /// <summary>
   /// Validate date range
     /// </summary>
     public static IRuleBuilderOptions<T, DateTime> WithinRange<T>(
-        this IRuleBuilder<T, DateTime> ruleBuilder,
-        DateTime min,
+     this IRuleBuilder<T, DateTime> ruleBuilder,
+  DateTime min,
         DateTime max)
     {
-        return ruleBuilder
-            .Must(date => date >= min && date <= max)
-      .WithMessage($"{{PropertyName}} must be between {min:yyyy-MM-dd} and {max:yyyy-MM-dd}.");
+      return ruleBuilder
+    .Must(date => date >= min && date <= max)
+.WithMessage($"{{PropertyName}} must be between {min:yyyy-MM-dd} and {max:yyyy-MM-dd}.");
     }
 
     /// <summary>
     /// Validate URL format
     /// </summary>
     public static IRuleBuilderOptions<T, string> MustBeValidUrl<T>(
-        this IRuleBuilder<T, string> ruleBuilder)
-    {
+     this IRuleBuilder<T, string> ruleBuilder)
+ {
       return ruleBuilder
       .Must(url => Uri.TryCreate(url, UriKind.Absolute, out _))
   .When(x => !string.IsNullOrEmpty(ruleBuilder.ToString()))
@@ -877,17 +877,17 @@ public static class ValidatorExtensions
     /// Validate file extension
     /// </summary>
     public static IRuleBuilderOptions<T, string> HasValidExtension<T>(
-        this IRuleBuilder<T, string> ruleBuilder,
-        params string[] allowedExtensions)
+  this IRuleBuilder<T, string> ruleBuilder,
+    params string[] allowedExtensions)
     {
-        return ruleBuilder
-            .Must(fileName =>
+     return ruleBuilder
+   .Must(fileName =>
             {
-                if (string.IsNullOrEmpty(fileName)) return false;
+       if (string.IsNullOrEmpty(fileName)) return false;
    var extension = Path.GetExtension(fileName).ToLowerInvariant();
-                return allowedExtensions.Contains(extension);
+      return allowedExtensions.Contains(extension);
         })
-            .WithMessage($"{{PropertyName}} must have one of the following extensions: {string.Join(", ", allowedExtensions)}");
+      .WithMessage($"{{PropertyName}} must have one of the following extensions: {string.Join(", ", allowedExtensions)}");
     }
 
     /// <summary>
@@ -896,8 +896,8 @@ public static class ValidatorExtensions
     public static IRuleBuilderOptions<T, IList<TElement>> MustHaveUniqueItems<T, TElement>(
         this IRuleBuilder<T, IList<TElement>> ruleBuilder)
   {
-        return ruleBuilder
-       .Must(list => list == null || list.Distinct().Count() == list.Count)
+   return ruleBuilder
+   .Must(list => list == null || list.Distinct().Count() == list.Count)
      .WithMessage("{PropertyName} must not contain duplicate items.");
     }
 }
@@ -1272,7 +1272,7 @@ public class UpdateProductValidator : AbstractValidator<UpdateProductRequest>
 {
     public UpdateProductValidator()
     {
-        // Reuse same rules
+        // Reuse same rules cho update
     Include(new ProductValidator());
       
      // Add specific rules cho update
@@ -1388,7 +1388,7 @@ Execute validation
 ### 📁 File Structure:
 
 ```
-src/Core/Application/
+src/Application/
 ├── Common/
 │   ├── Behaviors/
 │ │   └── ValidationBehavior.cs
@@ -1397,14 +1397,14 @@ src/Core/Application/
 │     └── ValidatorExtensions.cs
 ├── Identity/
 │   └── Users/
-│       ├── CreateUserRequest.cs
+│├── CreateUserRequest.cs
 │       └── CreateUserRequestValidator.cs  ← Cùng file
 ├── Catalog/
 │   └── Products/
 │    ├── UpdateProductRequest.cs
 │       ├── UpdateProductRequestValidator.cs
 │       ├── SearchProductsRequest.cs
-│       └── SearchProductsRequestValidator.cs
+│   └── SearchProductsRequestValidator.cs
 └── Startup.cs  ← Register ValidationBehavior
 ```
 
@@ -1432,7 +1432,3 @@ Trong bước tiếp theo, chúng ta sẽ:
 6. ✅ Login endpoint
 7. ✅ Refresh token endpoint
 8. ✅ JWT token validation
-
----
-
-**Quay lại:** [Mục lục](BUILD_INDEX.md)

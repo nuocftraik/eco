@@ -110,40 +110,40 @@ namespace {ProjectName}.Infrastructure.Common;
 internal static class Startup
 {
     internal static IServiceCollection AddServices(this IServiceCollection services) =>
-    services
-            .AddServices(typeof(ITransientService), ServiceLifetime.Transient)
+        services
+   .AddServices(typeof(ITransientService), ServiceLifetime.Transient)
    .AddServices(typeof(IScopedService), ServiceLifetime.Scoped);
 
     internal static IServiceCollection AddServices(this IServiceCollection services, Type interfaceType, ServiceLifetime lifetime)
-  {
-      var interfaceTypes =
+    {
+        var interfaceTypes =
       AppDomain.CurrentDomain.GetAssemblies()
-       .SelectMany(s => s.GetTypes())
-     .Where(t => interfaceType.IsAssignableFrom(t)
+        .SelectMany(s => s.GetTypes())
+          .Where(t => interfaceType.IsAssignableFrom(t)
             && t.IsClass && !t.IsAbstract)
-         .Select(t => new
-   {
-            Service = t.GetInterfaces().FirstOrDefault(),
-  Implementation = t
-                })
-    .Where(t => t.Service is not null
-              && interfaceType.IsAssignableFrom(t.Service));
+           .Select(t => new
+     {
+        Service = t.GetInterfaces().FirstOrDefault(),
+      Implementation = t
+       })
+        .Where(t => t.Service is not null
+           && interfaceType.IsAssignableFrom(t.Service));
 
-        foreach (var type in interfaceTypes)
- {
-          services.AddService(type.Service!, type.Implementation, lifetime);
-    }
+      foreach (var type in interfaceTypes)
+{
+            services.AddService(type.Service!, type.Implementation, lifetime);
+      }
 
         return services;
-    }
+ }
 
     internal static IServiceCollection AddService(this IServiceCollection services, Type serviceType, Type implementationType, ServiceLifetime lifetime) =>
-  lifetime switch
-        {
-        ServiceLifetime.Transient => services.AddTransient(serviceType, implementationType),
-         ServiceLifetime.Scoped => services.AddScoped(serviceType, implementationType),
-  ServiceLifetime.Singleton => services.AddSingleton(serviceType, implementationType),
-  _ => throw new ArgumentException("Invalid lifeTime", nameof(lifetime))
+        lifetime switch
+    {
+            ServiceLifetime.Transient => services.AddTransient(serviceType, implementationType),
+          ServiceLifetime.Scoped => services.AddScoped(serviceType, implementationType),
+            ServiceLifetime.Singleton => services.AddSingleton(serviceType, implementationType),
+       _ => throw new ArgumentException("Invalid lifeTime", nameof(lifetime))
         };
 }
 ```
@@ -243,7 +243,7 @@ internal class EmailService : IEmailService, ITransientService
 {
     public async Task SendAsync(string to, string subject, string body)
     {
-        // Send email implementation
+     // Send email implementation
         await Task.CompletedTask;
     }
 }
@@ -275,10 +275,10 @@ public interface ICurrentUserService
 // ⭐ Scoped per HTTP request
 internal class CurrentUserService : ICurrentUserService, IScopedService
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
+ private readonly IHttpContextAccessor _httpContextAccessor;
 
     public CurrentUserService(IHttpContextAccessor httpContextAccessor)
-    {
+  {
         _httpContextAccessor = httpContextAccessor;
     }
 
@@ -286,7 +286,7 @@ internal class CurrentUserService : ICurrentUserService, IScopedService
         _httpContextAccessor.HttpContext?.User?.FindFirst("uid")?.Value;
 
     public string? Email =>
-        _httpContextAccessor.HttpContext?.User?.FindFirst("email")?.Value;
+     _httpContextAccessor.HttpContext?.User?.FindFirst("email")?.Value;
 }
 ```
 
@@ -296,11 +296,16 @@ services.AddScoped<ICurrentUserService, CurrentUserService>();
 ```
 
 ---
+
 ### Bước 6.3: Multiple Interfaces Example
 
-**File:** `src/Infrastructure/Infrastructure/Services/ProductService.cs`
+**File:** `src/Infrastructure/Services/ProductService.cs`
 
 ```csharp
+using {ProjectName}.Application.Common.Interfaces;
+
+namespace {ProjectName}.Infrastructure.Services;
+
 public interface IProductService
 {
     Task<ProductDto> GetByIdAsync(int id);
@@ -313,14 +318,14 @@ public interface IProductQueryService
 
 // ⭐ Multiple business interfaces + marker
 internal class ProductService : 
-IProductService,    // First interface → used for registration
-    IProductQueryService,     // Also implemented
-    ITransientService   // Marker
+    IProductService,     // First interface → used for registration
+    IProductQueryService, // Also implemented
+    ITransientService         // Marker
 {
     public async Task<ProductDto> GetByIdAsync(int id)
     {
- // Implementation
-   return new ProductDto();
+        // Implementation
+    return new ProductDto();
     }
 
     public async Task<List<ProductDto>> SearchAsync(string query)
@@ -500,11 +505,11 @@ Registers: services.AddTransient<IXxxService, XxxService>()
 ### 📁 File Structure:
 
 ```
-src\Application\Common\Interfaces\
+src/Application/Common/Interfaces/
 ├── ITransientService.cs
 └── IScopedService.cs
 
-src\Infrastructure\Common\
+src/Infrastructure/Common/
 └── Startup.cs (AddServices extensions)
 ```
 

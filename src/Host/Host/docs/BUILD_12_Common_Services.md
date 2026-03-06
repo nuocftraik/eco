@@ -56,7 +56,7 @@ await _eventPublisher.PublishAsync(new ProductCreatedEvent(product));
 
 ### Bước 2.1: Add Newtonsoft.Json Package
 
-**File:** `src/Infrastructure/Infrastructure/Infrastructure.csproj`
+**File:** `src/Infrastructure.csproj`
 
 ```xml
 <ItemGroup>
@@ -80,12 +80,12 @@ await _eventPublisher.PublishAsync(new ProductCreatedEvent(product));
 
 **Tại sao:** Handlers/Services cần biết user nào đang thực hiện action (audit, authorization).
 
-**File:** `src/Core/Application/Common/Interfaces/ICurrentUser.cs`
+**File:** `src/Application/Common/Interfaces/ICurrentUser.cs`
 
 ```csharp
 using System.Security.Claims;
 
-namespace ECO.WebApi.Application.Common.Interfaces;
+namespace {ProjectName}.Application.Common.Interfaces;
 
 /// <summary>
 /// Interface để lấy thông tin user hiện tại từ JWT token
@@ -117,8 +117,8 @@ public interface ICurrentUser
     /// </summary>
     bool IsInRole(string role);
 
-    /// <summary>
-    /// Lấy tất cả claims của user
+  /// <summary>
+ /// Lấy tất cả claims của user
     /// </summary>
     IEnumerable<Claim>? GetUserClaims();
 }
@@ -145,12 +145,12 @@ public interface ICurrentUser
 
 **Tại sao:** Middleware cần set user từ HttpContext, còn handlers chỉ cần đọc.
 
-**File:** `src/Core/Application/Common/Interfaces/ICurrentUserInitializer.cs`
+**File:** `src/Application/Common/Interfaces/ICurrentUserInitializer.cs`
 
 ```csharp
 using System.Security.Claims;
 
-namespace ECO.WebApi.Application.Common.Interfaces;
+namespace {ProjectName}.Application.Common.Interfaces;
 
 /// <summary>
 /// Interface để initialize current user (dùng trong middleware)
@@ -186,10 +186,10 @@ public interface ICurrentUserInitializer
 
 **Tại sao:** Code gọn hơn, reusable, type-safe.
 
-**File:** `src/Core/Shared/Authorization/ClaimsPrincipalExtensions.cs`
+**File:** `src/Shared/Authorization/ClaimsPrincipalExtensions.cs`
 
 ```csharp
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Shared.Authorization;
 
 namespace System.Security.Claims;
 
@@ -205,10 +205,10 @@ public static class ClaimsPrincipalExtensions
   => principal.FindFirstValue(ClaimTypes.Email);
 
     /// <summary>
-    /// Lấy Full Name từ ECOClaims.Fullname
+    /// Lấy Full Name từ AppClaims.Fullname
     /// </summary>
     public static string? GetFullName(this ClaimsPrincipal principal)
-        => principal?.FindFirst(ECOClaims.Fullname)?.Value;
+        => principal?.FindFirst(AppClaims.Fullname)?.Value;
 
     /// <summary>
     /// Lấy First Name từ ClaimTypes.Name
@@ -235,17 +235,17 @@ public static class ClaimsPrincipalExtensions
         => principal.FindFirstValue(ClaimTypes.NameIdentifier);
 
     /// <summary>
-    /// Lấy Image URL từ ECOClaims.ImageUrl
+    /// Lấy Image URL từ AppClaims.ImageUrl
     /// </summary>
     public static string? GetImageUrl(this ClaimsPrincipal principal)
-     => principal.FindFirstValue(ECOClaims.ImageUrl);
+     => principal.FindFirstValue(AppClaims.ImageUrl);
 
     /// <summary>
-    /// Lấy Token Expiration từ ECOClaims.Expiration
+    /// Lấy Token Expiration từ AppClaims.Expiration
     /// </summary>
  public static DateTimeOffset GetExpiration(this ClaimsPrincipal principal) =>
         DateTimeOffset.FromUnixTimeSeconds(Convert.ToInt64(
-    principal.FindFirstValue(ECOClaims.Expiration)));
+    principal.FindFirstValue(AppClaims.Expiration)));
 
     /// <summary>
     /// Helper method để tìm claim value
@@ -277,13 +277,13 @@ public static class ClaimsPrincipalExtensions
 
 **Tại sao:** Một class implement cả 2 interfaces, scoped per request.
 
-**File:** `src/Infrastructure/Infrastructure/Auth/CurrentUser.cs`
+**File:** `src/Infrastructure/Auth/CurrentUser.cs`
 
 ```csharp
 using System.Security.Claims;
-using ECO.WebApi.Application.Common.Interfaces;
+using {ProjectName}.Application.Common.Interfaces;
 
-namespace ECO.WebApi.Infrastructure.Auth;
+namespace {ProjectName}.Infrastructure.Auth;
 
 /// <summary>
 /// Implementation của ICurrentUser và ICurrentUserInitializer
@@ -393,13 +393,13 @@ _user?.Identity?.IsAuthenticated is true;
 
 **Tại sao:** Mỗi request đều cần user context, middleware tự động set thay vì manual.
 
-**File:** `src/Infrastructure/Infrastructure/Auth/CurrentUserMiddleware.cs`
+**File:** `src/Infrastructure/Auth/CurrentUserMiddleware.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
+using {ProjectName}.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Http;
 
-namespace ECO.WebApi.Infrastructure.Auth;
+namespace {ProjectName}.Infrastructure.Auth;
 
 /// <summary>
 /// Middleware để set current user từ HttpContext.User
@@ -447,14 +447,14 @@ public class CurrentUserMiddleware : IMiddleware
 
 **Tại sao:** ASP.NET Core cần biết cách tạo và inject services.
 
-**File:** `src/Infrastructure/Infrastructure/Auth/Startup.cs`
+**File:** `src/Infrastructure/Auth/Startup.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
+using {ProjectName}.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Infrastructure.Auth;
+namespace {ProjectName}.Infrastructure.Auth;
 
 internal static class Startup
 {
@@ -502,10 +502,10 @@ internal static class Startup
 
 **Tại sao:** Caching, logging, messaging đều cần serialize objects. Interface để dễ thay đổi implementation.
 
-**File:** `src/Core/Application/Common/Interfaces/ISerializerService.cs`
+**File:** `src/Application/Common/Interfaces/ISerializerService.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Interfaces;
+namespace {ProjectName}.Application.Common.Interfaces;
 
 /// <summary>
 /// Interface để serialize/deserialize objects
@@ -549,15 +549,15 @@ public interface ISerializerService : ITransientService
 
 **Tại sao:** Newtonsoft.Json mature hơn, feature-rich hơn System.Text.Json. Support nhiều scenarios phức tạp.
 
-**File:** `src/Infrastructure/Infrastructure/Common/Services/NewtonSoftService.cs`
+**File:** `src/Infrastructure/Common/Services/NewtonSoftService.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
+using {ProjectName}.Application.Common.Interfaces;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
-namespace ECO.WebApi.Infrastructure.Common.Services;
+namespace {ProjectName}.Infrastructure.Common.Services;
 
 /// <summary>
 /// JSON serializer implementation sử dụng Newtonsoft.Json
@@ -658,14 +658,14 @@ var json = _serializer.Serialize(product);
 
 **Làm gì:** Register serializer service vào DI container.
 
-**File:** `src/Infrastructure/Infrastructure/Common/Startup.cs`
+**File:** `src/Infrastructure/Common/Startup.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Infrastructure.Common.Services;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Infrastructure.Common.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Infrastructure.Common;
+namespace {ProjectName}.Infrastructure.Common;
 
 internal static class Startup
 {
@@ -700,10 +700,10 @@ internal static class Startup
 - Trong BUILD_09, `IEvent` đã được **di chuyển** từ `Shared.Events` sang `Domain.Common.Contracts`
 - Nếu bạn đã tạo `IEvent` trong Shared layer (BUILD_02 cũ), xem [BUILD_09 Section 12](BUILD_09_Domain_Base_Entities.md#12-migration-note) để migrate
 
-**File:** `src/Core/Domain/Common/Contracts/IEvent.cs` (đã tạo trong BUILD_09)
+**File:** `src/Domain/Common/Contracts/IEvent.cs` (đã tạo trong BUILD_09)
 
 ```csharp
-namespace ECO.WebApi.Domain.Common.Contracts;
+namespace {ProjectName}.Domain.Common.Contracts;
 
 /// <summary>
 /// Marker interface cho tất cả domain events
@@ -727,7 +727,7 @@ public interface IEvent
 **Migration from BUILD_02:**
 - BUILD_02 cũ có `IEvent` trong `Shared.Events` (deprecated)
 - BUILD_09 di chuyển sang `Domain.Common.Contracts` (correct)
-- Update imports: `using ECO.WebApi.Domain.Common.Contracts;`
+- Update imports: `using {ProjectName}.Domain.Common.Contracts;`
 
 ---
 
@@ -737,13 +737,13 @@ public interface IEvent
 
 **Tại sao:** Domain events (`IEvent`) không phụ thuộc MediatR. Wrapper để publish qua MediatR.
 
-**File:** `src/Core/Application/Common/Events/EventNotification.cs`
+**File:** `src/Application/Common/Events/EventNotification.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Common.Contracts; // ⚠️ Updated from Shared.Events
+using {ProjectName}.Domain.Common.Contracts; // ⚠️ Updated from Shared.Events
 using MediatR;
 
-namespace ECO.WebApi.Application.Common.Events;
+namespace {ProjectName}.Application.Common.Events;
 
 /// <summary>
 /// Wrapper class để wrap IEvent thành INotification (MediatR)
@@ -781,13 +781,13 @@ public class EventNotification<TEvent> : INotification
 
 **Tại sao:** Application layer cần publish events, nhưng không biết implementation (MediatR).
 
-**File:** `src/Core/Application/Common/Events/IEventPublisher.cs`
+**File:** `src/Application/Common/Events/IEventPublisher.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Domain.Common.Contracts; // ⚠️ Updated from Shared.Events
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Domain.Common.Contracts; // ⚠️ Updated from Shared.Events
 
-namespace ECO.WebApi.Application.Common.Events;
+namespace {ProjectName}.Application.Common.Events;
 
 /// <summary>
 /// Interface để publish domain events
@@ -820,15 +820,15 @@ public interface IEventPublisher : ITransientService
 
 **Tại sao:** MediatR handle event routing và invocation. Chúng ta chỉ cần wrap events.
 
-**File:** `src/Infrastructure/Infrastructure/Common/Events/EventPublisher.cs`
+**File:** `src/Infrastructure/Common/Events/EventPublisher.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Events;
-using ECO.WebApi.Domain.Common.Contracts; // ⚠️ Updated from Shared.Events
+using {ProjectName}.Application.Common.Events;
+using {ProjectName}.Domain.Common.Contracts; // ⚠️ Updated from Shared.Events
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace ECO.WebApi.Infrastructure.Common.Events;
+namespace {ProjectName}.Infrastructure.Common.Events;
 
 /// <summary>
 /// Implementation của IEventPublisher sử dụng MediatR
@@ -915,13 +915,13 @@ return (INotification)instance;
 
 **Tại sao:** Auto unwrap EventNotification, handlers chỉ cần handle domain event.
 
-**File:** `src/Core/Application/Common/Events/IEventNotificationHandler.cs`
+**File:** `src/Application/Common/Events/IEventNotificationHandler.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Common.Contracts; // ⚠️ Updated from Shared.Events
+using {ProjectName}.Domain.Common.Contracts; // ⚠️ Updated from Shared.Events
 using MediatR;
 
-namespace ECO.WebApi.Application.Common.Events;
+namespace {ProjectName}.Application.Common.Events;
 
 /// <summary>
 /// Interface cho event notification handlers (shorthand)
@@ -997,14 +997,14 @@ public class ProductCreatedHandler : EventNotificationHandler<ProductCreatedEven
 
 **Làm gì:** Register EventPublisher vào DI container.
 
-**File:** `src/Infrastructure/Infrastructure/Common/Startup.cs`
+**File:** `src/Infrastructure/Common/Startup.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Events;
-using ECO.WebApi.Infrastructure.Common.Events;
+using {ProjectName}.Application.Common.Events;
+using {ProjectName}.Infrastructure.Common.Events;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Infrastructure.Common;
+namespace {ProjectName}.Infrastructure.Common;
 
 internal static class Startup
 {
@@ -1035,17 +1035,17 @@ internal static class Startup
 
 **Tại sao:** Centralized registration, dễ maintain.
 
-**File:** `src/Infrastructure/Infrastructure/Startup.cs`
+**File:** `src/Infrastructure/Startup.cs`
 
 ```csharp
-using ECO.WebApi.Infrastructure.Auth;
-using ECO.WebApi.Infrastructure.Common;
-using ECO.WebApi.Infrastructure.Persistence;
+using {ProjectName}.Infrastructure.Auth;
+using {ProjectName}.Infrastructure.Common;
+using {ProjectName}..Infrastructure.Persistence;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Infrastructure;
+namespace {ProjectName}.Infrastructure;
 
 public static class Startup
 {
@@ -1110,13 +1110,13 @@ public static class Startup
 
 **Create test handler:**
 
-**File:** `src/Core/Application/Identity/Users/GetMyProfileRequest.cs`
+**File:** `src/Application/Identity/Users/GetMyProfileRequest.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
+using {ProjectName}.Application.Common.Interfaces;
 using MediatR;
 
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 public class GetMyProfileRequest : IRequest<UserDetailDto> { }
 
@@ -1211,10 +1211,10 @@ var product = new Product
 
 **Create domain event:**
 ```csharp
-// File: src/Core/Domain/Catalog/Events/ProductCreatedEvent.cs
-using ECO.WebApi.Domain.Common.Contracts; // ⚠️ Updated: IEvent now in Domain.Common.Contracts
+// File: src/Domain/Catalog/Events/ProductCreatedEvent.cs
+using {ProjectName}.Domain.Common.Contracts; // ⚠️ Updated: IEvent now in Domain.Common.Contracts
 
-namespace ECO.WebApi.Domain.Catalog.Events;
+namespace {ProjectName}.Domain.Catalog.Events;
 
 public class ProductCreatedEvent : DomainEvent // ⚠️ Extends DomainEvent (from BUILD_09)
 {
@@ -1230,7 +1230,7 @@ public class ProductCreatedEvent : DomainEvent // ⚠️ Extends DomainEvent (fr
 **⚠️ Alternative using BUILD_09 Static Factory Pattern:**
 ```csharp
 // Option 2: Use EntityCreatedEvent generic (recommended from BUILD_09)
-using ECO.WebApi.Domain.Common.Events;
+using {ProjectName}.Domain.Common.Events;
 
 // In handler - no need custom event class
 var createdEvent = EntityCreatedEvent.WithEntity(product);
@@ -1239,12 +1239,12 @@ await _eventPublisher.PublishAsync(createdEvent);
 
 **Create event handler:**
 ```csharp
-// File: src/Core/Application/Catalog/Products/EventHandlers/ProductCreatedEventHandler.cs
-using ECO.WebApi.Application.Common.Events;
-using ECO.WebApi.Domain.Catalog.Events;
+// File: src/Application/Catalog/Products/EventHandlers/ProductCreatedEventHandler.cs
+using {ProjectName}.Application.Common.Events;
+using {ProjectName}.Domain.Catalog.Events;
 using Microsoft.Extensions.Logging;
 
-namespace ECO.WebApi.Application.Catalog.Products.EventHandlers;
+namespace {ProjectName}.Application.Catalog.Products.EventHandlers;
 
 public class ProductCreatedEventHandler : EventNotificationHandler<ProductCreatedEvent>
 {

@@ -343,7 +343,7 @@ public class ProductsBySearchSpec : Specification<Product>
 
 ### Bước 4.1: EntitiesByBaseFilterSpec
 
-**File:** `src/Core/Application/Common/Specification/EntitiesByBaseFilterSpec.cs`
+**File:** `src/Application/Common/Specification/EntitiesByBaseFilterSpec.cs`
 
 ```csharp
 using Ardalis.Specification;
@@ -366,10 +366,12 @@ public class EntitiesByBaseFilterSpec<T> : Specification<T>
 public class EntitiesByBaseFilterSpec<T, TResult> : Specification<T, TResult>
 {
   public EntitiesByBaseFilterSpec(BaseFilter filter) =>
-        Query.SearchBy(filter);
+  Query.SearchBy(filter);
 }
 ```
+
 ### Bước 4.2: EntitiesByPaginationFilterSpec
+
 **File:** `src/Application/Common/Specification/EntitiesByPaginationFilterSpec.cs`
 
 ```csharp
@@ -384,7 +386,7 @@ public class EntitiesByPaginationFilterSpec<T> : EntitiesByBaseFilterSpec<T>
 {
     public EntitiesByPaginationFilterSpec(PaginationFilter filter)
      : base(filter) =>
-        Query.PaginateBy(filter);
+      Query.PaginateBy(filter);
 }
 
 /// <summary>
@@ -1013,8 +1015,8 @@ IRepositoryWithEvents<Product>
     ↓
 EventAddingRepositoryDecorator
     ├─ Add EntityCreatedEvent
-    ├─ Add EntityUpdatedEvent
-    └─ Add EntityDeletedEvent
+    ├─ Update EntityUpdatedEvent
+    └─ Delete EntityDeletedEvent
     ↓
 IRepository<Product>
     ↓
@@ -1051,21 +1053,21 @@ ApplicationDbContext
 ### 📁 File Structure:
 
 ```
-src\Application\Common\
-├── Models\
+src/Application/Common/
+├── Models/
 │   ├── Search.cs
 │   ├── Filter.cs
 │   ├── BaseFilter.cs
 │   └── PaginationFilter.cs
-├── Specification\
+├── Specification/
 │   ├── SpecificationBuilderExtensions.cs
 │   ├── EntitiesByBaseFilterSpec.cs
 │   └── EntitiesByPaginationFilterSpec.cs
-└── Persistence\
- └── IRepository.cs
+└── Persistence/
+  └── IRepository.cs
 
-src\Infrastructure\Persistence\
-├── Repository\
+src/Infrastructure/Persistence/
+├── Repository/
 │   ├── ApplicationDbRepository.cs
 │   └── EventAddingRepositoryDecorator.cs
 └── Startup.cs
