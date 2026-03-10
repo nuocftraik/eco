@@ -81,11 +81,6 @@ Tài liệu này hướng dẫn xây dựng [Module Name] - [Purpose].
 Tài liệu này hướng dẫn về Repository Pattern với Ardalis.Specification và Domain Events.
 
 ---
-```
-
-> 💡 **Optional:** Thêm [AI Metadata](#ai-generation-metadata-advanced-optional) nếu dùng AI assistance.
-
----
 
 ### **Section 1: Overview (Tổng quan)**
 
