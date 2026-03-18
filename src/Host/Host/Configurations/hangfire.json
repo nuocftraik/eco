@@ -21,7 +21,7 @@
     },
     "Storage": {
       "StorageProvider": "mssql",
-     "ConnectionString": "Server=ADMIN\\SQLEXPRESS;Database=ECO;Integrated Security=True;Encrypt=False;TrustServerCertificate=True",
+      "ConnectionString": "Server=NGUYENVANVUONG\\SQLEXPRESS;Database=ECO;Integrated Security=True;Encrypt=False;TrustServerCertificate=True",
 
       "Options": {
         "CommandBatchMaxTimeout": "00:05:00",
