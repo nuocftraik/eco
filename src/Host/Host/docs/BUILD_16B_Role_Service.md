@@ -73,7 +73,7 @@ var functionsWithPermissions = await _roleService.GetByIdWithPermissionsAsync(ro
 
 **Tại sao:** Không expose toàn bộ ApplicationRole entity, chỉ trả về fields cần thiết.
 
-**File:** `src/Core/Application/Identity/Roles/RoleDto.cs`
+**File:** `src/Application/Identity/Roles/RoleDto.cs`
 
 ```csharp
 namespace ECO.WebApi.Application.Identity.Roles;
@@ -120,7 +120,7 @@ public class RoleDto
 
 **Tại sao:** Single endpoint cho both Create và Update operations.
 
-**File:** `src/Core/Application/Identity/Roles/CreateOrUpdateRoleRequest.cs`
+**File:** `src/Application/Identity/Roles/CreateOrUpdateRoleRequest.cs`
 
 ```csharp
 using FluentValidation;
@@ -186,7 +186,7 @@ public class CreateOrUpdateRoleRequestValidator : AbstractValidator<CreateOrUpda
 
 **Tại sao:** Separate endpoint cho permission management (complex operation).
 
-**File:** `src/Core/Application/Identity/Roles/UpdateRolePermissionsRequest.cs`
+**File:** `src/Application/Identity/Roles/UpdateRolePermissionsRequest.cs`
 
 ```csharp
 using FluentValidation;
@@ -273,7 +273,7 @@ public class UpdateRolePermissionsRequestValidator : AbstractValidator<UpdateRol
 
 **Tại sao:** Frontend cần biết available Functions và Actions để display checkboxes.
 
-**File:** `src/Core/Application/Identity/Roles/FunctionDto.cs`
+**File:** `src/Application/Identity/Roles/FunctionDto.cs`
 
 ```csharp
 namespace ECO.WebApi.Application.Identity.Roles;
@@ -300,7 +300,7 @@ public class FunctionDto
 }
 ```
 
-**File:** `src/Core/Application/Identity/Roles/ActionDto.cs`
+**File:** `src/Application/Identity/Roles/ActionDto.cs`
 
 ```csharp
 namespace ECO.WebApi.Application.Identity.Roles;
@@ -362,7 +362,7 @@ Products Function
 
 **Tại sao:** Abstraction, dễ test, dễ swap implementations.
 
-**File:** `src/Core/Application/Identity/Roles/IRoleService.cs`
+**File:** `src/Application/Identity/Roles/IRoleService.cs`
 
 ```csharp
 namespace ECO.WebApi.Application.Identity.Roles;
@@ -453,7 +453,7 @@ public interface IRoleService : ITransientService
 
 **Tại sao:** Business logic cho role và permission management.
 
-**File:** `src/Infrastructure/Infrastructure/Identity/RoleService.cs`
+**File:** `src/Infrastructure/Identity/RoleService.cs`
 
 ```csharp
 using ECO.WebApi.Application.Common.Events;
@@ -745,7 +745,7 @@ internal class RoleService : IRoleService
 
 **Tại sao:** Users cần roles để access resources.
 
-**File:** `src/Infrastructure/Infrastructure/Identity/UserService.Role.cs`
+**File:** `src/Infrastructure/Identity/UserService.Role.cs`
 
 ```csharp
 using ECO.WebApi.Application.Common.Exceptions;
@@ -861,7 +861,7 @@ if (role != null)
 
 ### Bước 5.2: UserRolesRequest và UserRoleDto
 
-**File:** `src/Core/Application/Identity/Users/UserRolesRequest.cs`
+**File:** `src/Application/Identity/Users/UserRolesRequest.cs`
 
 ```csharp
 namespace ECO.WebApi.Application.Identity.Users;
@@ -878,7 +878,7 @@ public class UserRolesRequest
 }
 ```
 
-**File:** `src/Core/Application/Identity/Users/UserRoleDto.cs`
+**File:** `src/Application/Identity/Users/UserRoleDto.cs`
 
 ```csharp
 namespace ECO.WebApi.Application.Identity.Users;
@@ -932,7 +932,7 @@ public class UserRoleDto
 
 **Tại sao:** RESTful endpoints cho role operations.
 
-**File:** `src/Host/Host/Controllers/Identity/RoleController.cs`
+**File:** `src/Host/Controllers/Identity/RoleController.cs`
 
 ```csharp
 using ECO.WebApi.Application.Identity.Roles;
@@ -1157,29 +1157,26 @@ public async Task<ActionResult> DeleteAsync(string id)
 
 ```
 src/
-├── Core/
-│   └── Application/
-│       └── Identity/
-│           ├── Roles/
-│           │   ├── IRoleService.cs
-│         │   ├── RoleDto.cs
-│   │   ├── CreateOrUpdateRoleRequest.cs
-│           │   ├── UpdateRolePermissionsRequest.cs
+├── Application/
+│   └── Identity/
+│       ├── Roles/
+│       │   ├── IRoleService.cs
+│       │   ├── RoleDto.cs
+│       │   ├── CreateOrUpdateRoleRequest.cs
+│       │   ├── UpdateRolePermissionsRequest.cs
 │       │   ├── FunctionDto.cs
-│        │   └── ActionDto.cs
-│    └── Users/
-│    ├── UserRolesRequest.cs
-│     └── UserRoleDto.cs
+│       │   └── ActionDto.cs
+│       └── Users/
+│           ├── UserRolesRequest.cs
+│           └── UserRoleDto.cs
 ├── Infrastructure/
-│   └── Infrastructure/
-│       └── Identity/
-│    ├── RoleService.cs
-│           └── UserService.Role.cs
+│   └── Identity/
+│       ├── RoleService.cs
+│       └── UserService.Role.cs
 └── Host/
-    └── Host/
-        └── Controllers/
-            └── Identity/
-                └── RoleController.cs
+    └── Controllers/
+        └── Identity/
+            └── RoleController.cs
 ```
 
 ---

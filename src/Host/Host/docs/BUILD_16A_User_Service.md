@@ -84,7 +84,7 @@ await _userService.ToggleStatusAsync(new ToggleUserStatusRequest
 
 **Tại sao:** Không expose toàn bộ ApplicationUser entity, chỉ trả về fields cần thiết.
 
-**File:** `src/Core/Application/Identity/Users/UserDetailDto.cs`
+**File:** `src/Application/Identity/Users/UserDetailDto.cs`
 
 ```csharp
 namespace ECO.WebApi.Application.Identity.Users;
@@ -159,7 +159,7 @@ public class UserDetailDto
 
 **Tại sao:** Type-safe request với validation rules.
 
-**File:** `src/Core/Application/Identity/Users/CreateUserRequest.cs`
+**File:** `src/Application/Identity/Users/CreateUserRequest.cs`
 
 ```csharp
 using FluentValidation;
@@ -291,7 +291,7 @@ RuleFor(p => p.Password)
 
 **Tại sao:** Cho phép users update thông tin cá nhân và avatar.
 
-**File:** `src/Core/Application/Identity/Users/UpdateUserRequest.cs`
+**File:** `src/Application/Identity/Users/UpdateUserRequest.cs`
 
 ```csharp
 using FluentValidation;
@@ -311,7 +311,7 @@ public class UpdateUserRequest
     /// <summary>
     /// First name
     /// </summary>
-    public string? FirstName { get; set; }
+    public string? FirstName { get; set;}
 
     /// <summary>
     /// Last name
@@ -403,7 +403,7 @@ RuleFor(p => p.FirstName)
 
 **Tại sao:** Admin có thể activate/deactivate users.
 
-**File:** `src/Core/Application/Identity/Users/ToggleUserStatusRequest.cs`
+**File:** `src/Application/Identity/Users/ToggleUserStatusRequest.cs`
 
 ```csharp
 namespace ECO.WebApi.Application.Identity.Users;
@@ -437,7 +437,7 @@ public class ToggleUserStatusRequest
 
 **Tại sao:** Support search và pagination trong user list.
 
-**File:** `src/Core/Application/Identity/Users/UserParameterFilter.cs`
+**File:** `src/Application/Identity/Users/UserParameterFilter.cs`
 
 ```csharp
 namespace ECO.WebApi.Application.Identity.Users;
@@ -480,7 +480,7 @@ public class UserParameterFilter : PaginationFilter
 
 **Tại sao:** Abstraction, dễ test, dễ swap implementations.
 
-**File:** `src/Core/Application/Identity/Users/IUserService.cs`
+**File:** `src/Application/Identity/Users/IUserService.cs`
 
 ```csharp
 using ECO.WebApi.Application.Identity.Users.Password;
@@ -667,7 +667,7 @@ public interface IUserService : ITransientService
 
 **Tại sao:** Business logic cho user management.
 
-**File:** `src/Infrastructure/Infrastructure/Identity/UserService.cs`
+**File:** `src/Infrastructure/Identity/UserService.cs`
 
 ```csharp
 using Ardalis.Specification.EntityFrameworkCore;
@@ -881,7 +881,7 @@ internal partial class UserService : IUserService
 
 **Tại sao:** Separate file cho create/update logic (partial class pattern).
 
-**File:** `src/Infrastructure/Infrastructure/Identity/UserService.CreateUpdate.cs`
+**File:** `src/Infrastructure/Identity/UserService.CreateUpdate.cs`
 
 ```csharp
 using ECO.WebApi.Application.Common.Exceptions;
@@ -1014,7 +1014,7 @@ internal partial class UserService
 
 **Tại sao:** Prepare interface cho BUILD_23 (Email Service).
 
-**File:** `src/Infrastructure/Infrastructure/Identity/UserService.Confirm.cs`
+**File:** `src/Infrastructure/Identity/UserService.Confirm.cs`
 
 ```csharp
 using ECO.WebApi.Application.Common.Exceptions;
@@ -1121,7 +1121,7 @@ return "Phone number confirmed successfully!";
 
 **Tại sao:** RESTful API cho client ứng dụng.
 
-**File:** `src/Host/Host/Controllers/Identity/UsersController.cs`
+**File:** `src/Host/Controllers/Identity/UsersController.cs`
 
 ```csharp
 using ECO.WebApi.Application.Identity.Users;

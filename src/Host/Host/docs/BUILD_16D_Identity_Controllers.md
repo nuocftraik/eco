@@ -75,7 +75,7 @@ public Task<UserDetailDto> GetProfileAsync()
 **Controllers trong Identity Module:**
 
 ```
-src/Host/Host/Controllers/
+src/Host/Controllers/
 ├── Identity/
 │   ├── TokensController.cs       # Login, Refresh token
 │   ├── UsersController.cs        # User management
@@ -101,7 +101,7 @@ src/Host/Host/Controllers/
 
 **Tại sao:** Centralize common functionality cho tất cả controllers.
 
-**File:** `src/Host/Host/Controllers/BaseApiController.cs`
+**File:** `src/Host/Controllers/BaseApiController.cs`
 
 ```csharp
 using MediatR;
@@ -153,7 +153,7 @@ public class BaseApiController : ControllerBase
 
 **Tại sao:** Expose authentication endpoints cho frontend.
 
-**File:** `src/Host/Host/Controllers/Identity/TokensController.cs`
+**File:** `src/Host/Controllers/Identity/TokensController.cs`
 
 ```csharp
 using ECO.WebApi.Application.Identity.Tokens;
@@ -255,7 +255,7 @@ private string? GetIpAddress() =>
 
 **Tại sao:** Expose user CRUD, role assignment, email confirmation endpoints.
 
-**File:** `src/Host/Host/Controllers/Identity/UsersController.cs`
+**File:** `src/Host/Controllers/Identity/UsersController.cs`
 
 ```csharp
 using ECO.WebApi.Application.Identity.Users;
@@ -481,7 +481,7 @@ public class UsersController : BaseApiController
 
 **Tại sao:** Expose role CRUD, permission management, function CRUD endpoints.
 
-**File:** `src/Host/Host/Controllers/Identity/RoleController.cs`
+**File:** `src/Host/Controllers/Identity/RoleController.cs`
 
 ```csharp
 using ECO.WebApi.Application.Identity.Roles;
@@ -690,7 +690,7 @@ public class RoleController : BaseApiController
 
 **Tại sao:** Endpoints cho user tự quản lý profile, password, permissions.
 
-**File:** `src/Host/Host/Controllers/Personal/PersonalController.cs`
+**File:** `src/Host/Controllers/Personal/PersonalController.cs`
 
 ```csharp
 using ECO.WebApi.Application.Auditing;
@@ -839,7 +839,7 @@ public class PersonalController : BaseApiController
 
 **Tại sao:** Reusable helper cho tất cả controllers.
 
-**File:** `src/Core/Shared/Authorization/ClaimsPrincipalExtensions.cs`
+**File:** `src/Shared/Authorization/ClaimsPrincipalExtensions.cs`
 
 ```csharp
 using System.Security.Claims;
@@ -952,7 +952,7 @@ if (User.HasPermission("Permissions.Users.View"))
 **Step 1: Run API**
 
 ```bash
-cd src/Host/Host
+cd src/Host
 dotnet run
 ```
 
@@ -1219,7 +1219,7 @@ GET /api/role
 ### 📊 Complete Controllers Structure (Cấu trúc Controllers Hoàn chỉnh):
 
 ```
-src/Host/Host/Controllers/
+src/Host/Controllers/
 ├── BaseApiController.cs
 ├── Identity/
 │   ├── TokensController.cs
@@ -1299,8 +1299,8 @@ src/
  ├── Identity/
             │   ├── TokensController.cs
             │ ├── AuthController.cs
-      │   ├── UsersController.cs
-       │   └── RoleController.cs
+      │   │   ├── UsersController.cs
+       │   │   └── RoleController.cs
      └── Personal/
 └── PersonalController.cs
 ```

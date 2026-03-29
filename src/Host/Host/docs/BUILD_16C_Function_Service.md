@@ -223,7 +223,7 @@ INSERT INTO Permission (RoleId, FunctionId, ActionId) VALUES (...);
 
 **Tại sao:** Functions are domain concepts (business modules).
 
-**File:** `src/Core/Domain/Identity/Function.cs`
+**File:** `src/Domain/Identity/Function.cs`
 
 ```csharp
 namespace ECO.WebApi.Domain.Identity;
@@ -306,7 +306,7 @@ public class Function : BaseEntity
 
 **Tại sao:** Actions are domain concepts (operations).
 
-**File:** `src/Core/Domain/Identity/Action.cs`
+**File:** `src/Domain/Identity/Action.cs`
 
 ```csharp
 namespace ECO.WebApi.Domain.Identity;
@@ -351,7 +351,7 @@ public class Action : BaseEntity
 
 **Tại sao:** Many-to-many relationship requires junction table.
 
-**File:** `src/Core/Domain/Identity/ActionInFunction.cs`
+**File:** `src/Domain/Identity/ActionInFunction.cs`
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
@@ -426,7 +426,7 @@ ActionInFunction Table:
 
 **Tại sao:** Single endpoint cho both create/update operations.
 
-**File:** `src/Core/Application/Identity/Roles/CreateOrUpdateFunctionRequest.cs`
+**File:** `src/Application/Identity/Roles/CreateOrUpdateFunctionRequest.cs`
 
 ```csharp
 namespace ECO.WebApi.Application.Identity.Roles;
@@ -472,7 +472,7 @@ public class CreateOrUpdateFunctionRequest
 
 **Tại sao:** Abstraction, dễ test, dễ swap implementations.
 
-**File:** `src/Core/Application/Identity/Roles/IFunctionService.cs`
+**File:** `src/Application/Identity/Roles/IFunctionService.cs`
 
 ```csharp
 namespace ECO.WebApi.Application.Identity.Roles;
@@ -520,7 +520,7 @@ public interface IFunctionService : ITransientService
 
 **Tại sao:** Business logic cho function và action assignments.
 
-**File:** `src/Infrastructure/Infrastructure/Identity/FunctionService.cs`
+**File:** `src/Infrastructure/Identity/FunctionService.cs`
 
 ```csharp
 using ECO.WebApi.Application.Common.Exceptions;
@@ -721,7 +721,7 @@ public class FunctionService : IFunctionService
    → Users has: View, Create, Update, Delete
    → Products has: View, Create, Update, Delete, Export
 
-4. DEFINE ROLES (Seeded on startup)
+4. DEFINE ROLES (Seeded on app startup)
    → Admin, Manager, Basic
 
 5. ASSIGN FUNCTION+ACTION TO ROLES (Permission table)
