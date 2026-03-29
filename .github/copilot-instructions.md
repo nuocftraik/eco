@@ -1,4 +1,4 @@
-﻿# GitHub Copilot Instructions for ECO.WebApi Project
+﻿# GitHub Copilot Instructions for {ProjectName} Project
 
 > **Purpose**: Quick reference for AI-assisted development  
 > **Full Documentation**: See `docs/BUILD_INDEX.md` and `docs/MODULE_DOCUMENTATION_TEMPLATE.md`  
@@ -13,7 +13,7 @@
 - **`docs/MODULE_DOCUMENTATION_TEMPLATE.md`**: Standard for writing docs
 - **`docs/BUILD_XX_*.md`**: Feature-specific implementation details
 
-**This file contains:** Quick patterns and rules for immediate reference.
+**This file contains:** Quick patterns and rules for immediate reference applicable to any project using this standardized Clean Architecture template.
 
 ---
 
@@ -21,11 +21,24 @@
 
 ### Layer Structure
 
-```
+```text
 Host → Infrastructure → Application → Domain → Shared
  ↓         ↓           ↓          ↓         ↓
 API      EF Core       Use Cases   Entities  Constants
 ```
+
+### Flattened Directory Structure
+
+```text
+src/
+├── Shared/
+├── Domain/
+├── Application/
+├── Infrastructure/
+├── Migrators.MSSQL/
+└── Host/
+```
+*Note: Projects are placed directly in `src/` without logical layer hierarchy folders (no Core/Infrastructure intermediate folders).*
 
 **Dependency Rules:**
 - ✅ Host depends on: Infrastructure, Application
@@ -153,13 +166,13 @@ public class CreateProductHandler : IRequestHandler<CreateProductRequest, Guid>
 
 ### 4. File Organization
 
-```
-Application/Common/{Feature}/
+```text
+src/Application/Common/{Feature}/
 ├── I{Feature}Service.cs
 ├── {Action}{Entity}Request.cs
 └── {Action}{Entity}Response.cs
 
-Infrastructure/{Feature}/
+src/Infrastructure/{Feature}/
 ├── {Tech}{Feature}Service.cs
 ├── {Feature}Settings.cs
 └── Startup.cs
@@ -197,7 +210,7 @@ docs/MODULE_DOCUMENTATION_TEMPLATE.md
 - ✅ Self-contained (can rebuild solution from docs alone)
 - ✅ XML documentation on public APIs
 - ✅ Comments explain WHY, not WHAT
-- ✅ Namespace = `ECO.WebApi.{Layer}.{Feature}`
+- ✅ Namespace = `{ProjectName}.{Layer}.{Feature}` (e.g., `{ProjectName}.Infrastructure.Mailing`)
 
 **Full template**: `docs/MODULE_DOCUMENTATION_TEMPLATE.md`
 
@@ -391,8 +404,8 @@ Total: 50 minutes to understand full project context
 
 ---
 
-**Version**: 3.0 (Lean, Reference-Based)  
+**Version**: 3.0 (Lean, Reference-Based, Generic Template)  
 **Last Updated**: 2026-01-30
-**Maintained By**: ECO.WebApi Development Team
+**Maintained By**: {ProjectName} Development Team
 
 **Primary Documentation**: `docs/BUILD_INDEX.md` (Master reference)

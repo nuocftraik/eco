@@ -1,93 +1,117 @@
-﻿# BUILD_07 - Logging Setup (Serilog)
+﻿# BUILD_07 - Logging Setup (Serilog + Seq/Elasticsearch)
 
 > 📚 [Quay lại Mục lục](BUILD_INDEX.md)  
 > 📋 **Prerequisites:** BUILD_06 (Host Layer) đã hoàn thành  
 > ⏱️ **Thời gian:** Khoảng 15 phút
 
-Tài liệu này hướng dẫn setup Serilog - structured logging framework cho .NET application.
-
 ---
 
-## 1. Overview
+## 1. Tổng quan
 
-**Làm gì:** Setup Serilog structured logging cho application.
+**Làm gì:** Cấu hình hệ thống Logging tập trung sử dụng Serilog.
 
 **Tại sao cần:**
-- **Troubleshooting:** Debug issues trong production
-- **Monitoring:** Track application health
-- **Auditing:** Record user actions
-- **Structured logs:** Query logs như database
+- **Bắt lỗi startup:** Bắt được các lỗi xảy ra trong quá trình khởi động ứng dụng trước khi Host được build.
+- **Lưu trữ tập trung (Centralized Logging):** Ghi log ra ElasticSearch để query và phân tích (qua Kibana).
+- **Linh hoạt:** Cấu hình bật/tắt ghi file, log có cấu trúc (Structured Logging) thông qua cấu hình JSON. 
+- **Lọc nhiễu:** Ghi đè (Override) minimum log level cho một số namespace mặc định của Microsoft, EntityFramework để giảm log rác.
 
 **Trong bước này chúng ta sẽ:**
-- ✅ Add Serilog packages
-- ✅ Tạo StaticLogger (bootstrap logging)
-- ✅ Configure logger.json
-- ✅ Setup multiple sinks (Console, File)
-- ✅ Integrate vào Program.cs
+- ✅ Cài đặt các package Serilog và Figgle (cho ASCII Art Banner).
+- ✅ Tạo `LoggerSettings` để map với cấu hình `logger.json`.
+- ✅ Thiết lập `StaticLogger` (Bootstrap Logger).
+- ✅ Viết `Extensions.cs` để cấu hình động cho Serilog (Elasticsearch, File, Console).
+- ✅ Tích hợp cấu hình vào `Program.cs`.
 
 ---
 
-## 2. Add Serilog Packages
+## 2. Thêm Packages (Nuget)
+
+### Bước 2.1: Infrastructure packages
 
 **File:** `src/Infrastructure/Infrastructure.csproj`
 
 ```xml
 <ItemGroup>
-  <!-- Serilog Core -->
-  <PackageReference Include="Serilog" Version="3.1.1" />
-  <PackageReference Include="Serilog.Extensions.Hosting" Version="5.0.1" />
-  <PackageReference Include="Serilog.Settings.Configuration" Version="3.4.0" />
-  
-  <!-- Sinks -->
-  <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
-  <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-  <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
-  
-  <!-- Enrichers -->
-  <PackageReference Include="Serilog.Enrichers.Environment" Version="2.2.0" />
-  <PackageReference Include="Serilog.Enrichers.Process" Version="2.0.2" />
-  <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
-  <PackageReference Include="Serilog.Exceptions" Version="8.4.0" />
+    <PackageReference Include="Figgle" Version="0.5.1" />
+    <PackageReference Include="Serilog.Exceptions" Version="8.4.0" />
+    <PackageReference Include="Serilog.Enrichers.Process" Version="2.0.2" />
+    <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
+    <PackageReference Include="Serilog.Expressions" Version="3.4.1" />
+    <PackageReference Include="Serilog.Enrichers.Environment" Version="2.2.0" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="5.0.1" />
+    <PackageReference Include="Serilog.Formatting.Compact" Version="1.1.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="3.4.0" />
+    <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    <PackageReference Include="Serilog.Sinks.MSSqlServer" Version="6.3.0" />
+    <PackageReference Include="Serilog.Sinks.Elasticsearch" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.Seq" Version="5.2.2" />
 </ItemGroup>
 ```
+
+**Giải thích packages:**
+- `Serilog.Sinks.Elasticsearch`: Hỗ trợ đẩy logs vào Elasticsearch.
+- `Serilog.Sinks.Async`: Ghi log bất đồng bộ, tránh block main thread.
+- `Serilog.Formatting.Compact`: Ghi cấu trúc JSON tinh gọn.
+- `Figgle`: Dùng để in ra ASCII text "ECO.WebAPI" lúc ứng dụng start.
+
+### Bước 2.2: Host packages
 
 **File:** `src/Host/Host.csproj`
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
+    <PackageReference Include="Hangfire.Console.Extensions.Serilog" Version="1.0.2" />
+    <PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
 </ItemGroup>
 ```
 
 ---
 
-## 3. Tạo StaticLogger
+## 3. Logger Settings và Bootstrap Logger
 
-```powershell
-New-Item -ItemType Directory -Path "src\Infrastructure\Logging" -Force
+### Bước 3.1: DTO Cấu hình Logger
+
+Tạo model để tự động binding với cấu hình trong file `appsettings.json` (hoặc `logger.json`).
+
+**File:** `src/Infrastructure/Logging/LoggerSettings.cs`
+
+```csharp
+namespace {ProjectName}.Infrastructure.Logging;
+
+public class LoggerSettings
+{
+    public string AppName { get; set; } = "{ProjectName}";
+    public string ElasticSearchUrl { get; set; } = string.Empty;
+    public bool WriteToFile { get; set; } = false;
+    public bool StructuredConsoleLogging { get; set; } = false;
+    public string MinimumLogLevel { get; set; } = "Information";
+}
 ```
 
-**File:** `src/Infrastructure/Logging/StaticLogger.cs`
+### Bước 3.2: Static Logger (Bootstrap)
+
+Dùng để log ngay cả trước khi host (Dependency Injection) khởi tạo xong, bảo đảm những exception do quá trình startup gây ra vẫn được lưu.
+
+**File:** `src/Infrastructure/Common/StaticLogger.cs`
 
 ```csharp
 using Serilog;
-using Serilog.Events;
 
-namespace {ProjectName}.Infrastructure.Logging;
+namespace {ProjectName}.Infrastructure.Common;
 
 public static class StaticLogger
 {
     public static void EnsureInitialized()
-  {
-     if (Log.Logger is not Serilog.Core.Logger)
-{
-      Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
-       .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
-   .Enrich.FromLogContext()
-     .WriteTo.Console()
-    .CreateBootstrapLogger();
+    {
+        if (Log.Logger is not Serilog.Core.Logger)
+        {
+            Log.Logger = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .CreateLogger();
         }
     }
 }
@@ -95,161 +119,180 @@ public static class StaticLogger
 
 ---
 
-## 4. Logger Configuration
+## 4. Serilog Configuration Extensions
 
-**File:** `src/Host/Configurations/logger.json`
-
-```json
-{
-  "Serilog": {
-    "Using": [
- "Serilog.Sinks.Console",
-      "Serilog.Sinks.File",
-      "Serilog.Sinks.Async"
- ],
-    "MinimumLevel": {
-      "Default": "Information",
-      "Override": {
-        "Microsoft": "Warning",
-   "Microsoft.Hosting.Lifetime": "Information",
-        "Microsoft.EntityFrameworkCore.Database.Command": "Warning",
-        "Microsoft.AspNetCore": "Warning",
-        "System": "Warning"
-      }
-    },
-    "WriteTo": [
-      {
-        "Name": "Console",
-  "Args": {
-        "outputTemplate": "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"
-        }
-   },
-      {
-        "Name": "Async",
-     "Args": {
- "configure": [
-    {
-    "Name": "File",
-              "Args": {
-  "path": "Logs/log-.txt",
-        "rollingInterval": "Day",
-          "rollOnFileSizeLimit": true,
- "fileSizeLimitBytes": 10485760,
-      "retainedFileCountLimit": 7,
-     "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"
-    }
-      }
-          ]
-   }
-      }
-    ],
-    "Enrich": [
-  "FromLogContext",
-      "WithMachineName",
-      "WithThreadId",
-      "WithExceptionDetails"
-    ],
-    "Properties": {
-  "Application": "{ProjectName}"
-    }
-}
-}
-```
-
-**Giải thích cấu hình:**
-
-**MinimumLevel:**
-- `Default: Information` - Log level mặc định
-- `Override` - Override cho specific namespaces (giảm noise từ Microsoft logs)
-
-**WriteTo:**
-- **Console:** Hiển thị logs trong console (development)
-- **File (Async):** Write logs to file với rolling (production)
-  - `rollingInterval: Day` - Mỗi ngày một file mới
-  - `fileSizeLimitBytes: 10MB` - Max file size
-  - `retainedFileCountLimit: 7` - Keep 7 ngày logs
-
-**Enrich:**
-- `FromLogContext` - Add contextual properties
-- `WithMachineName` - Add machine name
-- `WithThreadId` - Add thread ID
-- `WithExceptionDetails` - Add exception details
-
----
-
-**Update:** `src/Host/Configurations/Startup.cs`
-
-```csharp
-namespace {ProjectName}.Host.Configurations;
-
-internal static class Startup
-{
-    internal static WebApplicationBuilder AddConfigurations(
-        this WebApplicationBuilder builder)
-    {
-        const string configurationsDirectory = "Configurations";
-        var env = builder.Environment;
-   
-        builder.Configuration
-         .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-      .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
-  .AddJsonFile($"{configurationsDirectory}/database.json", optional: false, reloadOnChange: true)
-    .AddJsonFile($"{configurationsDirectory}/database.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
-      .AddJsonFile($"{configurationsDirectory}/logger.json", optional: false, reloadOnChange: true)
-       .AddJsonFile($"{configurationsDirectory}/logger.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
-      .AddEnvironmentVariables();
-     
-        return builder;
-    }
-}
-```
-
----
-
-## 5. Register Serilog Extension
+Đây là file thiết lập behavior của Serilog cho Application runtime, đọc cấu hình từ `LoggerSettings`, thiết lập minimum log level và nối với Elasticsearch nếu được khai báo.
 
 **File:** `src/Infrastructure/Logging/Extensions.cs`
 
 ```csharp
 using Microsoft.AspNetCore.Builder;
+using Serilog.Events;
+using Serilog.Formatting.Compact;
 using Serilog;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Figgle;
+using Serilog.Exceptions;
 
 namespace {ProjectName}.Infrastructure.Logging;
 
 public static class Extensions
 {
-    public static WebApplicationBuilder RegisterSerilog(this WebApplicationBuilder builder)
- {
-        builder.Logging.ClearProviders();
-        
-        builder.Host.UseSerilog((context, services, loggerConfig) =>
-        {
-            loggerConfig
-    .ReadFrom.Configuration(context.Configuration)
-          .ReadFrom.Services(services)
-         .Enrich.FromLogContext()
-         .Enrich.WithProperty("Application", "{ProjectName}")
-      .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName);
- });
+    public static void RegisterSerilog(this WebApplicationBuilder builder)
+    {
+        builder.Services.AddOptions<LoggerSettings>().BindConfiguration(nameof(LoggerSettings));
 
-        return builder;
+        _ = builder.Host.UseSerilog((_, sp, serilogConfig) =>
+        {
+            var loggerSettings = sp.GetRequiredService<IOptions<LoggerSettings>>().Value;
+            string appName = loggerSettings.AppName;
+            string elasticSearchUrl = loggerSettings.ElasticSearchUrl;
+            bool writeToFile = loggerSettings.WriteToFile;
+            bool structuredConsoleLogging = loggerSettings.StructuredConsoleLogging;
+            string minLogLevel = loggerSettings.MinimumLogLevel;
+
+            ConfigureEnrichers(serilogConfig, appName);
+            ConfigureConsoleLogging(serilogConfig, structuredConsoleLogging);
+            ConfigureWriteToFile(serilogConfig, writeToFile);
+            ConfigureElasticSearch(builder, serilogConfig, appName, elasticSearchUrl);
+            SetMinimumLogLevel(serilogConfig, minLogLevel);
+            OverideMinimumLogLevel(serilogConfig);
+            
+            // Render text lúc khởi động
+            Console.WriteLine(FiggleFonts.Standard.Render(loggerSettings.AppName));
+        });
+    }
+
+    private static void ConfigureEnrichers(LoggerConfiguration serilogConfig, string appName)
+    {
+        serilogConfig
+            .Enrich.FromLogContext()
+            .Enrich.WithProperty("Application", appName)
+            .Enrich.WithExceptionDetails()
+            .Enrich.WithMachineName()
+            .Enrich.WithProcessId()
+            .Enrich.WithThreadId();
+    }
+
+    private static void ConfigureConsoleLogging(LoggerConfiguration serilogConfig, bool structuredConsoleLogging)
+    {
+        if (structuredConsoleLogging)
+        {
+            serilogConfig.WriteTo.Async(wt => wt.Console(new CompactJsonFormatter()));
+        }
+        else
+        {
+            serilogConfig.WriteTo.Async(wt => wt.Console());
+        }
+    }
+
+    private static void ConfigureWriteToFile(LoggerConfiguration serilogConfig, bool writeToFile)
+    {
+        if (writeToFile)
+        {
+            serilogConfig.WriteTo.File(
+                new CompactJsonFormatter(),
+                "Logs/logs.json",
+                restrictedToMinimumLevel: LogEventLevel.Information,
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 5);
+        }
+    }
+
+    private static void ConfigureElasticSearch(WebApplicationBuilder builder, LoggerConfiguration serilogConfig, string appName, string elasticSearchUrl)
+    {
+        if (!string.IsNullOrEmpty(elasticSearchUrl))
+        {
+            string? formattedAppName = appName?.ToLower().Replace(".", "-").Replace(" ", "-");
+            string indexFormat = $"{formattedAppName}-logs-{builder.Environment.EnvironmentName?.ToLower().Replace(".", "-")}-{DateTime.UtcNow:yyyy-MM}";
+            
+            serilogConfig.WriteTo.Async(writeTo =>
+                writeTo.Elasticsearch(new(new Uri(elasticSearchUrl))
+                {
+                    AutoRegisterTemplate = true,
+                    IndexFormat = indexFormat,
+                    MinimumLogEventLevel = LogEventLevel.Information,
+                })).Enrich.WithProperty("Environment", builder.Environment.EnvironmentName!);
+        }
+    }
+
+    private static void OverideMinimumLogLevel(LoggerConfiguration serilogConfig)
+    {
+        serilogConfig
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .MinimumLevel.Override("Hangfire", LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Error);
+    }
+
+    private static void SetMinimumLogLevel(LoggerConfiguration serilogConfig, string minLogLevel)
+    {
+        switch (minLogLevel.ToLower())
+        {
+            case "debug":
+                serilogConfig.MinimumLevel.Debug();
+                break;
+            case "information":
+                serilogConfig.MinimumLevel.Information();
+                break;
+            case "warning":
+                serilogConfig.MinimumLevel.Warning();
+                break;
+            default:
+                serilogConfig.MinimumLevel.Information();
+                break;
+        }
     }
 }
 ```
 
+**Giải thích:**
+- **ConfigureEnrichers:** Thêm các thông tin cơ bản cho log message như Tên App, process id, exception details.
+- **ConfigureElasticSearch:** Tổ chức index tự động mỗi ngày (rolling), format index theo tên app và environment.
+- **OverideMinimumLogLevel:** Tránh việc in log của System/Microsoft ra ngoài trừ khi gặp lỗi (Warning/Error).
+
+
 ---
 
-## 6. Update Program.cs
+## 5. Cấu hình JSON & Khởi chạy Host
+
+### Bước 5.1: File Cấu hình JSON
+
+Đảm bảo project Host có cấu hình `logger.json` map với properties của class `LoggerSettings`.
+
+**File:** `src/Host/Configurations/logger.json`
+
+```json
+{
+  "LoggerSettings": {
+    "AppName": "{ProjectName}",
+    "ElasticSearchUrl": "http://localhost:9200",
+    "WriteToFile": true,
+    "StructuredConsoleLogging": false,
+    "MinimumLogLevel": "Information"
+  }
+}
+```
+
+*(Nhớ khai báo nạp `logger.json` trong Configuration Pipeline như đã làm ở Bước 6)*
+
+### Bước 5.2: Tích hợp vào Start Pipeline
+
+Gọi bootstrap logger ngay dòng đầu tiên trong `Program.cs`, và gọi method `.RegisterSerilog()`.
 
 **File:** `src/Host/Program.cs`
 
 ```csharp
-using {ProjectName}.Application;
-using {ProjectName}.Host.Configurations;
 using {ProjectName}.Infrastructure;
-using {ProjectName}.Infrastructure.Logging;
+using {ProjectName}.Host.Configurations;
+using {ProjectName}.Infrastructure.Common;
 using Serilog;
+using {ProjectName}.Infrastructure.Logging;
+using {ProjectName}.Application;
+// Các namespace khác...
 
+// 1. Chạy bootstrap logger đầu tiên
 StaticLogger.EnsureInitialized();
 Log.Information("Server Booting Up...");
 
@@ -257,58 +300,20 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
 
- // 2. Load configurations (includes logger.json)
-    builder.AddConfigurations();
+    // 2. Chú ý dòng này - Load configs trước rồi injection Serilog
+    builder.AddConfigurations().RegisterSerilog();
     
-    // 3. Register Serilog (full configuration)
-    builder.RegisterSerilog();
-
-    // 4. Add services to DI container
     builder.Services.AddControllers();
-    builder.Services.AddEndpointsApiExplorer();
-    
-    // 5. Add layers
-    builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddApplication();
     
-    // 6. Add Swagger
-    builder.Services.AddSwaggerGen(options =>
-    {
-        options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
-      {
-          Title = "{ProjectName} API",
-  Version = "v1"
-        });
-    });
+    // ... Setup Swagger ...
 
-    // 7. Build application
     var app = builder.Build();
 
-    // 8. Log application built
-    Log.Information("Application built successfully");
+    // ... Middlewares ...
 
-    // 9. Configure middleware pipeline
-    if (app.Environment.IsDevelopment())
-    {
-   app.UseSwagger();
-        app.UseSwaggerUI();
-    }
-
-    // 10. Request logging middleware
-    app.UseSerilogRequestLogging(options =>
-    {
-   options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
-});
-
-    // 11. Use Infrastructure middleware
-    app.UseInfrastructure(builder.Configuration);
-    
-    // 12. Map endpoints
-    app.MapEndpoints();
-
-    // 13. Run application
     Log.Information("Application Starting...");
-    Log.Information("Listening on: {Addresses}", string.Join(", ", app.Urls));
     app.Run();
 }
 catch (Exception ex) when (!ex.GetType().Name.Equals("HostAbortedException", StringComparison.Ordinal))
@@ -324,255 +329,74 @@ finally
 }
 ```
 
-**Thêm features:**
-- `UseSerilogRequestLogging()` - Log HTTP requests/responses
-- `EnrichDiagnosticContext` - Add extra properties to request logs
-- Better error handling với detailed error messages
-
-**Lưu ý:** Đã remove dòng `await app.Services.InitializeDatabasesAsync()` vì phần này sẽ có ở BUILD_08.
-
 ---
 
-## 6. Logging Best Practices
+## 6. Usage Examples
 
-### Bước 6.1: Log Levels Usage
+### Bước 6.1: Structured logging với ILogger
+
+Sử dụng chuỗi Format tự động theo cơ chế structured logging, rất quan trọng nếu tìm kiếm qua Elasticsearch (Kibana).
 
 ```csharp
-// Verbose - Quá chi tiết, chỉ dùng khi debug sâu
-Log.Verbose("Processing item {ItemId}", itemId);
+// ❌ BAD: Dùng string interpolation/concat
+_logger.LogInformation($"User {userId} created order {orderId}");
 
-// Debug - Thông tin development/troubleshooting
-Log.Debug("Cache miss for key {CacheKey}", key);
-
-// Information - General flow của application
-Log.Information("User {UserId} logged in successfully", userId);
-
-// Warning - Unexpected nhưng không critical
-Log.Warning("Rate limit approaching for IP {IpAddress}", ipAddress);
-
-// Error - Lỗi cần attention
-Log.Error(ex, "Failed to process order {OrderId}", orderId);
-
-// Fatal - Application không thể tiếp tục
-Log.Fatal(ex, "Database connection failed. Application cannot start.");
+// ✅ GOOD: Dùng cấu trúc param
+_logger.LogInformation("User {UserId} created order {OrderId}", userId, orderId);
 ```
 
----
+### Bước 6.2: Serilog Context
 
-### Bước 6.2: Structured Logging Example
-
-```csharp
-// ❌ BAD - String concatenation
-Log.Information("User " + userId + " placed order " + orderId);
-
-// ✅ GOOD - Structured logging
-Log.Information("User {UserId} placed order {OrderId}", userId, orderId);
-
-// ✅ BETTER - With object
-Log.Information("Order placed: {@Order}", new
-{
-    UserId = userId,
-    OrderId = orderId,
-    Total = total,
-    Items = items.Count
-});
-```
-
-**Benefits:**
-- Searchable: Có thể query `UserId = "123"`
-- Analyzable: Aggregate và analytics
-- Machine-readable: Parse và process logs
-
----
-
-### Bước 6.3: Using LogContext
-
-**File:** `src/Infrastructure/Infrastructure/Identity/UserService.cs` (example)
+Sử dụng push context properties tự động thêm properties này ở mọi logs gọi bên trong khối "using".
 
 ```csharp
 using Serilog.Context;
 
-public class UserService : IUserService
+using (LogContext.PushProperty("UserId", userId))
 {
-    public async Task<UserDto> GetByIdAsync(string userId)
-{
-        // Push context property
-        using (LogContext.PushProperty("UserId", userId))
-        {
-            Log.Information("Fetching user details");
-   
-            var user = await _db.Users.FindAsync(userId);
-      
-            if (user == null)
-            {
-                Log.Warning("User not found");
-                throw new NotFoundException("User not found");
+    _logger.LogInformation("Start process payment");
+    // Bất cứ log nào trong này đều đính kèm UserId 
+    _logger.LogInformation("End process payment");
 }
-      
-            Log.Information("User details fetched successfully");
-            return user.Adapt<UserDto>();
-        }
-    }
-}
-```
-
-**Output log:**
-```
-[Information] Fetching user details | UserId: "abc123"
-[Information] User details fetched successfully | UserId: "abc123"
 ```
 
 ---
 
-## 7. Environment-Specific Configurations
-
-### Bước 7.1: Development Configuration
-
-**File:** `src/Host/Host/Configurations/logger.Development.json`
-
-```json
-{
-  "Serilog": {
-  "MinimumLevel": {
-      "Default": "Debug",
-      "Override": {
-        "Microsoft.EntityFrameworkCore.Database.Command": "Information"
-      }
-  },
- "WriteTo": [
-      {
-        "Name": "Console",
-        "Args": {
-"outputTemplate": "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}{NewLine}  {Message:lj} {Properties:j}{NewLine}{Exception}"
-        }
-      }
-  ]
-  }
-}
-```
-
-**Features:**
-- `Default: Debug` - More verbose logging
-- EF Core SQL queries visible
-- Prettier console output
-
----
-
-### Bước 7.2: Production Configuration
-
-**File:** `src/Host/Host/Configurations/logger.Production.json`
-
-```json
-{
-  "Serilog": {
-  "MinimumLevel": {
-      "Default": "Information",
-      "Override": {
-   "Microsoft": "Warning",
-      "System": "Warning"
-      }
-    },
-    "WriteTo": [
-{
-        "Name": "Async",
-  "Args": {
-          "configure": [
-          {
-              "Name": "File",
-       "Args": {
-                "path": "/var/log/eco-webapi/log-.txt",
-              "rollingInterval": "Day",
-        "rollOnFileSizeLimit": true,
-                "fileSizeLimitBytes": 52428800,
-     "retainedFileCountLimit": 30,
-      "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"
-    }
-    }
-          ]
-        }
-      }
- ]
-        }
-      }
-```
-
-**Features:**
-- `Default: Information` - Less noise
-- Larger files (50MB)
-- Keep logs 30 days
-- Production log path
-
----
-
-## 8. Advanced Sinks (Optional)
-
-### Bước 8.1: Seq (Centralized Logging)
-
-**Add package:**
-```xml
-<PackageReference Include="Serilog.Sinks.Seq" Version="5.2.2" />
-```
-
-**Update logger.json:**
-```json
-{
-  "Serilog": {
-    "WriteTo": [
-    {
-        "Name": "Seq",
-        "Args": {
-          "serverUrl": "http://localhost:5341",
-  "apiKey": "your-api-key"
-        }
-      }
- ]
-  }
-}
-```
-
-**Expected console:**
-```
-[12:00:00 INF] Server Booting Up...
-[12:00:01 INF] Application built successfully
-[12:00:02 INF] Application Starting...
-```
-
-**Check log file:** `src/Host/Logs/log-{date}.txt`
-
----
-
-## 8. Summary
+## 7. Summary
 
 ### ✅ Đã hoàn thành:
-
-- ✅ Serilog packages
-- ✅ StaticLogger (bootstrap)
-- ✅ logger.json configuration
-- ✅ Multiple sinks (Console, File, Async)
-- ✅ Enrichers
-- ✅ Request logging
+- ✅ Thiết lập chuỗi Serilog tích hợp ElasticSearch Sink tối ưu cho phân tích log chuyên sâu.
+- ✅ Sử dụng Bootstrap Logger (`StaticLogger`) quản lý lỗi trong chuỗi khởi tạo Dependency Injection ban đầu.
+- ✅ Tự động filter log vô ích nhờ log level overrides chuẩn trên Serilog.
 
 ### 📁 File Structure:
 
-```
-src\Infrastructure\
-├── Logging\
-│├── StaticLogger.cs
-│   └── Extensions.cs
-└── ...
-
-src\Host\
-├── Configurations\
-│   └── logger.json
-└── Logs\
-    └── log-{date}.txt
+```text
+src/
+├── Infrastructure/
+│   └── Infrastructure/
+│       ├── Common/
+│       │   └── StaticLogger.cs
+│       └── Logging/
+│           ├── Extensions.cs
+│           └── LoggerSettings.cs
+└── Host/
+    └── Host/
+        ├── Configurations/
+        │   └── logger.json
+        └── Program.cs
 ```
 
 ---
 
-## 9. Bước tiếp theo
+## 8. Next Steps
 
 **Tiếp theo:** [BUILD_08 - Database Initialization](BUILD_08_Database_Initialization.md)
+
+Trong bước tiếp theo, chúng ta sẽ:
+1. ✅ Tạo Database Initializer logic
+2. ✅ Chạy Migration tự động hóa
+3. ✅ Seed dữ liệu Admin, Roles, Actions ban đầu hệ thống 
 
 ---
 

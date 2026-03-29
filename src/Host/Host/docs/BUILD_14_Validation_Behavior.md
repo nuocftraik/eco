@@ -356,11 +356,11 @@ public abstract class CustomValidator<T> : AbstractValidator<T>
     /// Validate phone number format
     /// </summary>
     protected IRuleBuilderOptions<T, string?> MustBeValidPhoneNumber(IRuleBuilder<T, string?> ruleBuilder)
- {
+    {
+        // Don't include a conditional here; callers can wrap this rule with When(...)
         return ruleBuilder
-       .Matches(@"^\+?[1-9]\d{1,14}$")
-            .When(x => !string.IsNullOrEmpty(ruleBuilder.ToString()))
-        .WithMessage("Invalid phone number format.");
+            .Matches(@"^\\+?[1-9]\d{1,14}$")
+            .WithMessage("Invalid phone number format.");
     }
 
     /// <summary>
@@ -368,19 +368,13 @@ public abstract class CustomValidator<T> : AbstractValidator<T>
     /// </summary>
     protected IRuleBuilderOptions<T, string> MustBeStrongPassword(IRuleBuilder<T, string> ruleBuilder)
     {
-     return ruleBuilder
-        .NotEmpty()
-     .WithMessage("Password is required.")
-        .MinimumLength(8)
-    .WithMessage("Password must be at least 8 characters.")
-   .Matches(@"[A-Z]")
-  .WithMessage("Password must contain at least one uppercase letter.")
-        .Matches(@"[a-z]")
-        .WithMessage("Password must contain at least one lowercase letter.")
-    .Matches(@"[0-9]")
-  .WithMessage("Password must contain at least one number.")
-.Matches(@"[\W_])
-       .WithMessage("Password must contain at least one special character.");
+        return ruleBuilder
+            .NotEmpty().WithMessage("Password is required.")
+            .MinimumLength(8).WithMessage("Password must be at least 8 characters.")
+            .Matches("[A-Z]").WithMessage("Password must contain at least one uppercase letter.")
+            .Matches("[a-z]").WithMessage("Password must contain at least one lowercase letter.")
+            .Matches("[0-9]").WithMessage("Password must contain at least one number.")
+            .Matches("[\\W_]").WithMessage("Password must contain at least one special character.");
     }
 
   /// <summary>

@@ -35,7 +35,7 @@ dotnet --version
 
 ```powershell
 # Di chuyển đến thư mục gốc
-cd D:\MyCode\MyProject
+cd {Your_Workspace_Directory}
 
 # Tạo solution
 # ⚠️ Luôn dùng placeholder tên solution trong docs
@@ -309,7 +309,7 @@ dotnet build {ProjectName}.sln -v detailed | Select-String "analyzer"
 ## 5. Cấu trúc thư mục
 
 ```
-D:\MyCode\MyProject\
+{Your_Workspace_Directory}\
 ├── {ProjectName}.sln            ⭐ Solution
 ├── Directory.Build.props        ⭐ Build config
 ├── Directory.Build.targets      ⭐ XML docs
@@ -380,7 +380,7 @@ Tạo authorization constants (Actions, Functions, Roles, Permissions).
 Tạo `setup-solution.ps1`:
 
 ```powershell
-$root = "D:\MyCode\MyProject"
+$root = "{Your_Workspace_Directory}"
 cd $root
 
 dotnet new sln -n {ProjectName}

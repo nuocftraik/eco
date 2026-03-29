@@ -1,4 +1,4 @@
-﻿# ECO.WebApi - Hướng dẫn Xây dựng Solution từ đầu
+﻿# {ProjectName} - Hướng dẫn Xây dựng Solution từ đầu
 
 > 📘 **Mục đích:** Tài liệu này hướng dẫn **từng bước chi tiết** để xây dựng một Clean Architecture solution từ đầu.  
 > Mỗi bước giải thích **làm gì**, **tại sao**, **thứ tự thực hiện**, và **code cụ thể**.
@@ -7,7 +7,7 @@
 
 ## 📋 Tổng quan
 
-ECO.WebApi được xây dựng theo **Clean Architecture** với 5 layers:
+{ProjectName} được xây dựng theo **Clean Architecture** với 5 layers logic:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -36,12 +36,25 @@ ECO.WebApi được xây dựng theo **Clean Architecture** với 5 layers:
 └─────────────────────────────────────────────────────────┘
 ```
 
+**Cấu trúc thư mục vật lý (Flattened Directory Structure):**
+Các dự án được đặt hoàn toàn phẳng trong thư mục `src/`, loại bỏ các folder trung gian (như Core, Infrastructure, Host) để dễ điều hướng:
+```text
+src/
+├── Shared/
+├── Domain/
+├── Application/
+├── Infrastructure/
+├── Migrators.MSSQL/
+└── Host/
+```
+
 **Nguyên tắc dependency:**
 - Shared: Không phụ thuộc vào layer nào
 - Domain: Chỉ phụ thuộc Shared
 - Application: Phụ thuộc Domain + Shared
 - Infrastructure: Phụ thuộc Application + Domain
 - Host: Phụ thuộc Infrastructure + Application
+- Migrators: Phụ thuộc Infrastructure (dùng cho EF Core Migrations)
 
 ---
 
@@ -146,20 +159,40 @@ Xây dựng các modules nghiệp vụ và tính năng nâng cao.
 | 26 | [BUILD_26](BUILD_26_Export_Services.md) 📝 | Excel export, Report generation | Phase 6 |
 | 27 | [BUILD_27](BUILD_27_PDF_Export.md) 📝 | PDF generation, Report templates | Bước 26 |
 | 28 | [BUILD_28](BUILD_28_Catalog_Module.md) 📝 | Products, Categories CRUD | Bước 27 |
+| 28.1 | [BUILD_28_Domain_Layer](BUILD_28_Domain_Layer.md) 📝 | Catalog Domain Layer | Bước 28 |
+| 28.2 | [BUILD_28_Application_Layer](BUILD_28_Application_Layer.md) 📝 | Catalog CQRS Application Layer | Bước 28.1 |
+| 28.3 | [BUILD_28_Infrastructure_Controllers](BUILD_28_Infrastructure_Controllers.md) 📝 | Catalog REST APIs | Bước 28.2 |
 | 29 | [BUILD_29](BUILD_29_Notifications.md) 📝 | SignalR notifications, Real-time updates | Bước 28 |
 | 30 | [BUILD_30](BUILD_30_Database_Design_Identity_Module_MultiGroup.md) ✅ | Database Design - Identity Module (Multi-Group Support) | Phase 5 |
 | 31 | [BUILD_31](BUILD_31_Database_Design_Catalog_Module.md) ✅ | Database Design - Catalog Module (Code-First) | Phase 5 |
 | 31.2 | [BUILD_31_Part2](BUILD_31_Part2.md) ✅ | Catalog Module Part 2: Attributes, Tags, Reviews | Bước 31 |
 | 32 | [BUILD_32](BUILD_32_Database_Design_Order_Cart_Module.md) ✅ | Database Design - Order & Cart Module (Code-First) | Bước 31 |
 | 32.2 | [BUILD_32_Part2](BUILD_32_Part2.md) ✅ | Order & Cart Module Part 2: Payment, Shipping, Configurations | Bước 32 |
+| 33 | [BUILD_33](BUILD_33_Database_Design_Inventory_Module.md) ✅ | Database Design - Inventory Module | Bước 32 |
+
+---
+
+### **PHASE 8: Payment Gateway Integrations** (Cổng thanh toán)
+Tích hợp các cổng thanh toán và quản lý giao dịch.
+
+| Bước | Tài liệu | Nội dung | Prerequisites |
+|------|----------|----------|---------------|
+| 34.1 | [BUILD_34](BUILD_34_Database_Design_Payment_Gateway_Integration.md) ✅ | Database Design - Payment Integrations | Phase 7 |
+| 34.2 | [BUILD_34_Part2](BUILD_34_Part2_Webhooks_Refunds_Security.md) ✅ | Webhooks, Refunds, and Security | Bước 34.1 |
+| 35 | [BUILD_35](BUILD_35_Payment_Gateway_VNPay_Integration.md) ✅ | VNPay Integration | Bước 34 |
+| 36 | [BUILD_36](BUILD_36_Payment_Gateway_Momo_Integration.md) ✅ | MoMo Integration | Bước 34 |
+| 37 | [BUILD_37](BUILD_37_Payment_Gateway_ZaloPay_Integration.md) ✅ | ZaloPay Integration | Bước 34 |
+| 38 | [BUILD_38](BUILD_38_Payment_Gateway_VietQR_Integration.md) ✅ | VietQR Integration | Bước 34 |
 
 **⚠️ Lưu ý:** Phase 7 đang trong quá trình xây dựng. 
 - ✅ **BUILD_30:** Database Design for Identity Module (Multi-Group) - COMPLETED
 - ✅ **BUILD_31:** Database Design for Catalog Module (2 parts) - COMPLETED
 - ✅ **BUILD_32:** Database Design for Order & Cart Module (2 parts) - COMPLETED
+- ✅ **BUILD_33:** Database Design for Inventory Module - COMPLETED
 - 🚧 **BUILD_26-29:** Planned features - Documentation in progress
 
 **Kết quả Phase 7:** Business modules complete (Export Services, PDF Export, Catalog with comprehensive database design, Notifications).
+**Kết quả Phase 8:** Payment gateway integrations complete (VNPay, MoMo, ZaloPay, VietQR).
 
 ---
 
@@ -171,14 +204,14 @@ Xây dựng các modules nghiệp vụ và tính năng nâng cao.
 **File:** [BUILD_01_Solution_Setup.md](BUILD_01_Solution_Setup.md)
 
 **Nội dung:**
-1. Tạo solution file (`ECO.WebApi.sln`)
-2. Tạo 6 projects theo thứ tự dependency
+1. Tạo solution file (`{ProjectName}.sln`)
+2. Tạo các projects trực tiếp trong `src/` theo cấu trúc phẳng
 3. Setup `Directory.Build.props` (StyleCop, SonarAnalyzer)
 4. Setup `Directory.Build.targets` (XML documentation)
 5. Tạo `stylecop.json` (code style rules)
 6. Tạo `.editorconfig` (editor formatting)
 
-**Kết quả:** Solution structure hoàn chỉnh, build configuration áp dụng cho tất cả projects.
+**Kết quả:** Solution structure hoàn chỉnh với directory phẳng, build configuration áp dụng cho tất cả projects.
 
 ---
 
@@ -187,11 +220,11 @@ Xây dựng các modules nghiệp vụ và tính năng nâng cao.
 
 **Nội dung:**
 1. Setup `Shared.csproj` (no dependencies)
-2. Tạo `ECOAction` constants (View, Create, Update, Delete...)
-3. Tạo `ECOFunction` constants (Dashboard, User, Role...)
-4. Tạo `ECORoles` constants (Admin, Basic)
-5. Tạo `ECOClaims` constants (Fullname, Permission...)
-6. Tạo `ECOPermission` record (generate permissions động)
+2. Tạo `{ProjectName}Action` constants (View, Create, Update, Delete...)
+3. Tạo `{ProjectName}Function` constants (Dashboard, User, Role...)
+4. Tạo `{ProjectName}Roles` constants (Admin, Basic)
+5. Tạo `{ProjectName}Claims` constants (Fullname, Permission...)
+6. Tạo `{ProjectName}Permission` record (generate permissions động)
 
 **Kết quả:** Authorization constants sẵn sàng để dùng trong các layers khác.
 
@@ -341,7 +374,7 @@ await app.Services...InitializeDatabasesAsync();
 
 **Nội dung:**
 1. Tạo Search/Filter models (Search, Filter, BaseFilter, PaginationFilter)
-2. Tạo `IRepository<T>`, `IReadRepository<T>`, `IRepositoryWithEvents<T>`
+2. Tạo `IRepository<T>`, `IReadRepository<T>`, `IRepositoryWithEvents<T>` 
 3. Implement `ApplicationDbRepository<T>`
 4. Tạo `EventAddingRepositoryDecorator<T>` (decorator pattern)
 5. Tạo base specifications: `EntitiesByBaseFilterSpec`, `EntitiesByPaginationFilterSpec`
@@ -649,6 +682,130 @@ await app.Services...InitializeDatabasesAsync();
 
 ---
 
+### **PHASE 7: BUSINESS MODULES**
+
+#### **Bước 26: Export Services** 📝
+**File:** [BUILD_26_Export_Services.md](BUILD_26_Export_Services.md)
+
+**Nội dung:**
+- Excel export với ClosedXML
+- CSV export
+- Export templates
+- Dynamic column mapping
+- Batch export operations
+
+#### **Bước 27: PDF Export Service** 📝
+**File:** [BUILD_27_PDF_Export.md](BUILD_27_PDF_Export.md)
+
+**Nội dung:**
+- PDF generation với QuestPDF/iTextSharp
+- Invoice/Report templates
+- Header/Footer customization
+- Charts và images embedding
+- Watermarks và digital signatures
+- PDF merge và split operations
+
+#### **Bước 28: Catalog Module** 📝
+**File:** [BUILD_28_Catalog_Module.md](BUILD_28_Catalog_Module.md)
+
+**Nội dung:**
+- Products, Categories CRUD
+- Catalog Domain Layer
+- CQRS Application Layer
+- REST APIs
+
+#### **Bước 29: Notifications** 📝
+**File:** [BUILD_29_Notifications.md](BUILD_29_Notifications.md)
+
+**Nội dung:**
+- SignalR notifications, Real-time updates
+
+#### **Bước 30: Database Design - Identity Module (Multi-Group)** ✅
+**File:** [BUILD_30_Database_Design_Identity_Module_MultiGroup.md](BUILD_30_Database_Design_Identity_Module_MultiGroup.md)
+
+**Nội dung:**
+- Multi-Group Support: Users can belong to multiple groups
+- Group Hierarchy: Parent-child relationships between groups
+- Group-based Permissions: Fine-grained access control per group
+- User Group Roles: Different roles for users in different groups
+- Complete EF Core Configurations
+- Research-Based Architecture: Enterprise-ready patterns
+
+**Database Summary:**
+```
+11 Core Tables:
+├── Products (Marketing info ONLY)
+├── Variants (Price & Inventory - ALWAYS)
+├── Attributes (Dynamic product attributes)
+├── AttributeValues (Attribute value options)
+├── VariantAttributeValues (Junction: Composite PK)
+├── Categories (Hierarchical with Materialized Path)
+├── ProductCategories (Junction: Composite PK)
+├── Tags (Flat tags)
+├── ProductTags (Junction: Composite PK)
+├── UserReviews (Variant-specific reviews)
+└── Audit Tables (Automatic via AuditableEntity)
+```
+
+#### **Bước 31: Database Design - Catalog Module** ✅
+**File:** [BUILD_31_Database_Design_Catalog_Module.md](BUILD_31_Database_Design_Catalog_Module.md)
+
+**Nội dung:**
+- Database Design - Catalog Module (Code-First)
+- Include Attributes, Tags, Reviews
+
+#### **Bước 32: Database Design - Order & Cart Module** ✅
+**File:** [BUILD_32_Database_Design_Order_Cart_Module.md](BUILD_32_Database_Design_Order_Cart_Module.md)
+
+**Nội dung:**
+- Database Design - Order & Cart Module (Code-First)
+- Include Payment, Shipping, Configurations
+
+#### **Bước 33: Database Design - Inventory Module** ✅
+**File:** [BUILD_33_Database_Design_Inventory_Module.md](BUILD_33_Database_Design_Inventory_Module.md)
+
+**Nội dung:**
+- Warehouse management
+- Stock tracking
+- Stock movement and adjustment history
+
+---
+
+### **PHASE 8: PAYMENT GATEWAY INTEGRATIONS**
+
+#### **Bước 34: Payment Gateway Integrations** ✅
+**File:** [BUILD_34_Database_Design_Payment_Gateway_Integration.md](BUILD_34_Database_Design_Payment_Gateway_Integration.md)
+
+**Nội dung:**
+- Database Design - Payment Integrations
+- Webhooks, Refunds, and Security
+
+#### **Bước 35: VNPay Integration** ✅
+**File:** [BUILD_35_Payment_Gateway_VNPay_Integration.md](BUILD_35_Payment_Gateway_VNPay_Integration.md)
+
+**Nội dung:**
+- VNPay payment gateway integration
+
+#### **Bước 36: MoMo Integration** ✅
+**File:** [BUILD_36_Payment_Gateway_Momo_Integration.md](BUILD_36_Payment_Gateway_Momo_Integration.md)
+
+**Nội dung:**
+- MoMo payment gateway integration
+
+#### **Bước 37: ZaloPay Integration** ✅
+**File:** [BUILD_37_Payment_Gateway_ZaloPay_Integration.md](BUILD_37_Payment_Gateway_ZaloPay_Integration.md)
+
+**Nội dung:**
+- ZaloPay payment gateway integration
+
+#### **Bước 38: VietQR Integration** ✅
+**File:** [BUILD_38_Payment_Gateway_VietQR_Integration.md](BUILD_38_Payment_Gateway_VietQR_Integration.md)
+
+**Nội dung:**
+- VietQR payment gateway integration
+
+---
+
 ## 📝 Template Documentation
 
 ### **Module Documentation Template**
@@ -678,6 +835,7 @@ Template chuẩn để viết tài liệu cho các modules mới:
 5. Follow **Phase 5** → Setup data integrity
 6. Follow **Phase 6** → Setup infrastructure services
 7. **Phase 7** → Build business features (đang phát triển) 🚧
+8. **Phase 8** → Integrate payment gateways
 
 ### **Khi thêm feature mới:**
 1. Đọc [MODULE_DOCUMENTATION_TEMPLATE.md](MODULE_DOCUMENTATION_TEMPLATE.md)
@@ -690,6 +848,7 @@ Template chuẩn để viết tài liệu cho các modules mới:
 2. Check **BUILD_13** (Exceptions) - error handling
 3. Check **BUILD_20** (Auditing) - data changes
 4. Check **BUILD_25** (Background Jobs) - async operations
+5. Check **BUILD_34** (Payment Gateway) - transaction issues
 
 ---
 
@@ -709,12 +868,15 @@ Template chuẩn để viết tài liệu cho các modules mới:
 - Follow naming conventions từ MODULE_DOCUMENTATION_TEMPLATE
 - XML documentation cho public APIs
 - Unit tests cho critical logic
+- Integration tests cho API và data access
 
 **✅ Security:**
 - Permission-based authorization (BUILD_17)
 - JWT authentication (BUILD_15)
 - Input validation (BUILD_14)
 - Audit trails (BUILD_20)
+- Secure sensitive data (payments, personal information)
+- Regular security reviews và dependency updates
 
 ---
 
@@ -727,19 +889,22 @@ Template chuẩn để viết tài liệu cho các modules mới:
 - ✅ **Phase 4:** Authentication & Authorization (6 steps)
 - ✅ **Phase 5:** Data Integrity Patterns (2 steps)
 - ✅ **Phase 6:** Infrastructure Services (5 steps + 1 alternative)
+- ✅ **Phase 7:** Business Modules (8 steps + 3 sub-docs)
+- ✅ **Phase 8:** Payment Gateway Integrations (6 steps)
 
 ### **In Progress:**
 - 🚧 **Phase 7:** Business Modules
   - ✅ BUILD_30: Database Design - Identity Module (Multi-Group) - COMPLETED
   - ✅ BUILD_31: Database Design - Catalog Module (2 parts) - COMPLETED
   - ✅ BUILD_32: Database Design - Order & Cart Module (2 parts) - COMPLETED
+  - ✅ BUILD_33: Database Design - Inventory Module - COMPLETED
   - 📝 BUILD_26-29: Planned features (Export Services, PDF, Application Layer, Notifications)
 
 ### **Total Documentation:**
-- **Main BUILD files:** 32 (BUILD_01 → BUILD_32)
-- **Sub-documentation:** 5 (BUILD_11 specs, BUILD_11.2, BUILD_24 AWS, BUILD_31 Part 2, BUILD_32 Part 2)
+- **Main BUILD files:** 38 (BUILD_01 → BUILD_38)
+- **Sub-documentation:** 10 (BUILD_11 specs, BUILD_11.2, BUILD_24 AWS, BUILD_28 Domain/App/Infra, BUILD_31 Part 2, BUILD_32 Part 2, BUILD_34 Part 2)
 - **Templates:** 1 (MODULE_DOCUMENTATION_TEMPLATE)
-- **Total pages:** 38+ documents
+- **Total pages:** 49+ documents
 
 ---
 
@@ -821,6 +986,30 @@ Template chuẩn để viết tài liệu cho các modules mới:
 - ✅ BUILD_31: Completed (2025-02-01) - Catalog Module
 - 🚧 BUILD_26-29: Q2 2026
 
+#### **BUILD_31: Database Design - Catalog Module** ✅ COMPLETED
+- **Part 1:** Attributes, Tags, Reviews
+  - ✅ Dynamic attributes and tags system
+  - ✅ Attribute value options (variation) 
+  - ✅ Composite keys for junction tables
+  - ✅ Complete EF Core configurations for all entities
+  - ✅ Extensive seed data for testing
+
+**Database Summary:**
+```
+11 Core Tables:
+├── Products (Marketing info ONLY)
+├── Variants (Price & Inventory - ALWAYS)
+├── Attributes (Dynamic product attributes)
+├── AttributeValues (Attribute value options)
+├── VariantAttributeValues (Junction: Composite PK)
+├── Categories (Hierarchical with Materialized Path)
+├── ProductCategories (Junction: Composite PK)
+├── Tags (Flat tags)
+├── ProductTags (Junction: Composite PK)
+├── UserReviews (Variant-specific reviews)
+└── Audit Tables (Automatic via AuditableEntity)
+```
+
 #### **BUILD_32: Database Design - Order & Cart Module** ✅ COMPLETED
 - **Part 1:** Order Entity, Cart Entity, Enums
   - ✅ OrderStatus, PaymentMethod, PaymentStatus Enums
@@ -878,13 +1067,26 @@ Create Order (Price Snapshot) → Payment → Confirm Order →
 Deduct Inventory → Send Email → Ship → Deliver
 ```
 
+#### **BUILD_33: Database Design - Inventory Module** ✅ COMPLETED
+- Warehouse management
+- Stock tracking
+- Stock movement and adjustment history
+
+---
+
+### **PHASE 8: PAYMENT GATEWAY INTEGRATIONS** ✅ COMPLETED
+- **BUILD_34:** Payment Integrations Design, Webhooks & Security (2 parts)
+- **BUILD_35:** VNPay Integration
+- **BUILD_36:** MoMo Integration
+- **BUILD_37:** ZaloPay Integration
+- **BUILD_38:** VietQR Integration
+
 **📅 Expected completion:** 
-- ✅ BUILD_30: Completed (2025-02-01) - Identity Module Multi-Group
-- ✅ BUILD_31: Completed (2025-02-01) - Catalog Module
-- ✅ BUILD_32: Completed (2025-02-01) - Order & Cart Module
+- ✅ Phase 1-6 & Phase 8: Completed
+- ✅ BUILD_30, 31, 32, 33: Completed
 - 🚧 BUILD_26-29: Q2 2026
 
 ---
-**Maintained By:** ECO.WebApi Development Team  
+**Maintained By:** {ProjectName} Development Team  
 **Last Updated:** 2026-02-01  
-**Version:** 2.5 (BUILD_30 Identity + BUILD_31 Catalog + BUILD_32 Order & Cart Complete - E-commerce Core Ready)
+**Version:** 3.0 (Generic Clean Architecture Template - Flattened Structure)

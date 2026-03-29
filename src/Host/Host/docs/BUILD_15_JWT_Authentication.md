@@ -901,22 +901,22 @@ namespace {ProjectName}.Infrastructure.Auth;
 internal static class Startup
 {
     internal static IServiceCollection AddAuth(this IServiceCollection services)
- {
+    {
         services
             .AddCurrentUser()
-    .AddPermissions()
-    // JWT Authentication
-        .AddJwtAuth();
-         
-  return services;
+            .AddPermissions()
+            // JWT Authentication
+            .AddJwtAuth();
+
+        return services;
     }
 
     internal static IApplicationBuilder UseAuth(this IApplicationBuilder app)
     {
-     return app
- .UseCurrentUser()
-  .UseAuthentication()
-     .UseAuthorization();
+        return app
+            .UseCurrentUserMiddleware() // ← ensure consistent method name from BUILD_12
+            .UseAuthentication()
+            .UseAuthorization();
     }
 }
 ```

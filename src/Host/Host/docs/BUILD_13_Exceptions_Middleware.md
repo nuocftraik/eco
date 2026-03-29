@@ -36,8 +36,8 @@ public class GetProductHandler : IRequestHandler<GetProductRequest, ProductDto>
     public async Task<ProductDto> Handle(GetProductRequest request, CancellationToken ct)
     {
         var product = await _repository.FirstOrDefaultAsync(new ProductByIdSpec(request.Id), ct)
-   ?? throw new NotFoundException($"Product with ID {request.Id} was not found.");
-     
+            ?? throw new NotFoundException($"Product with ID {request.Id} was not found.");
+
         return product.Adapt<ProductDto>();
     }
 }
@@ -45,7 +45,7 @@ public class GetProductHandler : IRequestHandler<GetProductRequest, ProductDto>
 // Exception tự động được catch bởi ExceptionMiddleware
 // Response:
 // {
-// "statusCode": 404,
+//   "statusCode": 404,
 //   "exception": "Product with ID 123 was not found.",
 //   "errorId": "a1b2c3d4-...",
 //   "supportMessage": "Provide the ErrorId a1b2c3d4-... to the support team for further analysis."
@@ -96,7 +96,7 @@ public class ErrorResult
     /// <summary>
     /// Source của exception (class và method name)
     /// </summary>
- public string? Source { get; set; }
+    public string? Source { get; set; }
 
     /// <summary>
     /// Exception message chính
@@ -109,11 +109,11 @@ public class ErrorResult
     public string? ErrorId { get; set; }
 
     /// <summary>
-  /// Support message hướng dẫn user liên hệ support team
+    /// Support message hướng dẫn user liên hệ support team
     /// </summary>
     public string? SupportMessage { get; set; }
 
- /// <summary>
+    /// <summary>
     /// HTTP status code
     /// </summary>
     public int StatusCode { get; set; }
@@ -150,11 +150,9 @@ public class ErrorResult
 
 ## 4. Tạo Custom Exceptions
 
+> Các exception types dưới đây kế thừa từ `CustomException` và embed HTTP status code để middleware dễ map.
+
 ### Bước 4.1: CustomException Base Class
-
-**Làm gì:** Tạo base exception class với HttpStatusCode và ErrorMessages properties.
-
-**Tại sao:** Base class để tất cả custom exceptions kế thừa, đảm bảo có đủ properties cần thiết.
 
 **File:** `src/Application/Common/Exceptions/CustomException.cs`
 
@@ -527,101 +525,105 @@ internal class ExceptionMiddleware : IMiddleware
     private readonly ICurrentUser _currentUser;
     private readonly ISerializerService _jsonSerializer;
 
- public ExceptionMiddleware(
- ICurrentUser currentUser,
+    public ExceptionMiddleware(
+        ICurrentUser currentUser,
         ISerializerService jsonSerializer)
     {
-      _currentUser = currentUser;
-      _jsonSerializer = jsonSerializer;
+        _currentUser = currentUser;
+        _jsonSerializer = jsonSerializer;
     }
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
-     try
- {
-        // Continue với request pipeline
-         await next(context);
-     }
- catch (Exception exception)
-     {
-        // 1. Lấy user context
-   string email = _currentUser.GetUserEmail() is string userEmail ? userEmail : "Anonymous";
-      var userId = _currentUser.GetUserId();
-
-     // 2. Push context vào Serilog
-        if (userId != Guid.Empty)
-        LogContext.PushProperty("UserId", userId);
-   LogContext.PushProperty("UserEmail", email);
-
-        // 3. Generate unique error ID
-      string errorId = Guid.NewGuid().ToString();
-      LogContext.PushProperty("ErrorId", errorId);
- LogContext.PushProperty("StackTrace", exception.StackTrace);
-
-        // 4. Tạo ErrorResult
-        var errorResult = new ErrorResult
+        try
         {
-        Source = exception.TargetSite?.DeclaringType?.FullName,
-         Exception = exception.Message.Trim(),
-            ErrorId = errorId,
-    SupportMessage = $"Provide the ErrorId {errorId} to the support team for further analysis."
-        };
-
-    // 5. Handle inner exception (unwrap)
-        if (exception is not CustomException && exception.InnerException != null)
-     {
-        while (exception.InnerException != null)
- {
-       exception = exception.InnerException;
-           }
+            // Continue với request pipeline
+            await next(context);
         }
-
-        // 6. Handle FluentValidation exceptions
-        if (exception is FluentValidation.ValidationException fluentException)
+        catch (Exception ex)
         {
-            errorResult.Exception = "One or More Validations failed.";
-            foreach (var error in fluentException.Errors)
-     {
-      errorResult.Messages.Add(error.ErrorMessage);
-     }
-    }
+            var exception = ex; // work on a local reference
 
-         // 7. Set status code dựa trên exception type
-         switch (exception)
-        {
-          case CustomException e:
-   errorResult.StatusCode = (int)e.StatusCode;
-      if (e.ErrorMessages is not null)
-       {
-     errorResult.Messages = e.ErrorMessages;
+            // 1. Lấy user context
+            var email = _currentUser.GetUserEmail() ?? "Anonymous";
+            var userId = _currentUser.GetUserId();
+
+            // 2. Push context vào Serilog (optional scoped properties)
+            LogContext.PushProperty("UserId", userId);
+            LogContext.PushProperty("UserEmail", email);
+
+            // 3. Generate unique error ID
+            var errorId = Guid.NewGuid().ToString();
+            LogContext.PushProperty("ErrorId", errorId);
+            LogContext.PushProperty("StackTrace", exception.StackTrace);
+
+            // 4. Tạo ErrorResult
+            var errorResult = new ErrorResult
+            {
+                Source = exception.TargetSite?.DeclaringType?.FullName,
+                Exception = exception.Message?.Trim(),
+                ErrorId = errorId,
+                SupportMessage = $"Provide the ErrorId {errorId} to the support team for further analysis."
+            };
+
+            // 5. Unwrap inner exceptions for root cause (except custom exceptions)
+            if (exception is not CustomException && exception.InnerException != null)
+            {
+                while (exception.InnerException != null)
+                {
+                    exception = exception.InnerException;
+                }
+
+                errorResult.Exception = exception.Message?.Trim();
             }
-            break;
 
-    case KeyNotFoundException:
-          errorResult.StatusCode = (int)HttpStatusCode.NotFound;
-         break;
+            // 6. Handle FluentValidation exceptions
+            if (exception is FluentValidation.ValidationException fluentException)
+            {
+                errorResult.Exception = "One or More Validations failed.";
+                foreach (var error in fluentException.Errors)
+                {
+                    errorResult.Messages.Add(error.ErrorMessage);
+                }
+            }
 
-case FluentValidation.ValidationException:
-    errorResult.StatusCode = (int)HttpStatusCode.BadRequest;
-                break;
+            // 7. Map status code based on exception type
+            switch (exception)
+            {
+                case CustomException ce:
+                    errorResult.StatusCode = (int)ce.StatusCode;
+                    if (ce.ErrorMessages is not null)
+                    {
+                        errorResult.Messages = ce.ErrorMessages;
+                    }
+                    break;
 
-       default:
-       errorResult.StatusCode = (int)HttpStatusCode.InternalServerError;
-         break;
-        }
+                case KeyNotFoundException:
+                    errorResult.StatusCode = (int)HttpStatusCode.NotFound;
+                    break;
 
-  // 8. Log error
-     Log.Error($"{errorResult.Exception} Request failed with Status Code {errorResult.StatusCode} and Error Id {errorId}.");
+                case FluentValidation.ValidationException:
+                    errorResult.StatusCode = (int)HttpStatusCode.BadRequest;
+                    break;
 
-    // 9. Write error response
+                default:
+                    errorResult.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    break;
+            }
+
+            // 8. Log error
+            Log.Error("{ExceptionMessage} Request failed with Status Code {StatusCode} and Error Id {ErrorId}.",
+                errorResult.Exception, errorResult.StatusCode, errorId);
+
+            // 9. Write error response (if possible)
             var response = context.Response;
             if (!response.HasStarted)
-        {
-   response.ContentType = "application/json";
-        response.StatusCode = errorResult.StatusCode;
-          await response.WriteAsync(_jsonSerializer.Serialize(errorResult));
-  }
-      else
+            {
+                response.ContentType = "application/json";
+                response.StatusCode = errorResult.StatusCode;
+                await response.WriteAsync(_jsonSerializer.Serialize(errorResult));
+            }
+            else
             {
                 Log.Warning("Can't write error response. Response has already started.");
             }
@@ -851,7 +853,7 @@ curl -X GET https://localhost:7001/api/products/00000000-0000-0000-0000-00000000
   "source": "ECO.WebApi.Application.Catalog.Products.GetProductHandler.Handle",
   "exception": "Product with ID 00000000-0000-0000-0000-000000000001 was not found.",
   "errorId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "supportMessage": "Provide the ErrorId a1b2c3d4-... to the support team for further analysis.",
+  "supportMessage": "Provide the ErrorId a1b2c3d4-e5f6-7890-abcd-ef1234567890 to the support team for further analysis.",
   "statusCode": 404
 }
 ```
@@ -1039,9 +1041,6 @@ curl -X POST https://localhost:7001/api/roles \
 Can't write error response. Response has already started.
 ```
 
-**Nguyên nhân:**
-Response đã được gửi một phần (headers hoặc body) trước khi exception xảy ra.
-
 **Giải pháp:**
 - Đảm bảo exception xảy ra TRƯỚC khi `await next()` gửi response
 - Code đã handle case này với `response.HasStarted` check:
@@ -1062,9 +1061,6 @@ else
 
 **Triệu chứng:**
 Exception message không rõ ràng, thiếu details.
-
-**Nguyên nhân:**
-Inner exception không được unwrap.
 
 **Giải pháp:**
 Code đã handle unwrap inner exceptions:
@@ -1088,9 +1084,6 @@ if (exception is not CustomException && exception.InnerException != null)
 
 **Triệu chứng:**
 Validation errors không hiện trong response.
-
-**Nguyên nhân:**
-FluentValidation exceptions không được handle đúng.
 
 **Giải pháp:**
 Code đã handle FluentValidation:
@@ -1384,30 +1377,3 @@ src/Infrastructure/Middleware/
 ├── ExceptionMiddleware.cs
 └── Startup.cs
 ```
-
-### 🔑 Important Points:
-
-1. **Middleware Order:** ExceptionMiddleware phải đầu tiên
-2. **Status Codes:** Mỗi exception type có HTTP status riêng
-3. **Logging:** Tự động log với context (UserId, ErrorId)
-4. **Security:** Không expose sensitive information
-5. **Validation:** Support FluentValidation exceptions
-6. **Tracking:** Unique ErrorId cho mỗi error
-
----
-
-## 11. Next Steps
-
-**Tiếp theo:** [BUILD_14 - Validation Behavior](BUILD_14_Validation_Behavior.md)
-
-Trong bước tiếp theo, chúng ta sẽ:
-1. ✅ Setup FluentValidation
-2. ✅ Tạo `ValidationBehavior` (MediatR pipeline behavior)
-3. ✅ Validator examples (CreateUserRequestValidator, UpdateProductRequestValidator)
-4. ✅ Auto-register validators
-5. ✅ Validation error handling
-6. ✅ Custom validation rules
-
----
-
-**Quay lại:** [Mục lục](BUILD_INDEX.md)
