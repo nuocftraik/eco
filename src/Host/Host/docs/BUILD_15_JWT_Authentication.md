@@ -63,7 +63,7 @@ var newTokens = await httpClient.PostAsync("/api/tokens/refresh", new
 
 ### Bước 2.1: Add JWT Packages to Infrastructure
 
-**File:** `src/Infrastructure/Infrastructure/Infrastructure.csproj`
+**File:** `src/Infrastructure/Infrastructure.csproj`
 
 ```xml
 <ItemGroup>
@@ -198,7 +198,7 @@ public class SecuritySettings
 
 **Tại sao:** Separation of concerns, dễ quản lý settings theo environment.
 
-**File:** `src/Host/Host/Configurations/security.json`
+**File:** `src/Host/Configurations/security.json`
 
 ```json
 {
@@ -1032,7 +1032,7 @@ public sealed class TokensController : BaseApiController
 
 **Tại sao:** Type-safe claim names, dễ refactor.
 
-**File:** `src/Core/Shared/Authorization/AppClaims.cs`
+**File:** `src/Shared/Authorization/AppClaims.cs`
 
 ```csharp
 namespace {ProjectName}.Shared.Authorization;
@@ -1084,7 +1084,7 @@ public static class AppClaims
 
 **Tại sao:** Reusable, type-safe claim access.
 
-**File:** `src/Core/Shared/Authorization/ClaimsPrincipalExtensions.cs`
+**File:** `src/Shared/Authorization/ClaimsPrincipalExtensions.cs`
 
 ```csharp
 using System.Security.Claims;
@@ -1511,39 +1511,36 @@ When token expires:
 
 ```
 src/
-├── Core/
-│   ├── Application/
-│   │   └── Identity/
-│   │       └── Tokens/
-│   │ ├── ITokenService.cs
-│   │           ├── TokenRequest.cs
-│   │  ├── TokenResponse.cs
-│   │ └── RefreshTokenRequest.cs
-│   ├── Domain/
-│   │   └── Identity/
-│   │       └── ApplicationUser.cs (RefreshToken fields)
-│   └── Shared/
-│       └── Authorization/
-│     ├── AppClaims.cs
-│  └── ClaimsPrincipalExtensions.cs
+├── Application/
+│   └── Identity/
+│       └── Tokens/
+│           ├── ITokenService.cs
+│           ├── TokenRequest.cs
+│           ├── TokenResponse.cs
+│           └── RefreshTokenRequest.cs
+├── Domain/
+│   └── Identity/
+│       └── ApplicationUser.cs (RefreshToken fields)
+├── Shared/
+│   └── Authorization/
+│       ├── AppClaims.cs
+│       └── ClaimsPrincipalExtensions.cs
 ├── Infrastructure/
-│   └── Infrastructure/
-│       ├── Auth/
-│       │   ├── SecuritySettings.cs
-│       │   ├── Startup.cs (AddAuth)
-│       │   └── Jwt/
-││       ├── JwtSettings.cs
-│       │       ├── ConfigureJwtBearerOptions.cs
-│       │       └── Startup.cs (AddJwtAuth)
-│       └── Identity/
-│      └── TokenService.cs
+│   ├── Auth/
+│   │   ├── SecuritySettings.cs
+│   │   ├── Startup.cs (AddAuth)
+│   │   └── Jwt/
+│   │       ├── JwtSettings.cs
+│   │       ├── ConfigureJwtBearerOptions.cs
+│   │       └── Startup.cs (AddJwtAuth)
+│   └── Identity/
+│       └── TokenService.cs
 └── Host/
-    └── Host/
-   ├── Controllers/
-        │   └── Identity/
-        │       └── TokensController.cs
-        └── Configurations/
-            └── security.json
+    ├── Controllers/
+    │   └── Identity/
+    │       └── TokensController.cs
+    └── Configurations/
+        └── security.json
 ```
 
 ---

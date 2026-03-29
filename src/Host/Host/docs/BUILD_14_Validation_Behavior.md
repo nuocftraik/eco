@@ -83,7 +83,7 @@ public class CreateProductHandler : IRequestHandler<CreateProductRequest, Guid>
 
 ## 2. Add Required Packages
 
-**File:** `src/Core/Application/Application.csproj`
+**File:** `src/Application/Application.csproj`
 
 Packages đã có từ BUILD_04 (không cần add thêm):
 - `FluentValidation` (v11.9.2)
@@ -439,7 +439,7 @@ public class CreateUserValidator : CustomValidator<CreateUserRequest>
 
 **Làm gì:** Validator cho CreateUserRequest.
 
-**File:** `src/Core/Application/Identity/Users/CreateUserRequest.cs`
+**File:** `src/Application/Identity/Users/CreateUserRequest.cs`
 
 ```csharp
 using {ProjectName}.Application.Common.Validation;
@@ -551,7 +551,7 @@ public class CreateUserHandler : IRequestHandler<CreateUserRequest, Guid>
 
 **Làm gì:** Validator cho UpdateProductRequest với async validation.
 
-**File:** `src/Core/Application/Catalog/Products/UpdateProductRequest.cs`
+**File:** `src/Application/Catalog/Products/UpdateProductRequest.cs`
 
 ```csharp
 using {ProjectName}.Application.Common.Interfaces;
@@ -1227,7 +1227,7 @@ public class CreateProductHandler : IRequestHandler<CreateProductRequest, Guid>
 
 **1. Organize validators by feature:**
 ```
-src/Core/Application/
+src/Application/
 ├── Identity/
 │   └── Users/
 │       ├── CreateUserRequest.cs
