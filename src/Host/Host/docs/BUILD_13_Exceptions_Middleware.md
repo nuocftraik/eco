@@ -132,7 +132,7 @@ public class ErrorResult
 ```json
 {
   "messages": [],
-  "source": "ECO.WebApi.Application.Catalog.Products.GetProductRequestHandler.Handle",
+  "source": "{ProjectName}.Application.Catalog.Products.GetProductRequestHandler.Handle",
   "exception": "Product with ID 123 was not found.",
   "errorId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "supportMessage": "Provide the ErrorId a1b2c3d4-e5f6-7890-abcd-ef1234567890 to the support team for further analysis.",
@@ -597,7 +597,13 @@ internal class ExceptionMiddleware : IMiddleware
                         errorResult.Messages = ce.ErrorMessages;
                     }
                     break;
-
+                case DomainException de:
+                    errorResult.StatusCode = (int)de.StatusCode;
+                    if (de.ErrorMessages is not null)
+                    {
+                        errorResult.Messages = de.ErrorMessages;
+                    }
+                    break;
                 case KeyNotFoundException:
                     errorResult.StatusCode = (int)HttpStatusCode.NotFound;
                     break;
@@ -662,6 +668,7 @@ internal class ExceptionMiddleware : IMiddleware
 
 **Step 7: Set status code**
 - `CustomException`: Lấy `StatusCode` từ exception
+- `DomainException`: Lấy `StatusCode` từ exception
 - `KeyNotFoundException`: 404 Not Found
 - `ValidationException`: 400 Bad Request
 - Default: 500 Internal Server Error
@@ -799,236 +806,67 @@ this IServiceCollection services,
 
 ## 7. Testing
 
-### Bước 7.1: Test NotFoundException
+> 💡 **Mẹo:** Trong thực tế, các exceptions này sẽ được throw từ các Handlers/Services. Để test Exception Middleware trong bước này, chúng ta có thể tạo nhanh các test endpoints trong `Program.cs` hoặc một file tạm. Khi tích hợp đầy đủ hệ thống sau này (MediatR/CQRS, Identity, ...), các exceptions sẽ được gọi tự nhiên hơn.
 
-**Làm gì:** Test exception khi không tìm thấy entity.
+### Bước 7.1: Test custom exceptions thông qua Endpoint mẫu
 
-**File:** `src/Application/Catalog/Products/GetProductRequest.cs`
+**Làm gì:** Tạo tạm các endpoint nhỏ để route trực tiếp và kích hoạt throw exceptions.
+
+**File:** (Thêm vào cuối phần Mapping endpoints trong `src/Host/Program.cs` hoặc `Startup` để test tạm thời)
 
 ```csharp
 using {ProjectName}.Application.Common.Exceptions;
-using {ProjectName}.Application.Common.Interfaces;
-using {ProjectName}.Application.Common.Specification;
-using {ProjectName}.Domain.Catalog;
-using Mapster;
-using MediatR;
 
-namespace {ProjectName}.Application.Catalog.Products;
+// Thêm các endpoint này vào trước bước chạy app.Run();
+app.MapGet("/api/test-404", () => {
+    throw new NotFoundException("Test NotFound entity doesn't exist.");
+});
 
-public class GetProductRequest : IRequest<ProductDto>
-{
-    public Guid Id { get; set; }
-}
+app.MapGet("/api/test-401", () => {
+    throw new UnauthorizedException("Test Unauthorized access.");
+});
 
-public class GetProductHandler : IRequestHandler<GetProductRequest, ProductDto>
-{
-    private readonly IRepository<Product> _repository;
+app.MapGet("/api/test-403", () => {
+    throw new ForbiddenException("Test Forbidden action.");
+});
 
-    public GetProductHandler(IRepository<Product> repository)
+app.MapGet("/api/test-409", () => {
+    throw new ConflictException("Test Conflict data.");
+});
+
+app.MapGet("/api/test-500", () => {
+    throw new InternalServerException("Test Internal server error.");
+});
+
+// Test FluentValidation (ném exception thủ công nếu chưa có pipeline Validation behavior)
+app.MapGet("/api/test-validation", () => {
+    var failures = new List<FluentValidation.Results.ValidationFailure>
     {
-        _repository = repository;
-    }
-
-    public async Task<ProductDto> Handle(GetProductRequest request, CancellationToken ct)
-    {
-        // Throw NotFoundException nếu không tìm thấy
-var product = await _repository.FirstOrDefaultAsync(
-            new ProductByIdSpec(request.Id), ct)
-            ?? throw new NotFoundException($"Product with ID {request.Id} was not found.");
-
-        return product.Adapt<ProductDto>();
-    }
-}
+        new("Name", "Name is required."),
+        new("Price", "Price must be > 0")
+    };
+    throw new FluentValidation.ValidationException(failures);
+});
 ```
 
-**API Request:**
+**Thực thi Test - Ví dụ Request test NotFound:**
 ```bash
-curl -X GET https://localhost:7001/api/products/00000000-0000-0000-0000-000000000001
+curl -X GET https://localhost:7001/api/test-404
 ```
 
 **Expected Response (404):**
 ```json
 {
   "messages": [],
-  "source": "ECO.WebApi.Application.Catalog.Products.GetProductHandler.Handle",
-  "exception": "Product with ID 00000000-0000-0000-0000-000000000001 was not found.",
+  "source": null,
+  "exception": "Test NotFound entity doesn't exist.",
   "errorId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "supportMessage": "Provide the ErrorId a1b2c3d4-e5f6-7890-abcd-ef1234567890 to the support team for further analysis.",
   "statusCode": 404
 }
 ```
 
----
-
-### Bước 7.2: Test ValidationException
-
-**Làm gì:** Test FluentValidation exceptions với multiple errors.
-
-**File:** `src/Core/Application/Catalog/Products/CreateProductRequest.cs`
-
-```csharp
-using {ProjectName}..Application.Common.Interfaces;
-using {ProjectName}.Domain.Catalog;
-using FluentValidation;
-using MediatR;
-
-namespace {ProjectName}.Application.Catalog.Products;
-
-public class CreateProductRequest : IRequest<Guid>
-{
-    public string Name { get; set; } = default!;
-    public decimal Price { get; set; }
-}
-
-public class CreateProductValidator : AbstractValidator<CreateProductRequest>
-{
-    public CreateProductValidator()
-    {
-        RuleFor(x => x.Name)
-     .NotEmpty().WithMessage("Product name is required.")
-      .MaximumLength(200).WithMessage("Product name must not exceed 200 characters.");
-
-     RuleFor(x => x.Price)
-            .GreaterThan(0).WithMessage("Price must be greater than 0.");
-    }
-}
-
-public class CreateProductHandler : IRequestHandler<CreateProductRequest, Guid>
-{
-    private readonly IRepository<Product> _repository;
-
-    public CreateProductHandler(IRepository<Product> repository)
-    {
-        _repository = repository;
-    }
-
-    public async Task<Guid> Handle(CreateProductRequest request, CancellationToken ct)
-    {
-        var product = Product.Create(request.Name, request.Price);
-        await _repository.AddAsync(product, ct);
-        await _repository.SaveChangesAsync(ct);
-
-        return product.Id;
-    }
-}
-```
-
-**API Request:**
-```bash
-curl -X POST https://localhost:7001/api/products \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "",
-    "price": -100
-  }'
-```
-
-**Expected Response (400):**
-```json
-{
-  "messages": [
-    "Product name is required.",
-    "Price must be greater than 0."
-  ],
-  "source": null,
-  "exception": "One or More Validations failed.",
-  "errorId": "b2c3d4e5-f6g7-8901-bcde-f12345678901",
-  "supportMessage": "Provide the ErrorId b2c3d4e5-... to the support team for further analysis.",
-  "statusCode": 400
-}
-```
-
----
-
-### Bước 7.3: Test UnauthorizedException
-
-**Làm gì:** Test exception khi user chưa authenticate.
-
-**API Request (without token):**
-```bash
-curl -X GET https://localhost:7001/api/users/me
-```
-
-**Expected Response (401):**
-```json
-{
-  "messages": [],
-  "source": null,
-  "exception": "You must be logged in to access this resource.",
-  "errorId": "c3d4e5f6-g7h8-9012-cdef-123456789012",
-  "supportMessage": "Provide the ErrorId c3d4e5f6-... to the support team for further analysis.",
-  "statusCode": 401
-}
-```
-
----
-
-### Bước 7.4: Test ConflictException
-
-**Làm gì:** Test exception khi có duplicate resource.
-
-**File:** `src/Application/Identity/Roles/CreateRoleRequest.cs`
-
-```csharp
-using {ProjectName}.Application.Common.Exceptions;
-using {ProjectName}.Domain.Identity;
-using MediatR;
-using Microsoft.AspNetCore.Identity;
-
-namespace {ProjectName}.Application.Identity.Roles;
-
-public class CreateRoleRequest : IRequest<Guid>
-{
-    public string Name { get; set; } = default!;
-}
-
-public class CreateRoleHandler : IRequestHandler<CreateRoleRequest, Guid>
-{
-    private readonly RoleManager<ApplicationRole> _roleManager;
-
-  public CreateRoleHandler(RoleManager<ApplicationRole> roleManager)
-    {
-        _roleManager = roleManager;
-    }
-
-    public async Task<Guid> Handle(CreateRoleRequest request, CancellationToken ct)
-    {
- // Check duplicate
-        if (await _roleManager.RoleExistsAsync(request.Name))
- throw new ConflictException($"Role {request.Name} already exists.");
-
-        var role = new ApplicationRole
-   {
-    Name = request.Name,
-            NormalizedName = request.Name.ToUpperInvariant()
-   };
-
-      await _roleManager.CreateAsync(role);
-  return role.Id;
-    }
-}
-```
-
-**API Request:**
-```bash
-curl -X POST https://localhost:7001/api/roles \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Admin"
-  }'
-```
-
-**Expected Response (409):**
-```json
-{
-  "messages": [],
-  "source": "ECO.WebApi.Application.Identity.Roles.CreateRoleHandler.Handle",
-  "exception": "Role Admin already exists.",
-  "errorId": "d4e5f6g7-h8i9-0123-defg-234567890123",
-  "supportMessage": "Provide the ErrorId d4e5f6g7-... to the support team for further analysis.",
-  "statusCode": 409
-}
-```
+(Thực hiện tương tự cho các endpoint `/api/test-401`, `/api/test-validation`, v.v. Các bạn sẽ thấy ErrorResult chuẩn xác từng mã lỗi.)
 
 ---
 
@@ -1336,7 +1174,7 @@ Exception (System)
 ```
 Request → try { await next() } → Response
       ↓ (exception)
-          catch (Exception)
+     catch (Exception)
      ↓
     1. Get user context
  2. Push to Serilog
@@ -1376,4 +1214,4 @@ src/Infrastructure/Middleware/
 ├── ErrorResult.cs
 ├── ExceptionMiddleware.cs
 └── Startup.cs
-```
+

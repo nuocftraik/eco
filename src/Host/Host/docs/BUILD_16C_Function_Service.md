@@ -226,7 +226,7 @@ INSERT INTO Permission (RoleId, FunctionId, ActionId) VALUES (...);
 **File:** `src/Domain/Identity/Function.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Identity;
+namespace {ProjectName}.Domain.Identity;
 
 /// <summary>
 /// Function entity (represents a module/feature)
@@ -309,7 +309,7 @@ public class Function : BaseEntity
 **File:** `src/Domain/Identity/Action.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Identity;
+namespace {ProjectName}.Domain.Identity;
 
 /// <summary>
 /// Action entity (represents an operation)
@@ -356,7 +356,7 @@ public class Action : BaseEntity
 ```csharp
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Domain.Identity;
+namespace {ProjectName}.Domain.Identity;
 
 /// <summary>
 /// ActionInFunction entity (junction table for Function-Action many-to-many)
@@ -429,7 +429,7 @@ ActionInFunction Table:
 **File:** `src/Application/Identity/Roles/CreateOrUpdateFunctionRequest.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Identity.Roles;
+namespace {ProjectName}.Application.Identity.Roles;
 
 /// <summary>
 /// Request để tạo hoặc update function
@@ -475,7 +475,7 @@ public class CreateOrUpdateFunctionRequest
 **File:** `src/Application/Identity/Roles/IFunctionService.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Identity.Roles;
+namespace {ProjectName}.Application.Identity.Roles;
 
 /// <summary>
 /// Service xử lý function management operations
@@ -523,14 +523,14 @@ public interface IFunctionService : ITransientService
 **File:** `src/Infrastructure/Identity/FunctionService.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Exceptions;
-using ECO.WebApi.Application.Identity.Roles;
-using ECO.WebApi.Domain.Identity;
-using ECO.WebApi.Infrastructure.Persistence.Context;
+using {ProjectName}.Application.Common.Exceptions;
+using {ProjectName}.Application.Identity.Roles;
+using {ProjectName}.Domain.Identity;
+using {ProjectName}.Infrastructure.Persistence.Context;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Infrastructure.Identity;
+namespace {ProjectName}.Infrastructure.Identity;
 
 /// <summary>
 /// Service xử lý function management operations
@@ -743,43 +743,40 @@ public class FunctionService : IFunctionService
 
 ```
 src/
-├── Core/
-│   ├── Domain/
-│   │   └── Identity/
-│   │       ├── Function.cs
-│   │ ├── Action.cs
-│   │       ├── ActionInFunction.cs
-│   │       ├── Permission.cs
-│   │     ├── ApplicationRole.cs
-│   │   └── ApplicationUser.cs
-│   └── Application/
-│       └── Identity/
-│        ├── Roles/
-│           │   ├── IRoleService.cs
-│           │   ├── IFunctionService.cs
+├── Domain/
+│   └── Identity/
+│       ├── Function.cs
+│       ├── Action.cs
+│       ├── ActionInFunction.cs
+│       ├── Permission.cs
+│       ├── ApplicationRole.cs
+│       └── ApplicationUser.cs
+├── Application/
+│   └── Identity/
+│       ├── Roles/
+│       │   ├── IRoleService.cs
+│       │   ├── IFunctionService.cs
 │       │   ├── RoleDto.cs
-│    │   ├── FunctionDto.cs
-│           │   ├── ActionDto.cs
-│   │   ├── CreateOrUpdateRoleRequest.cs
-│   │   ├── CreateOrUpdateFunctionRequest.cs
-│           │   └── UpdateRolePermissionsRequest.cs
-│           └── Users/
-│    ├── IUserService.cs
-│    ├── UserRolesRequest.cs
-│         └── UserRoleDto.cs
+│       │   ├── FunctionDto.cs
+│       │   ├── ActionDto.cs
+│       │   ├── CreateOrUpdateRoleRequest.cs
+│       │   ├── CreateOrUpdateFunctionRequest.cs
+│       │   └── UpdateRolePermissionsRequest.cs
+│       └── Users/
+│           ├── IUserService.cs
+│           ├── UserRolesRequest.cs
+│           └── UserRoleDto.cs
 ├── Infrastructure/
-│   └── Infrastructure/
-│       └── Identity/
-│  ├── RoleService.cs
+│   └── Identity/
+│       ├── RoleService.cs
 │       ├── FunctionService.cs
-│           ├── UserService.cs
-│     └── UserService.Role.cs
+│       ├── UserService.cs
+│       └── UserService.Role.cs
 └── Host/
-    └── Host/
-     └── Controllers/
-   └── Identity/
-       ├── RoleController.cs
-                └── UsersController.cs
+    └── Controllers/
+        └── Identity/
+            ├── RoleController.cs
+            └── UsersController.cs
 ```
 
 ---

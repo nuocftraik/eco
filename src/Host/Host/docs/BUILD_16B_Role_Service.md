@@ -76,7 +76,7 @@ var functionsWithPermissions = await _roleService.GetByIdWithPermissionsAsync(ro
 **File:** `src/Application/Identity/Roles/RoleDto.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Identity.Roles;
+namespace {ProjectName}.Application.Identity.Roles;
 
 /// <summary>
 /// Role detail DTO (dùng cho responses)
@@ -125,7 +125,7 @@ public class RoleDto
 ```csharp
 using FluentValidation;
 
-namespace ECO.WebApi.Application.Identity.Roles;
+namespace {ProjectName}.Application.Identity.Roles;
 
 /// <summary>
 /// Request để tạo hoặc update role
@@ -191,7 +191,7 @@ public class CreateOrUpdateRoleRequestValidator : AbstractValidator<CreateOrUpda
 ```csharp
 using FluentValidation;
 
-namespace ECO.WebApi.Application.Identity.Roles;
+namespace {ProjectName}.Application.Identity.Roles;
 
 /// <summary>
 /// Request để update permissions của role (table-based approach)
@@ -208,6 +208,7 @@ public class UpdateRolePermissionsRequest
     /// </summary>
     public List<PermissionRequest> Permissions { get; set; } = default!;
 }
+
 
 /// <summary>
 /// Permission request (Function + Action combination)
@@ -276,7 +277,7 @@ public class UpdateRolePermissionsRequestValidator : AbstractValidator<UpdateRol
 **File:** `src/Application/Identity/Roles/FunctionDto.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Identity.Roles;
+namespace {ProjectName}.Application.Identity.Roles;
 
 /// <summary>
 /// Function DTO (represents a module/feature)
@@ -303,7 +304,7 @@ public class FunctionDto
 **File:** `src/Application/Identity/Roles/ActionDto.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Identity.Roles;
+namespace {ProjectName}.Application.Identity.Roles;
 
 /// <summary>
 /// Action DTO (represents an operation)
@@ -365,7 +366,7 @@ Products Function
 **File:** `src/Application/Identity/Roles/IRoleService.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Identity.Roles;
+namespace {ProjectName}.Application.Identity.Roles;
 
 /// <summary>
 /// Service xử lý role management operations
@@ -456,18 +457,18 @@ public interface IRoleService : ITransientService
 **File:** `src/Infrastructure/Identity/RoleService.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Events;
-using ECO.WebApi.Application.Common.Exceptions;
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Application.Identity.Roles;
-using ECO.WebApi.Domain.Identity;
-using ECO.WebApi.Infrastructure.Persistence.Context;
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Application.Common.Events;
+using {ProjectName}.Application.Common.Exceptions;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Application.Identity.Roles;
+using {ProjectName}.Domain.Identity;
+using {ProjectName}.Infrastructure.Persistence.Context;
+using {ProjectName}.Shared.Authorization;
 using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Infrastructure.Identity;
+namespace {ProjectName}.Infrastructure.Identity;
 
 /// <summary>
 /// Service xử lý role management operations
@@ -606,7 +607,7 @@ internal class RoleService : IRoleService
             _ = role ?? throw new NotFoundException("Role Not Found");
 
             // Cannot update default roles
-            if (ECORoles.IsDefault(role.Name!))
+            if ({ProjectName}Roles.IsDefault(role.Name!))
             {
                 throw new ConflictException($"Not allowed to modify {role.Name} Role.");
             }
@@ -640,7 +641,7 @@ internal class RoleService : IRoleService
       _ = role ?? throw new NotFoundException("Role Not Found");
 
         // Cannot update Admin role permissions
-        if (role.Name == ECORoles.Admin)
+        if (role.Name == {ProjectName}Roles.Admin)
         {
           throw new ConflictException("Not allowed to modify Permissions for this Role.");
         }
@@ -679,7 +680,7 @@ internal class RoleService : IRoleService
          _ = role ?? throw new NotFoundException("Role Not Found");
 
         // Cannot delete default roles
-        if (ECORoles.IsDefault(role.Name!))
+        if ({ProjectName}Roles.IsDefault(role.Name!))
         {
              throw new ConflictException($"Not allowed to delete {role.Name} Role.");
         }
@@ -748,12 +749,12 @@ internal class RoleService : IRoleService
 **File:** `src/Infrastructure/Identity/UserService.Role.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Exceptions;
-using ECO.WebApi.Application.Identity.Users;
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Application.Common.Exceptions;
+using {ProjectName}.Application.Identity.Users;
+using {ProjectName}.Shared.Authorization;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Infrastructure.Identity;
+namespace {ProjectName}.Infrastructure.Identity;
 
 /// <summary>
 /// UserService - Role Operations (Partial Class)
@@ -808,8 +809,8 @@ var userRoles = await _userManager.GetRolesAsync(user);
         _ = user ?? throw new NotFoundException("User Not Found.");
 
         // Check if Admin role is being assigned/removed for current user
-        if (await _userManager.IsInRoleAsync(user, ECORoles.Admin)
-      && (request.UserRoles.FirstOrDefault(r => r.RoleName == ECORoles.Admin) is not { Enabled: true }))
+        if (await _userManager.IsInRoleAsync(user, {ProjectName}Roles.Admin)
+      && (request.UserRoles.FirstOrDefault(r => r.RoleName == {ProjectName}Roles.Admin) is not { Enabled: true }))
     {
      throw new ConflictException("Admin users cannot remove their own Admin role.");
      }
@@ -864,7 +865,7 @@ if (role != null)
 **File:** `src/Application/Identity/Users/UserRolesRequest.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 /// <summary>
 /// Request để assign roles to user
@@ -881,7 +882,7 @@ public class UserRolesRequest
 **File:** `src/Application/Identity/Users/UserRoleDto.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 /// <summary>
 /// User role DTO (for assign roles UI)
@@ -935,10 +936,10 @@ public class UserRoleDto
 **File:** `src/Host/Controllers/Identity/RoleController.cs`
 
 ```csharp
-using ECO.WebApi.Application.Identity.Roles;
+using {ProjectName}.Application.Identity.Roles;
 using NSwag.Annotations;
 
-namespace ECO.WebApi.Host.Controllers.Identity;
+namespace {ProjectName}.Host.Controllers.Identity;
 
 /// <summary>
 /// Role management APIs
