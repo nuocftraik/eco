@@ -37,7 +37,7 @@ public class UsersController : ControllerBase
 {
     // Only users với "Users.View" permission có thể access
     [HttpGet]
-    [MustHavePermission(ECOAction.View, ECOFunction.User)]
+    [MustHavePermission({ProjectName}Action.View, {ProjectName}Function.User)]
     public Task<List<UserDto>> GetAllAsync()
     {
         // Implementation
@@ -45,7 +45,7 @@ public class UsersController : ControllerBase
 
     // Only users với "Users.Create" permission có thể access
     [HttpPost]
-    [MustHavePermission(ECOAction.Create, ECOFunction.User)]
+    [MustHavePermission({ProjectName}Action.Create, {ProjectName}Function.User)]
     public Task<string> CreateAsync(CreateUserRequest request)
     {
         // Implementation
@@ -165,12 +165,12 @@ public class UsersController : ControllerBase
 
 **4. MustHavePermissionAttribute (AuthorizeAttribute):**
 - Declarative attribute for controllers/actions
-- Syntax: `[MustHavePermission(ECOAction.View, ECOFunction.User)]`
+- Syntax: `[MustHavePermission({ProjectName}Action.View, {ProjectName}Function.User)]`
 - Generates policy name: "Permissions.User.View"
 
 **5. TokenService:**
 - Adds permissions to JWT claims during login
-- Claims: `new Claim(ECOClaims.Permission, "Users.View")`
+- Claims: `new Claim({ProjectName}Claims.Permission, "Users.View")`
 
 **6. UserService.Permission.cs:**
 - `GetPermissionsAsync()`: Query permissions from database
@@ -180,22 +180,22 @@ public class UsersController : ControllerBase
 
 ## 3. Authorization Constants
 
-### Bước 3.1: ECOAction Constants
+### Bước 3.1: {ProjectName}Action Constants
 
 **Làm gì:** Define available actions (operations).
 
 **Tại sao:** Standard actions để tái sử dụng across functions.
 
-**File:** `src/Core/Shared/Authorization/ECOPermissions.cs` (partial)
+**File:** `src/Shared/Authorization/{ProjectName}Permissions.cs` (partial)
 
 ```csharp
-namespace ECO.WebApi.Shared.Authorization;
+namespace {ProjectName}.Shared.Authorization;
 
 /// <summary>
 /// Standard actions (operations) available in the system
 /// Used to build permissions: Permissions.{Function}.{Action}
 /// </summary>
-public static class ECOAction
+public static class {ProjectName}Action
 {
     public const string View = nameof(View);
     public const string Search = nameof(Search);
@@ -220,20 +220,20 @@ public static class ECOAction
 
 ---
 
-### Bước 3.2: ECOFunction Constants
+### Bước 3.2: {ProjectName}Function Constants
 
 **Làm gì:** Define available functions (modules/features).
 
 **Tại sao:** Standard functions để build permissions.
 
-**File:** `src/Core/Shared/Authorization/ECOPermissions.cs` (partial)
+**File:** `src/Shared/Authorization/{ProjectName}Permissions.cs` (partial)
 
 ```csharp
 /// <summary>
 /// Functions (modules/features) available in the system
 /// Used to build permissions: Permissions.{Function}.{Action}
 /// </summary>
-public static class ECOFunction
+public static class {ProjectName}Function
 {
     public const string Dashboard = nameof(Dashboard);
     public const string Hangfire = nameof(Hangfire);
@@ -253,13 +253,13 @@ public static class ECOFunction
 
 ---
 
-### Bước 3.3: ECOPermission Record
+### Bước 3.3: {ProjectName}Permission Record
 
 **Làm gì:** Helper record để generate permission strings.
 
 **Tại sao:** Type-safe permission generation và helper methods.
 
-**File:** `src/Core/Shared/Authorization/ECOPermissions.cs` (partial)
+**File:** `src/Shared/Authorization/{ProjectName}Permissions.cs` (partial)
 
 ```csharp
 /// <summary>
@@ -267,7 +267,7 @@ public static class ECOFunction
 /// Format: "Permissions.{Function}.{Action}"
 /// Example: "Permissions.User.View"
 /// </summary>
-public record ECOPermission(string action, string function)
+public record {ProjectName}Permission(string action, string function)
 {
     /// <summary>
     /// Permission name (format: Permissions.Function.Action)
@@ -288,7 +288,7 @@ public record ECOPermission(string action, string function)
     public static List<string> GeneratePermissionsForFunction(string function)
     {
         // Get all action constants using reflection
-        var actions = typeof(ECOAction)
+        var actions = typeof({ProjectName}Action)
                  .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
                  .Where(field => field.IsLiteral && !field.IsInitOnly) // Only constants
                  .Select(field => field.GetValue(null)?.ToString())
@@ -332,37 +332,37 @@ public record ECOPermission(string action, string function)
 **Usage Examples:**
 ```csharp
 // Single permission
-var permission = ECOPermission.NameFor(ECOAction.View, ECOFunction.User);
+var permission = {ProjectName}Permission.NameFor({ProjectName}Action.View, {ProjectName}Function.User);
 // → "Permissions.User.View"
 
 // All permissions for User function
-var allUserPermissions = ECOPermission.GeneratePermissionsForFunction(ECOFunction.User);
+var allUserPermissions = {ProjectName}Permission.GeneratePermissionsForFunction({ProjectName}Function.User);
 // → ["Permissions.User.View", "Permissions.User.Create", "Permissions.User.Update", ...]
 
 // Specific permissions for Product function
-var productPermissions = ECOPermission.GeneratePermissionsForFunction(
-    ECOFunction.Product, 
-    new List<string> { ECOAction.View, ECOAction.Create });
+var productPermissions = {ProjectName}Permission.GeneratePermissionsForFunction(
+    {ProjectName}Function.Product, 
+    new List<string> { {ProjectName}Action.View, {ProjectName}Action.Create });
 // → ["Permissions.Product.View", "Permissions.Product.Create"]
 ```
 
 ---
 
-### Bước 3.4: ECOClaims Constants
+### Bước 3.4: {ProjectName}Claims Constants
 
 **Làm gì:** Define JWT claim names.
 
 **Tại sao:** Consistent claim names across application.
 
-**File:** `src/Core/Shared/Authorization/ECOClaims.cs`
+**File:** `src/Shared/Authorization/{ProjectName}Claims.cs`
 
 ```csharp
-namespace ECO.WebApi.Shared.Authorization;
+namespace {ProjectName}.Shared.Authorization;
 
 /// <summary>
 /// JWT claim names
 /// </summary>
-public static class ECOClaims
+public static class {ProjectName}Claims
 {
     /// <summary>
     /// Full name claim (FirstName + LastName)
@@ -408,12 +408,12 @@ public static class ECOClaims
 
 **Tại sao:** Đại diện cho một yêu cầu quyền trong authorization pipeline.
 
-**File:** `src/Infrastructure/Infrastructure/Auth/Permissions/PermissionRequirement.cs`
+**File:** `src/Infrastructure/Auth/Permissions/PermissionRequirement.cs`
 
 ```csharp
 using Microsoft.AspNetCore.Authorization;
 
-namespace ECO.WebApi.Infrastructure.Auth.Permissions;
+namespace {ProjectName}.Infrastructure.Auth.Permissions;
 
 /// <summary>
 /// Yêu cầu quyền (implements IAuthorizationRequirement)
@@ -447,14 +447,14 @@ internal class PermissionRequirement : IAuthorizationRequirement
 
 **Tại sao:** Đánh giá yêu cầu quyền dựa trên claims của user.
 
-**File:** `src/Infrastructure/Infrastructure/Auth/Permissions/PermissionAuthorizationHandler.cs`
+**File:** `src/Infrastructure/Auth/Permissions/PermissionAuthorizationHandler.cs`
 
 ```csharp
 using System.Security.Claims;
-using ECO.WebApi.Application.Identity.Users;
+using {ProjectName}.Application.Identity.Users;
 using Microsoft.AspNetCore.Authorization;
 
-namespace ECO.WebApi.Infrastructure.Auth.Permissions;
+namespace {ProjectName}.Infrastructure.Auth.Permissions;
 
 /// <summary>
 /// Trình xử lý authorization cho yêu cầu quyền
@@ -516,14 +516,14 @@ internal class PermissionAuthorizationHandler : AuthorizationHandler<PermissionR
 
 **Tại sao:** Tạo authorization policies tức thì dựa trên chuỗi permission.
 
-**File:** `src/Infrastructure/Infrastructure/Auth/Permissions/PermissionPolicyProvider.cs`
+**File:** `src/Infrastructure/Auth/Permissions/PermissionPolicyProvider.cs`
 
 ```csharp
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Shared.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 
-namespace ECO.WebApi.Infrastructure.Auth.Permissions;
+namespace {ProjectName}.Infrastructure.Auth.Permissions;
 
 /// <summary>
 /// Nhà cung cấp chính sách quyền (tạo policy động)
@@ -590,7 +590,7 @@ internal class PermissionPolicyProvider : IAuthorizationPolicyProvider
 **Ví dụ:**
 ```csharp
 // Attribute trên controller:
-[MustHavePermission(ECOAction.View, ECOFunction.User)]
+[MustHavePermission({ProjectName}Action.View, {ProjectName}Function.User)]
 // → Tên policy: "Permissions.User.View"
 
 // PermissionPolicyProvider tạo:
@@ -608,13 +608,13 @@ internal class PermissionPolicyProvider : IAuthorizationPolicyProvider
 
 **Tại sao:** Thuộc tính dễ sử dụng cho controllers/actions.
 
-**File:** `src/Infrastructure/Infrastructure/Auth/Permissions/MustHavePermissionAttribute.cs`
+**File:** `src/Infrastructure/Auth/Permissions/MustHavePermissionAttribute.cs`
 
 ```csharp
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Shared.Authorization;
 using Microsoft.AspNetCore.Authorization;
 
-namespace ECO.WebApi.Infrastructure.Auth.Permissions;
+namespace {ProjectName}.Infrastructure.Auth.Permissions;
 
 /// <summary>
 /// Thuộc tính MustHavePermission (authorization khai báo)
@@ -650,7 +650,7 @@ public class MustHavePermissionAttribute : AuthorizeAttribute
 // Permission ở cấp Controller
 [ApiController]
 [Route("api/users")]
-[MustHavePermission(ECOAction.View, ECOFunction.User)] // Tất cả actions yêu cầu Users.View
+[MustHavePermission({ProjectName}Action.View, {ProjectName}Function.User)] // Tất cả actions yêu cầu Users.View
 public class UsersController : ControllerBase
 {
   // ...
@@ -662,21 +662,21 @@ public class UsersController : ControllerBase
 public class UsersController : ControllerBase
 {
     [HttpGet]
-    [MustHavePermission(ECOAction.View, ECOFunction.User)]
+    [MustHavePermission({ProjectName}Action.View, {ProjectName}Function.User)]
     public Task<List<UserDto>> GetAllAsync()
     {
         // Chỉ users có quyền "Permissions.User.View"
     }
 
     [HttpPost]
-    [MustHavePermission(ECOAction.Create, ECOFunction.User)]
+    [MustHavePermission({ProjectName}Action.Create, {ProjectName}Function.User)]
     public Task<string> CreateAsync(CreateUserRequest request)
     {
         // Chỉ users có quyền "Permissions.User.Create"
     }
 
     [HttpDelete("{id}")]
-  [MustHavePermission(ECOAction.Delete, ECOFunction.User)]
+  [MustHavePermission({ProjectName}Action.Delete, {ProjectName}Function.User)]
     public Task DeleteAsync(string id)
     {
         // Chỉ users có quyền "Permissions.User.Delete"
@@ -694,14 +694,14 @@ public class UsersController : ControllerBase
 
 **Tại sao:** Lấy danh sách quyền của user từ database và kiểm tra quyền.
 
-**File:** `src/Infrastructure/Infrastructure/Identity/UserService.Permission.cs`
+**File:** `src/Infrastructure/Identity/UserService.Permission.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Exceptions;
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Application.Common.Exceptions;
+using {ProjectName}.Shared.Authorization;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Infrastructure.Identity;
+namespace {ProjectName}.Infrastructure.Identity;
 
 /// <summary>
 /// UserService - Các Thao tác Quyền (Partial Class)
@@ -802,14 +802,14 @@ internal partial class UserService
 
 **Tại sao:** Permissions được lưu trong JWT để kiểm tra authorization nhanh.
 
-**File:** `src/Infrastructure/Infrastructure/Identity/TokenService.cs` (partial - update existing method)
+**File:** `src/Infrastructure/Identity/TokenService.cs` (partial - update existing method)
 
 ```csharp
-using ECO.WebApi.Application.Identity.Tokens;
-using ECO.WebApi.Application.Identity.Users;
-using ECO.WebApi.Domain.Identity;
-using ECO.WebApi.Infrastructure.Auth.Jwt;
-using ECO.WebApi.Infrastructure.Auth;
+using {ProjectName}.Application.Identity.Tokens;
+using {ProjectName}.Application.Identity.Users;
+using {ProjectName}.Domain.Identity;
+using {ProjectName}.Infrastructure.Auth.Jwt;
+using {ProjectName}.Infrastructure.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -817,10 +817,10 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using ECO.WebApi.Application.Common.Exceptions;
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Application.Common.Exceptions;
+using {ProjectName}.Shared.Authorization;
 
-namespace ECO.WebApi.Infrastructure.Identity;
+namespace {ProjectName}.Infrastructure.Identity;
 
 internal class TokenService : ITokenService
 {
@@ -860,11 +860,11 @@ internal class TokenService : ITokenService
         {
             new(ClaimTypes.NameIdentifier, user.Id),
             new(ClaimTypes.Email, user.Email!),
-            new(ECOClaims.Fullname, $"{user.FirstName} {user.LastName}"),
+            new({ProjectName}Claims.Fullname, $"{user.FirstName} {user.LastName}"),
             new(ClaimTypes.Name, user.FirstName ?? string.Empty),
             new(ClaimTypes.Surname, user.LastName ?? string.Empty),
-            new(ECOClaims.IpAddress, ipAddress),
-            new(ECOClaims.ImageUrl, user.ImageUrl ?? string.Empty),
+            new({ProjectName}Claims.IpAddress, ipAddress),
+            new({ProjectName}Claims.ImageUrl, user.ImageUrl ?? string.Empty),
             new(ClaimTypes.MobilePhone, user.PhoneNumber ?? string.Empty)
         };
 
@@ -873,11 +873,11 @@ internal class TokenService : ITokenService
         var permissions = await _userService.GetPermissionsAsync(user.Id, CancellationToken.None);
 
         // Thêm mỗi permission thành một claim riêng biệt
-        // Nhiều claims có cùng tên (ECOClaims.Permission)
+        // Nhiều claims có cùng tên ({ProjectName}Claims.Permission)
         foreach (var permission in permissions)
         {
             // Thêm với tiền tố "Permissions." để đồng nhất
-            claims.Add(new Claim(ECOClaims.Permission, $"Permissions.{permission}"));
+            claims.Add(new Claim({ProjectName}Claims.Permission, $"Permissions.{permission}"));
         }
 
         return claims;
@@ -906,7 +906,7 @@ internal class TokenService : ITokenService
   - Đổi từ synchronous `GetClaims()` sang async `GetClaimsAsync()`
   - Truy vấn permissions từ database: `_userService.GetPermissionsAsync()`
   - Thêm mỗi permission thành một claim riêng biệt
-  - Định dạng: `new Claim(ECOClaims.Permission, "Permissions.Function.Action")`
+  - Định dạng: `new Claim({ProjectName}Claims.Permission, "Permissions.Function.Action")`
 
 - **Nhiều Claims có Cùng Tên:**
   - JWT hỗ trợ nhiều claims có cùng tên
@@ -940,20 +940,20 @@ internal class TokenService : ITokenService
 
 **Tại sao:** Cấu hình ASP.NET Core Authorization với các components tùy chỉnh.
 
-**File:** `src/Infrastructure/Infrastructure/Auth/Startup.cs`
+**File:** `src/Infrastructure/Auth/Startup.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Infrastructure.Auth.Jwt;
-using ECO.WebApi.Infrastructure.Auth.OAuth2;
-using ECO.WebApi.Infrastructure.Auth.Permissions;
-using ECO.WebApi.Infrastructure.Identity;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Infrastructure.Auth.Jwt;
+using {ProjectName}.Infrastructure.Auth.OAuth2;
+using {ProjectName}.Infrastructure.Auth.Permissions;
+using {ProjectName}.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Infrastructure.Auth;
+namespace {ProjectName}.Infrastructure.Auth;
 
 internal static class Startup
 {
@@ -1135,8 +1135,8 @@ curl -X POST https://localhost:7001/api/tokens \
   "permission": "Permissions.User.Create",
   "permission": "Permissions.Product.View",
   "exp": 1706529600,
-  "iss": "ECO.WebApi",
-  "aud": "ECO.WebApi"
+  "iss": "{ProjectName}",
+  "aud": "{ProjectName}"
 }
 ```
 
@@ -1230,15 +1230,15 @@ curl -X GET https://localhost:7001/api/users
 
 ### Bước 9.1: UsersController with Permission Protection (UsersController với Bảo vệ Quyền)
 
-**File:** `src/Host/Host/Controllers/Identity/UsersController.cs` (update existing)
+**File:** `src/Host/Controllers/Identity/UsersController.cs` (update existing)
 
 ```csharp
-using ECO.WebApi.Application.Identity.Users;
-using ECO.WebApi.Infrastructure.Auth.Permissions;
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Application.Identity.Users;
+using {ProjectName}.Infrastructure.Auth.Permissions;
+using {ProjectName}.Shared.Authorization;
 using NSwag.Annotations;
 
-namespace ECO.WebApi.Host.Controllers.Identity;
+namespace {ProjectName}.Host.Controllers.Identity;
 
 /// <summary>
 /// APIs quản lý User (có bảo vệ quyền)
@@ -1257,7 +1257,7 @@ public class UsersController : BaseApiController
   /// Yêu cầu: Quyền Users.View
     /// </summary>
     [HttpGet("list")]
-    [MustHavePermission(ECOAction.View, ECOFunction.User)]
+    [MustHavePermission({ProjectName}Action.View, {ProjectName}Function.User)]
     [OpenApiOperation("Lấy danh sách tất cả users.", "")]
     public Task<List<UserDetailDto>> GetListAsync(CancellationToken cancellationToken)
     {
@@ -1269,7 +1269,7 @@ public class UsersController : BaseApiController
     /// Yêu cầu: Quyền Users.View
     /// </summary>
     [HttpGet("{id}")]
- [MustHavePermission(ECOAction.View, ECOFunction.User)]
+ [MustHavePermission({ProjectName}Action.View, {ProjectName}Function.User)]
     [OpenApiOperation("Lấy chi tiết một user.", "")]
 public Task<UserDetailDto> GetByIdAsync(string id, CancellationToken cancellationToken)
     {
@@ -1281,7 +1281,7 @@ public Task<UserDetailDto> GetByIdAsync(string id, CancellationToken cancellatio
   /// Yêu cầu: Quyền Users.Create
 /// </summary>
 [HttpPost("create")]
-    [MustHavePermission(ECOAction.Create, ECOFunction.User)]
+    [MustHavePermission({ProjectName}Action.Create, {ProjectName}Function.User)]
     [OpenApiOperation("Tạo một user mới.", "")]
     public Task<string> CreateAsync(CreateUserRequest request)
     {
@@ -1293,7 +1293,7 @@ public Task<UserDetailDto> GetByIdAsync(string id, CancellationToken cancellatio
     /// Yêu cầu: Quyền Users.Update
     /// </summary>
     [HttpPut("{id}")]
-    [MustHavePermission(ECOAction.Update, ECOFunction.User)]
+    [MustHavePermission({ProjectName}Action.Update, {ProjectName}Function.User)]
     [OpenApiOperation("Cập nhật thông tin user.", "")]
     public async Task<ActionResult> UpdateAsync(string id, UpdateUserRequest request)
     {
@@ -1311,7 +1311,7 @@ public Task<UserDetailDto> GetByIdAsync(string id, CancellationToken cancellatio
     /// Yêu cầu: Quyền Users.Delete
     /// </summary>
     [HttpDelete("{id}")]
-    [MustHavePermission(ECOAction.Delete, ECOFunction.User)]
+    [MustHavePermission({ProjectName}Action.Delete, {ProjectName}Function.User)]
     [OpenApiOperation("Xóa một user.", "")]
     public async Task<ActionResult> DeleteAsync(string id)
     {
@@ -1369,10 +1369,10 @@ Request → JWT Authentication → Permission Check → Controller Action
 - ✅ MustHavePermissionAttribute (Thuộc tính khai báo)
 
 **Permission Constants (Hằng số Quyền):**
-- ✅ ECOAction (View, Create, Update, Delete, v.v.)
-- ✅ ECOFunction (User, Role, Product, v.v.)
-- ✅ ECOPermission (helper record)
-- ✅ ECOClaims (Tên Permission claim)
+- ✅ {ProjectName}Action (View, Create, Update, Delete, v.v.)
+- ✅ {ProjectName}Function (User, Role, Product, v.v.)
+- ✅ {ProjectName}Permission (helper record)
+- ✅ {ProjectName}Claims (Tên Permission claim)
 
 **UserService - Permission Operations (UserService - Các Thao tác Quyền):**
 - ✅ GetPermissionsAsync (truy vấn từ database)
@@ -1411,7 +1411,7 @@ Request → JWT Authentication → Permission Check → Controller Action
    Query: SELECT Function.Name + '.' + Action.Name
  FROM Permission P
  WHERE P.RoleId IN (các roles của user)
- → Thêm permissions vào JWT claims
+   → Thêm permissions vào JWT claims
    → Trả về JWT token
 
 3. GỌI API VỚI JWT
@@ -1439,7 +1439,7 @@ Request → JWT Authentication → Permission Check → Controller Action
 **Permission Format (Định dạng Quyền):**
 - **Database (Cơ sở dữ liệu):** `"Users.View"` (Function.Action)
 - **JWT Claims:** `"Permissions.Users.View"` (có tiền tố)
-- **Attribute (Thuộc tính):** `[MustHavePermission(ECOAction.View, ECOFunction.User)]`
+- **Attribute (Thuộc tính):** `[MustHavePermission({ProjectName}Action.View, {ProjectName}Function.User)]`
 - **Policy (Chính sách):** `"Permissions.User.View"`
 
 **Components Interaction (Tương tác giữa các Thành phần):**
@@ -1466,40 +1466,37 @@ Request → JWT Authentication → Permission Check → Controller Action
 
 ```
 src/
-├── Core/
-│   ├── Shared/
-│   │   └── Authorization/
-│   │       ├── ECOPermissions.cs (ECOAction, ECOFunction, ECOPermission)
-│   │       ├── ECOClaims.cs
-│   │       └── ECORoles.cs
-│   ├── Domain/
-│   │   └── Identity/
-│   │  ├── Permission.cs (entity)
-│   │       ├── Function.cs
-│   │       └── Action.cs
-│   └── Application/
-│ └── Identity/
-│           ├── Users/
-│           │   └── IUserService.cs (GetPermissionsAsync, HasPermissionAsync)
-│           └── Tokens/
-│      └── ITokenService.cs
-├── Infrastructure/
-│   └── Infrastructure/
-│       ├── Auth/
-│ │   ├── Startup.cs (AddPermissions)
-│       │   └── Permissions/
-│       │       ├── PermissionRequirement.cs
-│       │       ├── PermissionAuthorizationHandler.cs
-│       │ ├── PermissionPolicyProvider.cs
-│       │       └── MustHavePermissionAttribute.cs
+├── Shared/
+│   └── Authorization/
+│       ├── {ProjectName}Permissions.cs ({ProjectName}Action, {ProjectName}Function, {ProjectName}Permission)
+│       ├── {ProjectName}Claims.cs
+│       └── {ProjectName}Roles.cs
+├── Domain/
 │   └── Identity/
-│           ├── TokenService.cs (GetClaimsAsync - thêm permissions)
-│     └── UserService.Permission.cs (GetPermissionsAsync, HasPermissionAsync)
+│       ├── Permission.cs (entity)
+│       ├── Function.cs
+│       └── Action.cs
+├── Application/
+│   └── Identity/
+│       ├── Users/
+│       │   └── IUserService.cs (GetPermissionsAsync, HasPermissionAsync)
+│       └── Tokens/
+│           └── ITokenService.cs
+├── Infrastructure/
+│   ├── Auth/
+│   │   ├── Startup.cs (AddPermissions)
+│   │   └── Permissions/
+│   │       ├── PermissionRequirement.cs
+│   │       ├── PermissionAuthorizationHandler.cs
+│   │       ├── PermissionPolicyProvider.cs
+│   │       └── MustHavePermissionAttribute.cs
+│   └── Identity/
+│       ├── TokenService.cs (GetClaimsAsync - thêm permissions)
+│       └── UserService.Permission.cs (GetPermissionsAsync, HasPermissionAsync)
 └── Host/
-    └── Host/
-        └── Controllers/
-            └── Identity/
-     └── UsersController.cs (với [MustHavePermission] attributes)
+    └── Controllers/
+        └── Identity/
+            └── UsersController.cs (với [MustHavePermission] attributes)
 ```
 
 ---
