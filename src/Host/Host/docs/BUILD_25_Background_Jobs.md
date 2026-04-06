@@ -52,7 +52,7 @@ _jobService.AddOrUpdateRecurringJob<ICleanupService>(
 
 ### Bước 2.1: Add Hangfire Packages
 
-**File:** `src/Infrastructure/Infrastructure/Infrastructure.csproj`
+**File:** `src/Infrastructure/Infrastructure.csproj`
 
 ```xml
 <ItemGroup>
@@ -89,14 +89,14 @@ _jobService.AddOrUpdateRecurringJob<ICleanupService>(
 
 **Tại sao:** Abstraction để không phụ thuộc trực tiếp vào Hangfire (có thể switch sang Quartz.NET nếu cần).
 
-**File:** `src/Core/Application/Common/BackgroundJobs/IJobService.cs`
+**File:** `src/Application/Common/BackgroundJobs/IJobService.cs`
 
 ```csharp
 using System;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 
-namespace ECO.WebApi.Application.Common.BackgroundJobs;
+namespace {ProjectName}.Application.Common.BackgroundJobs;
 
 /// <summary>
 /// Service for background job scheduling and management
@@ -206,10 +206,10 @@ public interface IJobService : ITransientService
 
 ### Bước 4.1: Tạo HangfireStorageSettings
 
-**File:** `src/Infrastructure/Infrastructure/BackgroundJobs/HangfireStorageSettings.cs`
+**File:** `src/Infrastructure/BackgroundJobs/HangfireStorageSettings.cs`
 
 ```csharp
-namespace ECO.WebApi.Infrastructure.BackgroundJobs;
+namespace {ProjectName}.Infrastructure.BackgroundJobs;
 
 /// <summary>
 /// Hangfire storage configuration
@@ -239,7 +239,7 @@ public class HangfireStorageSettings
     /// <summary>
     /// Dashboard title
     /// </summary>
-    public string DashboardTitle { get; set; } = "ECO.WebApi Jobs";
+    public string DashboardTitle { get; set; } = "{ProjectName} Jobs";
 
     /// <summary>
  /// Worker count (default: 20)
@@ -273,7 +273,7 @@ public class HangfireStorageSettings
 
 ### Bước 4.2: Implement HangfireService
 
-**File:** `src/Infrastructure/Infrastructure/BackgroundJobs/HangfireService.cs`
+**File:** `src/Infrastructure/BackgroundJobs/HangfireService.cs`
 
 ```csharp
 using Hangfire;
@@ -281,9 +281,9 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using ECO.WebApi.Application.Common.BackgroundJobs;
+using {ProjectName}.Application.Common.BackgroundJobs;
 
-namespace ECO.WebApi.Infrastructure.BackgroundJobs;
+namespace {ProjectName}.Infrastructure.BackgroundJobs;
 
 /// <summary>
 /// Hangfire implementation of job service
@@ -534,13 +534,13 @@ _logger.LogInformation("Requeued failed job {JobId}", jobId);
 
 ### Bước 4.3: Tạo Hangfire Dashboard Authorization
 
-**File:** `src/Infrastructure/Infrastructure/BackgroundJobs/HangfireDashboardAuthorizationFilter.cs`
+**File:** `src/Infrastructure/BackgroundJobs/HangfireDashboardAuthorizationFilter.cs`
 
 ```csharp
 using Hangfire.Dashboard;
 using Microsoft.AspNetCore.Http;
 
-namespace ECO.WebApi.Infrastructure.BackgroundJobs;
+namespace {ProjectName}.Infrastructure.BackgroundJobs;
 
 /// <summary>
 /// Authorization filter for Hangfire Dashboard
@@ -588,7 +588,7 @@ public bool Authorize(DashboardContext context)
 
 ### Bước 4.4: Tạo Hangfire Job Filters
 
-**File:** `src/Infrastructure/Infrastructure/BackgroundJobs/HangfireJobFilter.cs`
+**File:** `src/Infrastructure/BackgroundJobs/HangfireJobFilter.cs`
 
 ```csharp
 using Hangfire.Common;
@@ -597,7 +597,7 @@ using Hangfire.Storage;
 using Microsoft.Extensions.Logging;
 using System;
 
-namespace ECO.WebApi.Infrastructure.BackgroundJobs;
+namespace {ProjectName}.Infrastructure.BackgroundJobs;
 
 /// <summary>
 /// Global filter for Hangfire jobs (logging, error handling)
@@ -663,7 +663,7 @@ public class HangfireJobFilter : IElectStateFilter
 
 ### Bước 4.5: Tạo Startup Configuration
 
-**File:** `src/Infrastructure/Infrastructure/BackgroundJobs/Startup.cs`
+**File:** `src/Infrastructure/BackgroundJobs/Startup.cs`
 
 ```csharp
 using Hangfire;
@@ -673,9 +673,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using ECO.WebApi.Application.Common.BackgroundJobs;
+using {ProjectName}.Application.Common.BackgroundJobs;
 
-namespace ECO.WebApi.Infrastructure.BackgroundJobs;
+namespace {ProjectName}.Infrastructure.BackgroundJobs;
 
 /// <summary>
 /// Hangfire dependency injection and configuration
@@ -811,14 +811,14 @@ default:
 
 ### Bước 4.6: Register trong Infrastructure Startup
 
-**File:** `src/Infrastructure/Infrastructure/Startup.cs`
+**File:** `src/Infrastructure/Startup.cs`
 
 ```csharp
 // ...existing code...
 
-using ECO.WebApi.Infrastructure.BackgroundJobs;
+using {ProjectName}.Infrastructure.BackgroundJobs;
 
-namespace ECO.WebApi.Infrastructure;
+namespace {ProjectName}.Infrastructure;
 
 public static class Startup
 {
@@ -844,12 +844,12 @@ public static class Startup
 
 ### Bước 4.7: Register Dashboard trong Program.cs
 
-**File:** `src/Host/Host/Program.cs`
+**File:** `src/Host/Program.cs`
 
 ```csharp
 // ...existing code...
 
-using ECO.WebApi.Infrastructure.BackgroundJobs;
+using {ProjectName}.Infrastructure.BackgroundJobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -861,6 +861,7 @@ var app = builder.Build();
 
 // Add Hangfire Dashboard (after UseRouting, before UseEndpoints)
 app.UseHangfireDashboard(builder.Configuration);
+app.UseRecurringJobs(); // ✅ Register recurring jobs
 
 // ...existing middleware...
 
@@ -882,7 +883,7 @@ UseEndpoints()
 
 ### Bước 5.1: appsettings.json - SQL Server Storage
 
-**File:** `src/Host/Host/appsettings.json`
+**File:** `src/Host/appsettings.json`
 
 ```json
 {
@@ -891,7 +892,7 @@ UseEndpoints()
     "ConnectionString": "Server=localhost;Database=ECO_Jobs;User Id=sa;Password=YourPassword;TrustServerCertificate=True;",
     "EnableDashboard": true,
     "DashboardPath": "/jobs",
-    "DashboardTitle": "ECO.WebApi Background Jobs",
+    "DashboardTitle": "{ProjectName} Background Jobs",
     "WorkerCount": 20,
     "JobRetentionDays": 7,
     "EnableAutomaticRetry": true,
@@ -909,7 +910,7 @@ UseEndpoints()
 
 ### Bước 5.2: appsettings.Development.json - In-Memory Storage
 
-**File:** `src/Host/Host/appsettings.Development.json`
+**File:** `src/Host/appsettings.Development.json`
 
 ```json
 {
@@ -917,7 +918,7 @@ UseEndpoints()
     "StorageProvider": "Memory",
     "EnableDashboard": true,
     "DashboardPath": "/jobs",
-    "DashboardTitle": "ECO.WebApi Jobs (Development)",
+    "DashboardTitle": "{ProjectName} Jobs (Development)",
     "WorkerCount": 5,
     "EnableAutomaticRetry": true,
     "MaxRetryAttempts": 1
@@ -950,14 +951,14 @@ public class RegisterUserRequest : IRequest<Guid>
 
 **Handler:**
 ```csharp
-using ECO.WebApi.Application.Common.BackgroundJobs;
-using ECO.WebApi.Application.Common.Mailing;
+using {ProjectName}.Application.Common.BackgroundJobs;
+using {ProjectName}.Application.Common.Mailing;
 using MediatR;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 public class RegisterUserHandler : IRequestHandler<RegisterUserRequest, Guid>
 {
@@ -1001,7 +1002,7 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserRequest, Guid>
                 new MailRequest
   {
         To = new List<string> { user.Email! },
-        Subject = "Welcome to ECO.WebApi",
+        Subject = "Welcome to {ProjectName}",
           Body = $"<h1>Welcome {user.FullName}!</h1><p>Thank you for registering.</p>",
    IsHtml = true
      },
@@ -1114,14 +1115,14 @@ public ForgotPasswordHandler(
 
 **Service:**
 ```csharp
-using ECO.WebApi.Application.Common.BlobStorage;
+using {ProjectName}.Application.Common.BlobStorage;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ECO.WebApi.Infrastructure.BackgroundJobs.Jobs;
+namespace {ProjectName}.Infrastructure.BackgroundJobs.Jobs;
 
 /// <summary>
 /// Background job to cleanup temp files and expired data
@@ -1202,13 +1203,13 @@ _logger.LogInformation("Cache cleanup completed");
 
 **Register Recurring Jobs:**
 ```csharp
-using ECO.WebApi.Application.Common.BackgroundJobs;
-using ECO.WebApi.Infrastructure.BackgroundJobs.Jobs;
+using {ProjectName}.Application.Common.BackgroundJobs;
+using {ProjectName}.Infrastructure.BackgroundJobs.Jobs;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Infrastructure.BackgroundJobs;
+namespace {ProjectName}.Infrastructure.BackgroundJobs;
 
 public static class RecurringJobsSetup
 {
@@ -1491,17 +1492,17 @@ enqueuedCount);
 
 ### Bước 7.1: Tạo JobsController (Development/Admin Only)
 
-**File:** `src/Host/Host/Controllers/JobsController.cs`
+**File:** `src/Host/Controllers/JobsController.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.BackgroundJobs;
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Application.Common.BackgroundJobs;
+using {ProjectName}.Shared.Authorization;
 using Hangfire;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 
-namespace ECO.WebApi.Host.Controllers;
+namespace {ProjectName}.Host.Controllers;
 
 /// <summary>
 /// Background jobs management endpoints (Admin only)
@@ -1521,7 +1522,7 @@ public class JobsController : ControllerBase
     /// Test fire-and-forget job
     /// </summary>
     [HttpPost("test/fire-and-forget")]
-  [MustHavePermission(ECOAction.Create, ECOFunction.Jobs)]
+  [MustHavePermission({ProjectName}Action.Create, {ProjectName}Function.Jobs)]
     public IActionResult TestFireAndForget([FromBody] TestJobRequest request)
     {
         var jobId = _jobService.Enqueue<TestJobService>(
@@ -1534,7 +1535,7 @@ public class JobsController : ControllerBase
     /// Test delayed job
     /// </summary>
     [HttpPost("test/delayed")]
-    [MustHavePermission(ECOAction.Create, ECOFunction.Jobs)]
+    [MustHavePermission({ProjectName}Action.Create, {ProjectName}Function.Jobs)]
  public IActionResult TestDelayed([FromBody] TestDelayedJobRequest request)
     {
         var jobId = _jobService.Schedule<TestJobService>(
@@ -1553,7 +1554,7 @@ delaySeconds = request.DelaySeconds
     /// Test recurring job
     /// </summary>
     [HttpPost("test/recurring")]
-    [MustHavePermission(ECOAction.Create, ECOFunction.Jobs)]
+    [MustHavePermission({ProjectName}Action.Create, {ProjectName}Function.Jobs)]
     public IActionResult TestRecurring([FromBody] TestRecurringJobRequest request)
     {
       _jobService.AddOrUpdateRecurringJob<TestJobService>(
@@ -1572,7 +1573,7 @@ $"test-recurring-{Guid.NewGuid()}",
  /// Delete job
     /// </summary>
     [HttpDelete("{jobId}")]
- [MustHavePermission(ECOAction.Delete, ECOFunction.Jobs)]
+ [MustHavePermission({ProjectName}Action.Delete, {ProjectName}Function.Jobs)]
     public IActionResult DeleteJob(string jobId)
     {
   var deleted = _jobService.Delete(jobId);
@@ -1586,7 +1587,7 @@ $"test-recurring-{Guid.NewGuid()}",
     /// Requeue failed job
     /// </summary>
 [HttpPost("{jobId}/requeue")]
-    [MustHavePermission(ECOAction.Update, ECOFunction.Jobs)]
+    [MustHavePermission({ProjectName}Action.Update, {ProjectName}Function.Jobs)]
   public IActionResult RequeueJob(string jobId)
     {
       var requeued = _jobService.Requeue(jobId);
@@ -1622,7 +1623,7 @@ using Microsoft.Extensions.Logging;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ECO.WebApi.Infrastructure.BackgroundJobs.Jobs;
+namespace {ProjectName}.Infrastructure.BackgroundJobs.Jobs;
 
 public interface ITestJobService : ITransientService
 {
@@ -1955,7 +1956,7 @@ Solution:
   "Logging": {
     "LogLevel": {
       "Hangfire": "Debug",
-      "ECO.WebApi.Infrastructure.BackgroundJobs": "Debug"
+      "{ProjectName}.Infrastructure.BackgroundJobs": "Debug"
     }
   }
 }
@@ -2101,10 +2102,10 @@ SELECT * FROM hangfire.State ORDER BY CreatedAt DESC
 ### 📁 File Structure:
 
 ```
-src/Core/Application/Common/BackgroundJobs/
+src/Application/Common/BackgroundJobs/
 └── IJobService.cs
 
-src/Infrastructure/Infrastructure/BackgroundJobs/
+src/Infrastructure/BackgroundJobs/
 ├── HangfireService.cs
 ├── HangfireStorageSettings.cs
 ├── HangfireDashboardAuthorizationFilter.cs
@@ -2117,7 +2118,7 @@ src/Infrastructure/Infrastructure/BackgroundJobs/
   ├── ITestJobService.cs
     └── TestJobService.cs
 
-src/Host/Host/
+src/Host/
 ├── Controllers/
 │   └── JobsController.cs
 └── appsettings.json

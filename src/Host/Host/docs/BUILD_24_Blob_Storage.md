@@ -51,7 +51,7 @@ await _repository.UpdateAsync(product);
 
 ### Bước 2.1: Add Azure Blob Storage Package
 
-**File:** `src/Infrastructure/Infrastructure/Infrastructure.csproj`
+**File:** `src/Infrastructure/Infrastructure.csproj`
 
 ```xml
 <ItemGroup>
@@ -77,14 +77,14 @@ await _repository.UpdateAsync(product);
 
 **Tại sao:** Abstraction để decouple business logic khỏi Azure-specific implementations.
 
-**File:** `src/Core/Application/Common/BlobStorage/IBlobStorageService.cs`
+**File:** `src/Application/Common/BlobStorage/IBlobStorageService.cs`
 
 ```csharp
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ECO.WebApi.Application.Common.BlobStorage;
+namespace {ProjectName}.Application.Common.BlobStorage;
 
 /// <summary>
 /// Service for blob storage operations
@@ -154,12 +154,12 @@ public interface IBlobStorageService : ITransientService
 
 ### Bước 3.2: Tạo DTOs
 
-**File:** `src/Core/Application/Common/BlobStorage/UploadBlobRequest.cs`
+**File:** `src/Application/Common/BlobStorage/UploadBlobRequest.cs`
 
 ```csharp
 using System.IO;
 
-namespace ECO.WebApi.Application.Common.BlobStorage;
+namespace {ProjectName}.Application.Common.BlobStorage;
 
 /// <summary>
 /// Request to upload blob to storage
@@ -200,12 +200,12 @@ public class UploadBlobRequest
 }
 ```
 
-**File:** `src/Core/Application/Common/BlobStorage/BlobModel.cs`
+**File:** `src/Application/Common/BlobStorage/BlobModel.cs`
 
 ```csharp
 using System;
 
-namespace ECO.WebApi.Application.Common.BlobStorage;
+namespace {ProjectName}.Application.Common.BlobStorage;
 
 /// <summary>
 /// Blob information model
@@ -243,7 +243,7 @@ public class BlobModel
     public string? Url { get; set; }
 
     /// <summary>
-    /// ETag for concurrency control
+ /// ETag for concurrency control
  /// </summary>
     public string? ETag { get; set; }
 
@@ -265,10 +265,10 @@ public class BlobModel
 
 ### Bước 4.1: Tạo BlobStorageSettings
 
-**File:** `src/Infrastructure/Infrastructure/BlobStorage/BlobStorageSettings.cs`
+**File:** `src/Infrastructure/BlobStorage/BlobStorageSettings.cs`
 
 ```csharp
-namespace ECO.WebApi.Infrastructure.BlobStorage;
+namespace {ProjectName}.Infrastructure.BlobStorage;
 
 /// <summary>
 /// Configuration for Azure Blob Storage
@@ -301,15 +301,15 @@ public class BlobStorageSettings
 
 ### Bước 4.2: Implement AzureBlobStorageService
 
-**File:** `src/Infrastructure/Infrastructure/BlobStorage/AzureBlobStorageService.cs`
+**File:** `src/Infrastructure/BlobStorage/AzureBlobStorageService.cs`
 
 ```csharp
 using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
-using ECO.WebApi.Application.Common.BlobStorage;
-using ECO.WebApi.Application.Common.Exceptions;
+using {ProjectName}.Application.Common.BlobStorage;
+using {ProjectName}.Application.Common.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -319,7 +319,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ECO.WebApi.Infrastructure.BlobStorage;
+namespace {ProjectName}.Infrastructure.BlobStorage;
 
 /// <summary>
 /// Azure Blob Storage implementation
@@ -605,7 +605,7 @@ string? prefix = null,
       string containerName, 
       bool isPublic = false, 
         CancellationToken cancellationToken = default)
-    {
+  {
   try
  {
             var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
@@ -670,7 +670,7 @@ _logger.LogInformation("Deleted container '{ContainerName}'", containerName);
         catch (RequestFailedException ex)
  {
          _logger.LogError(ex, "Failed to list containers");
-    throw new InternalServerException $"Failed to list containers: {ex.Message}", ex);
+    throw new InternalServerException $"Failed to list containers: {ex.Message}", ex;
         }
     }
 }
@@ -705,15 +705,15 @@ _logger.LogInformation("Deleted container '{ContainerName}'", containerName);
 
 ### Bước 4.3: Tạo Startup Configuration
 
-**File:** `src/Infrastructure/Infrastructure/BlobStorage/Startup.cs`
+**File:** `src/Infrastructure/BlobStorage/Startup.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.BlobStorage;
+using {ProjectName}.Application.Common.BlobStorage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 
-namespace ECO.WebApi.Infrastructure.BlobStorage;
+namespace {ProjectName}.Infrastructure.BlobStorage;
 
 /// <summary>
 /// Blob storage dependency injection registration
@@ -757,14 +757,14 @@ internal static class Startup
 
 ### Bước 4.4: Register trong Infrastructure Startup
 
-**File:** `src/Infrastructure/Infrastructure/Startup.cs`
+**File:** `src/Infrastructure/Startup.cs`
 
 ```csharp
 // ...existing code...
 
-using ECO.WebApi.Infrastructure.BlobStorage;
+using {ProjectName}.Infrastructure.BlobStorage;
 
-namespace ECO.WebApi.Infrastructure;
+namespace {ProjectName}.Infrastructure;
 
 public static class Startup
 {
@@ -792,7 +792,7 @@ public static class Startup
 
 ### Bước 5.1: appsettings.json - Azure Blob Storage
 
-**File:** `src/Host/Host/appsettings.json`
+**File:** `src/Host/appsettings.json`
 
 ```json
 {
@@ -806,7 +806,7 @@ public static class Startup
 
 ### Bước 5.2: appsettings.Development.json - Local Development
 
-**File:** `src/Host/Host/appsettings.Development.json`
+**File:** `src/Host/appsettings.Development.json`
 
 ```json
 {
@@ -844,14 +844,14 @@ public class UploadProductImageRequest : IRequest<string>
 
 **Handler:**
 ```csharp
-using ECO.WebApi.Application.Common.BlobStorage;
+using {ProjectName}.Application.Common.BlobStorage;
 using MediatR;
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 public class UploadProductImageHandler : IRequestHandler<UploadProductImageRequest, string>
 {
@@ -920,7 +920,7 @@ await _repository.UpdateAsync(product, cancellationToken);
 **Controller:**
 ```csharp
 [HttpPost("{id}/image")]
-[MustHavePermission(ECOAction.Update, ECOFunction.Products)]
+[MustHavePermission({ProjectName}Action.Update, {ProjectName}Function.Products)]
 public async Task<ActionResult<string>> UploadImage(
     Guid id,
     [FromForm] IFormFile image)
@@ -1097,7 +1097,7 @@ public class GetDocumentDownloadLinkHandler : IRequestHandler<GetDocumentDownloa
 **Controller:**
 ```csharp
 [HttpGet("documents/{id}/download-link")]
-[MustHavePermission(ECOAction.View, ECOFunction.Documents)]
+[MustHavePermission({ProjectName}Action.View, {ProjectName}Function.Documents)]
 public async Task<ActionResult<string>> GetDownloadLink(
     Guid id,
     [FromQuery] int expiryMinutes = 60)
@@ -1169,7 +1169,7 @@ containerName: "products",
 **Controller:**
 ```csharp
 [HttpGet("{id}/images")]
-[MustHavePermission(ECOAction.View, ECOFunction.Products)]
+[MustHavePermission({ProjectName}Action.View, {ProjectName}Function.Products)]
 public async Task<ActionResult<List<BlobModel>>> ListImages(Guid id)
 {
     var request = new ListProductImagesRequest { ProductId = id };
@@ -1266,10 +1266,10 @@ public class UpdateUserAvatarHandler : IRequestHandler<UpdateUserAvatarRequest, 
 
 ### Bước 7.1: Tạo BlobStorageController (Development Only)
 
-**File:** `src/Host/Host/Controllers/BlobStorageController.cs`
+**File:** `src/Host/Controllers/BlobStorageController.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.BlobStorage;
+using {ProjectName}.Application.Common.BlobStorage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -1279,7 +1279,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ECO.WebApi.Host.Controllers;
+namespace {ProjectName}.Host.Controllers;
 
 /// <summary>
 /// Blob storage testing endpoints (Development only)
@@ -1716,7 +1716,7 @@ Solution:
   "Logging": {
     "LogLevel": {
       "Azure.Storage.Blobs": "Debug",
-      "ECO.WebApi.Infrastructure.BlobStorage": "Debug"
+      "{ProjectName}.Infrastructure.BlobStorage": "Debug"
     }
   }
 }
@@ -1824,17 +1824,17 @@ azurite --silent --location c:\azurite
 ### 📁 File Structure:
 
 ```
-src/Core/Application/Common/BlobStorage/
+src/Application/Common/BlobStorage/
 ├── IBlobStorageService.cs
 ├── UploadBlobRequest.cs
 └── BlobModel.cs
 
-src/Infrastructure/Infrastructure/BlobStorage/
+src/Infrastructure/BlobStorage/
 ├── AzureBlobStorageService.cs
 ├── BlobStorageSettings.cs
 └── Startup.cs
 
-src/Host/Host/
+src/Host/
 ├── Controllers/
 │   └── BlobStorageController.cs (testing only)
 └── appsettings.json

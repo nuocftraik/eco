@@ -68,7 +68,7 @@ public class ExportProductsHandler : IRequestHandler<ExportProductsRequest, byte
 
 ### Bước 2.1: Add ClosedXML Package
 
-**File:** `src/Infrastructure/Infrastructure/Infrastructure.csproj`
+**File:** `src/Infrastructure/Infrastructure.csproj`
 
 ```xml
 <ItemGroup>
@@ -103,12 +103,12 @@ public class ExportProductsHandler : IRequestHandler<ExportProductsRequest, byte
 
 **Tại sao:** Abstraction để có thể swap implementations (ClosedXML, EPPlus, etc.) nếu cần.
 
-**File:** `src/Core/Application/Common/Exporters/IExcelWriter.cs`
+**File:** `src/Application/Common/Exporters/IExcelWriter.cs`
 
 ```csharp
 using System.Data;
 
-namespace ECO.WebApi.Application.Common.Exporters;
+namespace {ProjectName}.Application.Common.Exporters;
 
 /// <summary>
 /// Service for exporting data to Excel format
@@ -160,10 +160,10 @@ public interface IExcelWriter : ITransientService
 
 ### Bước 3.2: Tạo Export DTOs
 
-**File:** `src/Core/Application/Common/Exporters/ExportColumn.cs`
+**File:** `src/Application/Common/Exporters/ExportColumn.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Exporters;
+namespace {ProjectName}.Application.Common.Exporters;
 
 /// <summary>
 /// Column definition for Excel export
@@ -192,10 +192,10 @@ public class ExportColumn
 }
 ```
 
-**File:** `src/Core/Application/Common/Exporters/ExportOptions.cs`
+**File:** `src/Application/Common/Exporters/ExportOptions.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Exporters;
+namespace {ProjectName}.Application.Common.Exporters;
 
 /// <summary>
 /// Options for Excel export styling
@@ -249,16 +249,16 @@ public class ExportOptions
 
 **Tại sao:** ClosedXML là best choice cho .NET Excel export (no Office dependency, rich features).
 
-**File:** `src/Infrastructure/Infrastructure/Exporters/ClosedXMLWriter.cs`
+**File:** `src/Infrastructure/Exporters/ClosedXMLWriter.cs`
 
 ```csharp
 using ClosedXML.Excel;
-using ECO.WebApi.Application.Common.Exporters;
+using {ProjectName}.Application.Common.Exporters;
 using Microsoft.Extensions.Logging;
 using System.Data;
 using System.Reflection;
 
-namespace ECO.WebApi.Infrastructure.Exporters;
+namespace {ProjectName}.Infrastructure.Exporters;
 
 /// <summary>
 /// Excel writer implementation using ClosedXML
@@ -533,13 +533,13 @@ public class ClosedXMLWriter : IExcelWriter
 
 ### Bước 4.2: Register Service
 
-**File:** `src/Infrastructure/Infrastructure/Exporters/Startup.cs`
+**File:** `src/Infrastructure/Exporters/Startup.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Exporters;
+using {ProjectName}.Application.Common.Exporters;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Infrastructure.Exporters;
+namespace {ProjectName}.Infrastructure.Exporters;
 
 internal static class Startup
 {
@@ -553,14 +553,14 @@ internal static class Startup
 }
 ```
 
-**File:** `src/Infrastructure/Infrastructure/Startup.cs`
+**File:** `src/Infrastructure/Startup.cs`
 
 ```csharp
 // ...existing code...
 
-using ECO.WebApi.Infrastructure.Exporters;
+using {ProjectName}.Infrastructure.Exporters;
 
-namespace ECO.WebApi.Infrastructure;
+namespace {ProjectName}.Infrastructure;
 
 public static class Startup
 {
@@ -591,13 +591,13 @@ public static class Startup
 
 **Request:**
 
-**File:** `src/Core/Application/Auditing/ExportAuditLogsRequest.cs`
+**File:** `src/Application/Auditing/ExportAuditLogsRequest.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Models;
+using {ProjectName}.Application.Common.Models;
 using MediatR;
 
-namespace ECO.WebApi.Application.Auditing;
+namespace {ProjectName}.Application.Auditing;
 
 /// <summary>
 /// Request to export audit logs to Excel
@@ -613,15 +613,15 @@ public class ExportAuditLogsRequest : BaseFilter, IRequest<byte[]>
 
 **Handler:**
 
-**File:** `src/Core/Application/Auditing/ExportAuditLogsHandler.cs`
+**File:** `src/Application/Auditing/ExportAuditLogsHandler.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Exporters;
-using ECO.WebApi.Application.Common.Persistence;
-using ECO.WebApi.Domain.Auditing;
+using {ProjectName}.Application.Common.Exporters;
+using {ProjectName}.Application.Common.Persistence;
+using {ProjectName}.Domain.Auditing;
 using MediatR;
 
-namespace ECO.WebApi.Application.Auditing;
+namespace {ProjectName}.Application.Auditing;
 
 public class ExportAuditLogsHandler : IRequestHandler<ExportAuditLogsRequest, byte[]>
 {
@@ -681,10 +681,10 @@ public class ExportAuditLogsHandler : IRequestHandler<ExportAuditLogsRequest, by
 
 **DTO:**
 
-**File:** `src/Core/Application/Auditing/AuditLogExportDto.cs`
+**File:** `src/Application/Auditing/AuditLogExportDto.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Auditing;
+namespace {ProjectName}.Application.Auditing;
 
 public class AuditLogExportDto
 {
@@ -701,13 +701,13 @@ public class AuditLogExportDto
 
 **Specification:**
 
-**File:** `src/Core/Application/Auditing/AuditLogsExportSpec.cs`
+**File:** `src/Application/Auditing/AuditLogsExportSpec.cs`
 
 ```csharp
 using Ardalis.Specification;
-using ECO.WebApi.Domain.Auditing;
+using {ProjectName}.Domain.Auditing;
 
-namespace ECO.WebApi.Application.Auditing;
+namespace {ProjectName}.Application.Auditing;
 
 public class AuditLogsExportSpec : Specification<Trail>
 {
@@ -747,13 +747,13 @@ Query.Where(x => x.DateTime >= request.StartDate.Value);
 
 **Request:**
 
-**File:** `src/Core/Application/Identity/Users/ExportUsersRequest.cs`
+**File:** `src/Application/Identity/Users/ExportUsersRequest.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Models;
+using {ProjectName}.Application.Common.Models;
 using MediatR;
 
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 public class ExportUsersRequest : BaseFilter, IRequest<byte[]>
 {
@@ -764,16 +764,16 @@ public class ExportUsersRequest : BaseFilter, IRequest<byte[]>
 
 **Handler:**
 
-**File:** `src/Core/Application/Identity/Users/ExportUsersHandler.cs`
+**File:** `src/Application/Identity/Users/ExportUsersHandler.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Exporters;
-using ECO.WebApi.Domain.Identity;
+using {ProjectName}.Application.Common.Exporters;
+using {ProjectName}.Domain.Identity;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 public class ExportUsersHandler : IRequestHandler<ExportUsersRequest, byte[]>
 {
@@ -854,10 +854,10 @@ usersQuery = usersQuery.Where(u => userIds.Contains(u.Id));
 
 **DTO:**
 
-**File:** `src/Core/Application/Identity/Users/UserExportDto.cs`
+**File:** `src/Application/Identity/Users/UserExportDto.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 public class UserExportDto
 {
@@ -880,16 +880,16 @@ public string Email { get; set; } = default!;
 
 **Làm gì:** Expose export endpoints cho testing và admin usage.
 
-**File:** `src/Host/Host/Controllers/ExportController.cs`
+**File:** `src/Host/Controllers/ExportController.cs`
 
 ```csharp
-using ECO.WebApi.Application.Auditing;
-using ECO.WebApi.Application.Identity.Users;
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Application.Auditing;
+using {ProjectName}.Application.Identity.Users;
+using {ProjectName}.Shared.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers;
+namespace {ProjectName}.Host.Controllers;
 
 /// <summary>
 /// Export endpoints (Excel, CSV, PDF)
@@ -902,7 +902,7 @@ public class ExportController : BaseApiController
     /// Export audit logs to Excel
     /// </summary>
     [HttpPost("audit-logs")]
-    [MustHavePermission(ECOAction.Export, ECOFunction.AuditLogs)]
+    [MustHavePermission({ProjectName}Action.Export, {ProjectName}Function.AuditLogs)]
     public async Task<IActionResult> ExportAuditLogs(
         [FromBody] ExportAuditLogsRequest request)
     {
@@ -920,7 +920,7 @@ fileDownloadName: fileName);
     /// Export users to Excel
     /// </summary>
     [HttpPost("users")]
-  [MustHavePermission(ECOAction.Export, ECOFunction.Users)]
+  [MustHavePermission({ProjectName}Action.Export, {ProjectName}Function.Users)]
   public async Task<IActionResult> ExportUsers(
         [FromBody] ExportUsersRequest request)
     {
@@ -1030,13 +1030,13 @@ curl -X POST https://localhost:7001/api/export/users \
 
 **Create Product Export Request:**
 
-**File:** `src/Core/Application/Catalog/Products/ExportProductsRequest.cs`
+**File:** `src/Application/Catalog/Products/ExportProductsRequest.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Models;
+using {ProjectName}.Application.Common.Models;
 using MediatR;
 
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 public class ExportProductsRequest : BaseFilter, IRequest<byte[]>
 {
@@ -1049,15 +1049,15 @@ public class ExportProductsRequest : BaseFilter, IRequest<byte[]>
 
 **Handler:**
 
-**File:** `src/Core/Application/Catalog/Products/ExportProductsHandler.cs`
+**File:** `src/Application/Catalog/Products/ExportProductsHandler.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Exporters;
-using ECO.WebApi.Application.Common.Persistence;
-using ECO.WebApi.Domain.Catalog;
+using {ProjectName}.Application.Common.Exporters;
+using {ProjectName}.Application.Common.Persistence;
+using {ProjectName}.Domain.Catalog;
 using MediatR;
 
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 public class ExportProductsHandler : IRequestHandler<ExportProductsRequest, byte[]>
 {
@@ -1117,13 +1117,13 @@ Category = p.Category?.Name ?? "N/A",
 
 **Specification:**
 
-**File:** `src/Core/Application/Catalog/Products/ProductsExportSpec.cs`
+**File:** `src/Application/Catalog/Products/ProductsExportSpec.cs`
 
 ```csharp
 using Ardalis.Specification;
-using ECO.WebApi.Domain.Catalog;
+using {ProjectName}.Domain.Catalog;
 
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 public class ProductsExportSpec : Specification<Product>
 {
@@ -1161,14 +1161,14 @@ Query.Take(10000);
 
 **Add to Controller:**
 
-**File:** `src/Host/Host/Controllers/ExportController.cs`
+**File:** `src/Host/Controllers/ExportController.cs`
 
 ```csharp
 /// <summary>
 /// Export products to Excel
 /// </summary>
 [HttpPost("products")]
-[MustHavePermission(ECOAction.Export, ECOFunction.Products)]
+[MustHavePermission({ProjectName}Action.Export, {ProjectName}Function.Products)]
 public async Task<IActionResult> ExportProducts(
     [FromBody] ExportProductsRequest request)
 {
@@ -1253,10 +1253,10 @@ return await _excelWriter.WriteAsync(data);
 **1. Permission-Based Access:**
 ```csharp
 // Require specific export permission
-[MustHavePermission(ECOAction.Export, ECOFunction.Users)]
+[MustHavePermission({ProjectName}Action.Export, {ProjectName}Function.Users)]
 
-// Add Export action to ECOAction
-public static class ECOAction
+// Add Export action to {ProjectName}Action
+public static class {ProjectName}Action
 {
     // ...existing actions...
     public const string Export = nameof(Export);
@@ -1432,7 +1432,7 @@ Solution:
 {
   "Logging": {
     "LogLevel": {
-  "ECO.WebApi.Infrastructure.Exporters": "Debug"
+  "{ProjectName}.Infrastructure.Exporters": "Debug"
     }
   }
 }
@@ -1568,27 +1568,27 @@ public async Task<IActionResult> TestExport()
 ### 📁 File Structure:
 
 ```
-src/Core/Application/Common/Exporters/
+src/Application/Common/Exporters/
 ├── IExcelWriter.cs
 ├── ExportColumn.cs
 └── ExportOptions.cs
 
-src/Core/Application/Auditing/
+src/Application/Auditing/
 ├── ExportAuditLogsRequest.cs
 ├── ExportAuditLogsHandler.cs
 ├── AuditLogExportDto.cs
 └── AuditLogsExportSpec.cs
 
-src/Core/Application/Identity/Users/
+src/Application/Identity/Users/
 ├── ExportUsersRequest.cs
 ├── ExportUsersHandler.cs
 └── UserExportDto.cs
 
-src/Infrastructure/Infrastructure/Exporters/
+src/Infrastructure/Exporters/
 ├── ClosedXMLWriter.cs
 └── Startup.cs
 
-src/Host/Host/Controllers/
+src/Host/Controllers/
 └── ExportController.cs
 ```
 

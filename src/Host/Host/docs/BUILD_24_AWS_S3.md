@@ -36,7 +36,7 @@ Tài liệu này hướng dẫn implement **AWS S3** storage provider - alternat
 
 ### Bước 2.1: Add AWS SDK Packages
 
-**File:** `src/Infrastructure/Infrastructure/Infrastructure.csproj`
+**File:** `src/Infrastructure/Infrastructure.csproj`
 
 ```xml
 <ItemGroup>
@@ -63,13 +63,13 @@ Tài liệu này hướng dẫn implement **AWS S3** storage provider - alternat
 
 ### Bước 3.1: Implement AwsS3StorageService
 
-**File:** `src/Infrastructure/Infrastructure/BlobStorage/AwsS3StorageService.cs`
+**File:** `src/Infrastructure/BlobStorage/AwsS3StorageService.cs`
 
 ```csharp
 using Amazon.S3;
 using Amazon.S3.Model;
-using ECO.WebApi.Application.Common.BlobStorage;
-using ECO.WebApi.Application.Common.Exceptions;
+using {ProjectName}.Application.Common.BlobStorage;
+using {ProjectName}.Application.Common.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -79,7 +79,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ECO.WebApi.Infrastructure.BlobStorage;
+namespace {ProjectName}.Infrastructure.BlobStorage;
 
 /// <summary>
 /// AWS S3 Storage implementation
@@ -442,19 +442,19 @@ var url = _s3Client.GetPreSignedURL(request);
 
 ### Bước 4.1: Update Startup.cs - Register AWS S3
 
-**File:** `src/Infrastructure/Infrastructure/BlobStorage/Startup.cs`
+**File:** `src/Infrastructure/BlobStorage/Startup.cs`
 
 Update method `AddBlobStorage` để support AWS:
 
 ```csharp
 using Amazon;
 using Amazon.S3;
-using ECO.WebApi.Application.Common.BlobStorage;
+using {ProjectName}.Application.Common.BlobStorage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 
-namespace ECO.WebApi.Infrastructure.BlobStorage;
+namespace {ProjectName}.Infrastructure.BlobStorage;
 
 internal static class Startup
 {
@@ -544,7 +544,7 @@ if (string.IsNullOrEmpty(settings.AzureConnectionString))
 
 ### Bước 4.2: appsettings.json - AWS S3 Configuration
 
-**File:** `src/Host/Host/appsettings.json`
+**File:** `src/Host/appsettings.json`
 
 ```json
 {
@@ -875,7 +875,7 @@ BlobServiceClient    →  IAmazonS3
 ### 📁 File Structure (AWS-specific):
 
 ```
-src/Infrastructure/Infrastructure/BlobStorage/
+src/Infrastructure/BlobStorage/
 ├── AzureBlobStorageService.cs (from BUILD_24)
 ├── AwsS3StorageService.cs (this document)
 ├── BlobStorageSettings.cs (supports both)
@@ -898,5 +898,5 @@ src/Infrastructure/Infrastructure/BlobStorage/
 
 ---
 
-**Maintained By:** ECO.WebApi Development Team  
+**Maintained By:** {ProjectName} Development Team  
 **Last Updated:** 2026-01-30

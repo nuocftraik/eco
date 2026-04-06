@@ -64,7 +64,7 @@ var reportPdf = await _pdfService.GenerateReportAsync(reportData);
 
 ### Bước 2.1: Add QuestPDF Package (Application Layer)
 
-**File:** `src/Core/Application/Application.csproj`
+**File:** `src/Application/Application.csproj`
 
 ```xml
 <ItemGroup>
@@ -89,7 +89,7 @@ var reportPdf = await _pdfService.GenerateReportAsync(reportData);
 
 ### Bước 2.2: Add Supporting Packages
 
-**File:** `src/Infrastructure/Infrastructure/Infrastructure.csproj`
+**File:** `src/Infrastructure/Infrastructure.csproj`
 
 ```xml
 <ItemGroup>
@@ -114,10 +114,10 @@ var reportPdf = await _pdfService.GenerateReportAsync(reportData);
 
 **Tại sao:** Type-safe models cho PDF generation, dễ maintain và extend.
 
-**File:** `src/Core/Application/Common/Exporters/PdfModels.cs`
+**File:** `src/Application/Common/Exporters/PdfModels.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Exporters;
+namespace {ProjectName}.Application.Common.Exporters;
 
 /// <summary>
 /// PDF document options
@@ -315,10 +315,10 @@ Pie
 
 **Tại sao:** Abstraction để dễ dàng switch PDF libraries (QuestPDF, iTextSharp, etc.)
 
-**File:** `src/Core/Application/Common/Exporters/IPdfService.cs`
+**File:** `src/Application/Common/Exporters/IPdfService.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Exporters;
+namespace {ProjectName}.Application.Common.Exporters;
 
 /// <summary>
 /// Service for generating PDF documents
@@ -407,14 +407,14 @@ public interface IPdfService : ITransientService
 
 **Tại sao:** QuestPDF cung cấp fluent API, type-safe, và performance tốt.
 
-**File:** `src/Infrastructure/Infrastructure/Exporters/QuestPdfService.cs`
+**File:** `src/Infrastructure/Exporters/QuestPdfService.cs`
 
 ```csharp
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 
-namespace ECO.WebApi.Infrastructure.Exporters;
+namespace {ProjectName}.Infrastructure.Exporters;
 
 /// <summary>
 /// PDF service implementation using QuestPDF
@@ -967,12 +967,12 @@ if (!string.IsNullOrEmpty(section.Content))
 
 **Làm gì:** Register PDF service trong Infrastructure startup.
 
-**File:** `src/Infrastructure/Infrastructure/Exporters/Startup.cs`
+**File:** `src/Infrastructure/Exporters/Startup.cs`
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Infrastructure.Exporters;
+namespace {ProjectName}.Infrastructure.Exporters;
 
 internal static class Startup
 {
@@ -999,12 +999,12 @@ internal static class Startup
 
 **Làm gì:** Call `AddExporters()` trong main Infrastructure startup.
 
-**File:** `src/Infrastructure/Infrastructure/Startup.cs`
+**File:** `src/Infrastructure/Startup.cs`
 
 ```csharp
-using ECO.WebApi.Infrastructure.Exporters;
+using {ProjectName}.Infrastructure.Exporters;
 
-namespace ECO.WebApi.Infrastructure;
+namespace {ProjectName}.Infrastructure;
 
 public static class Startup
 {
@@ -1028,14 +1028,14 @@ public static class Startup
 
 ### Bước 5.1: Invoice Generation Example
 
-**File:** `src/Host/Host/Controllers/Exports/PdfController.cs`
+**File:** `src/Host/Controllers/Exports/PdfController.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Exporters;
+using {ProjectName}.Application.Common.Exporters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers.Exports;
+namespace {ProjectName}.Host.Controllers.Exports;
 
 /// <summary>
 /// PDF export endpoints
@@ -1346,10 +1346,10 @@ curl -X GET https://localhost:7001/api/exports/pdf/report/sample \
 
 **Làm gì:** Tạo settings class nếu cần configuration.
 
-**File:** `src/Infrastructure/Infrastructure/Exporters/PdfSettings.cs`
+**File:** `src/Infrastructure/Exporters/PdfSettings.cs`
 
 ```csharp
-namespace ECO.WebApi.Infrastructure.Exporters;
+namespace {ProjectName}.Infrastructure.Exporters;
 
 /// <summary>
 /// PDF generation settings
@@ -1393,7 +1393,7 @@ public class PdfSettings
 }
 ```
 
-**File:** `src/Host/Host/Configurations/appsettings.json`
+**File:** `src/Host/Configurations/appsettings.json`
 
 ```json
 {
@@ -1545,13 +1545,13 @@ public async Task<IActionResult> GenerateBatchInvoices(
 **File:** `tests/Infrastructure.Tests/Exporters/QuestPdfServiceTests.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Exporters;
-using ECO.WebApi.Infrastructure.Exporters;
+using {ProjectName}.Application.Common.Exporters;
+using {ProjectName}.Infrastructure.Exporters;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
-namespace ECO.WebApi.Infrastructure.Tests.Exporters;
+namespace {ProjectName}.Infrastructure.Tests.Exporters;
 
 public class QuestPdfServiceTests
 {
@@ -1997,16 +1997,16 @@ QuestPdfService (Infrastructure)
 ### 📁 File Structure:
 
 ```
-src/Core/Application/Common/Exporters/
+src/Application/Common/Exporters/
 ├── IPdfService.cs
 ├── PdfModels.cs (PdfOptions, InvoiceData, ReportData, etc.)
 
-src/Infrastructure/Infrastructure/Exporters/
+src/Infrastructure/Exporters/
 ├── QuestPdfService.cs
 ├── PdfSettings.cs
 └── Startup.cs
 
-src/Host/Host/Controllers/Exports/
+src/Host/Controllers/Exports/
 └── PdfController.cs
 
 tests/Infrastructure.Tests/Exporters/
