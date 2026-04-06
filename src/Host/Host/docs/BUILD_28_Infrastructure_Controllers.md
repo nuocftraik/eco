@@ -14,12 +14,12 @@ Tài liệu này hướng dẫn xây dựng **Infrastructure Layer** và **Contr
 **File:** `src/Infrastructure/Persistence/Configurations/ProductConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Catalog;
-using ECO.WebApi.Domain.Catalog.ValueObjects;
+using {ProjectName}.Domain.Catalog;
+using {ProjectName}.Domain.Catalog.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations;
 
 /// <summary>
 /// EF Core configuration for Product entity
@@ -172,11 +172,11 @@ builder.OwnsMany(p => p.Images, images =>
 **File:** `src/Infrastructure/Persistence/Configurations/CategoryConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Catalog;
+using {ProjectName}.Domain.Catalog;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations;
 
 /// <summary>
 /// EF Core configuration for Category entity
@@ -246,10 +246,10 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
 cd src/Migrators/Migrators.MSSQL
 
 # Create migration
-dotnet ef migrations add AddCatalogModule --startup-project ../../Host/Host
+dotnet ef migrations add AddCatalogModule --startup-project ../../Host
 
 # Update database
-dotnet ef database update --startup-project ../../Host/Host
+dotnet ef database update --startup-project ../../Host
 ```
 
 **Expected Migration:**
@@ -351,10 +351,10 @@ table.ForeignKey("FK_Categories_Parent", x => x.ParentId, "Categories", "Id");
 **File:** `src/Host/Controllers/Catalog/ProductsController.cs`
 
 ```csharp
-using ECO.WebApi.Application.Catalog.Products;
+using {ProjectName}.Application.Catalog.Products;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers.Catalog;
+namespace {ProjectName}.Host.Controllers.Catalog;
 
 /// <summary>
 /// Products API endpoints
@@ -433,10 +433,10 @@ public class ProductsController : BaseApiController
 **File:** `src/Host/Controllers/Catalog/CategoriesController.cs`
 
 ```csharp
-using ECO.WebApi.Application.Catalog.Categories;
+using {ProjectName}.Application.Catalog.Categories;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers.Catalog;
+namespace {ProjectName}.Host.Controllers.Catalog;
 
 /// <summary>
 /// Categories API endpoints
@@ -632,7 +632,7 @@ POST /api/catalog/products/search
 ### 📁 Complete File Structure:
 
 ```
-ECO.WebApi/
+{ProjectName}/
 ├── Domain/
 │   └── Catalog/
 │       ├── ValueObjects/ (Money, SKU, ProductImage)

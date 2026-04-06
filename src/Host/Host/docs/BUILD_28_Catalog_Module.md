@@ -374,7 +374,7 @@ var products = await _mediator.Send(new SearchProductsQuery { ... });
 ## 6. File Structure
 
 ```
-ECO.WebApi/
+src/
 ├── Domain/Catalog/
 │   ├── ValueObjects/
 │   │   ├── Money.cs

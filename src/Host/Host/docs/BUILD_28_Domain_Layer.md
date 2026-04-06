@@ -114,10 +114,10 @@ public void DecreaseStock(int quantity)
 - **Business operations:** Add, Subtract, Multiply với validation
 - **Immutable:** Thread-safe, predictable behavior
 
-**File:** `src/Core/Domain/Catalog/ValueObjects/Money.cs`
+**File:** `src/Domain/Catalog/ValueObjects/Money.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Catalog.ValueObjects;
+namespace {ProjectName}.Domain.Catalog.ValueObjects;
 
 /// <summary>
 /// Value Object representing monetary value with currency
@@ -194,7 +194,7 @@ public sealed record Money
     public bool IsGreaterThan(Money other)
     {
         if (Currency != other.Currency)
-    throw new InvalidOperationException($"Cannot compare {Currency} and {other.Currency}");
+  throw new InvalidOperationException($"Cannot compare {Currency} and {other.Currency}");
 
         return Amount > other.Amount;
     }
@@ -261,10 +261,10 @@ var invalid = price.Add(vndPrice);  // Exception!
 - **Validation:** Format validation (uppercase, alphanumeric)
 - **Uniqueness:** Ensures SKU format consistency
 
-**File:** `src/Core/Domain/Catalog/ValueObjects/SKU.cs`
+**File:** `src/Domain/Catalog/ValueObjects/SKU.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Catalog.ValueObjects;
+namespace {ProjectName}.Domain.Catalog.ValueObjects;
 
 /// <summary>
 /// Value Object representing Stock Keeping Unit
@@ -351,10 +351,10 @@ var invalid2 = SKU.Of("PROD@123");   // Exception - invalid character @
 
 **Làm gì:** Tạo value object cho product images với URL validation.
 
-**File:** `src/Core/Domain/Catalog/ValueObjects/ProductImage.cs`
+**File:** `src/Domain/Catalog/ValueObjects/ProductImage.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Catalog.ValueObjects;
+namespace {ProjectName}.Domain.Catalog.ValueObjects;
 
 /// <summary>
 /// Value Object representing a product image
@@ -439,12 +439,12 @@ product.SetImages(new[] { mainImage, galleryImage });
 - **Audit Trail:** Track important business changes
 - **Integration:** Other bounded contexts can subscribe
 
-**File:** `src/Core/Domain/Catalog/Events/ProductEvents.cs`
+**File:** `src/Domain/Catalog/Events/ProductEvents.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Common.Contracts;
+using {ProjectName}.Domain.Common.Contracts;
 
-namespace ECO.WebApi.Domain.Catalog.Events;
+namespace {ProjectName}.Domain.Catalog.Events;
 
 /// <summary>
 /// Product price was changed - important business event
@@ -566,14 +566,14 @@ public class ProductPriceChangedCacheHandler : INotificationHandler<ProductPrice
 
 **Làm gì:** Tạo Product aggregate root với rich domain logic, value objects, và domain events.
 
-**File:** `src/Core/Domain/Catalog/Product.cs`
+**File:** `src/Domain/Catalog/Product.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Catalog.Events;
-using ECO.WebApi.Domain.Catalog.ValueObjects;
-using ECO.WebApi.Domain.Common.Contracts;
+using {ProjectName}.Domain.Catalog.Events;
+using {ProjectName}.Domain.Catalog.ValueObjects;
+using {ProjectName}.Domain.Common.Contracts;
 
-namespace ECO.WebApi.Domain.Catalog;
+namespace {ProjectName}.Domain.Catalog;
 
 /// <summary>
 /// Product Aggregate Root
@@ -942,12 +942,12 @@ if (Cost == null || Cost.Amount == 0)
 
 ### Bước 6.1: Category Entity - Hierarchical Structure
 
-**File:** `src/Core/Domain/Catalog/Category.cs`
+**File:** `src/Domain/Catalog/Category.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Common.Contracts;
+using {ProjectName}.Domain.Common.Contracts;
 
-namespace ECO.WebApi.Domain.Catalog;
+namespace {ProjectName}.Domain.Catalog;
 
 /// <summary>
 /// Category Aggregate Root
@@ -1097,10 +1097,10 @@ public bool HasChildren() => Children.Any();
 
 ### Bước 7.1: Type-Safe Enums
 
-**File:** `src/Core/Domain/Catalog/ProductStatus.cs`
+**File:** `src/Domain/Catalog/ProductStatus.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Catalog;
+namespace {ProjectName}.Domain.Catalog;
 
 /// <summary>
 /// Product availability status
@@ -1196,7 +1196,7 @@ product.DecreaseStock(5);
 ### 📁 File Structure:
 
 ```
-src/Core/Domain/Catalog/
+src/Domain/Catalog/
 ├── ValueObjects/
 │   ├── Money.cs
 │   ├── SKU.cs

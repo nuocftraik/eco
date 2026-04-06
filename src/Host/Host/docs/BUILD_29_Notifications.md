@@ -60,7 +60,7 @@ public class ProductLowStockEventHandler : INotificationHandler<ProductLowStockE
 
 ### Bước 2.1: SignalR Packages
 
-**File:** `src/Host/Host/Host.csproj`
+**File:** `src/Host/Host.csproj`
 
 ```xml
 <ItemGroup>
@@ -92,12 +92,12 @@ public class ProductLowStockEventHandler : INotificationHandler<ProductLowStockE
 
 ### Bước 3.1: Notification Entity
 
-**File:** `src/Core/Domain/Notifications/Notification.cs`
+**File:** `src/Domain/Notifications/Notification.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Common.Contracts;
+using {ProjectName}.Domain.Common.Contracts;
 
-namespace ECO.WebApi.Domain.Notifications;
+namespace {ProjectName}.Domain.Notifications;
 
 /// <summary>
 /// Notification entity - stores all notifications sent to users
@@ -132,7 +132,7 @@ public sealed class Notification : AuditableEntity, IAggregateRoot
     /// <summary>
     /// Reference entity type (e.g., "Product", "Order")
     /// </summary>
-    public string? ReferenceType { get; private set; }
+    public string? ReferenceType { get. private set; }
 
     /// <summary>
     /// Reference entity ID
@@ -339,10 +339,10 @@ ActionUrl = actionUrl,
 
 ### Bước 3.2: NotificationType Enum
 
-**File:** `src/Core/Domain/Notifications/NotificationType.cs`
+**File:** `src/Domain/Notifications/NotificationType.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Notifications;
+namespace {ProjectName}.Domain.Notifications;
 
 /// <summary>
 /// Notification type for UI styling
@@ -377,10 +377,10 @@ public enum NotificationType
 
 ### Bước 4.1: Notification DTOs
 
-**File:** `src/Core/Application/Notifications/NotificationDto.cs`
+**File:** `src/Application/Notifications/NotificationDto.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Notifications;
+namespace {ProjectName}.Application.Notifications;
 
 /// <summary>
 /// Notification DTO for API responses
@@ -401,6 +401,7 @@ public class NotificationDto
     public DateTime CreatedOn { get; set; }
 }
 
+
 /// <summary>
 /// Simplified notification DTO for real-time push
 /// </summary>
@@ -419,10 +420,10 @@ public class NotificationPushDto
 
 ### Bước 4.2: INotificationService Interface
 
-**File:** `src/Core/Application/Notifications/INotificationService.cs`
+**File:** `src/Application/Notifications/INotificationService.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Notifications;
+namespace {ProjectName}.Application.Notifications;
 
 /// <summary>
 /// Notification service interface
@@ -504,13 +505,13 @@ public interface INotificationService : ITransientService
 **File:** `src/Infrastructure/Notifications/NotificationService.cs`
 
 ```csharp
-using ECO.WebApi.Application.Notifications;
-using ECO.WebApi.Domain.Notifications;
-using ECO.WebApi.Infrastructure.Notifications.Hubs;
+using {ProjectName}.Application.Notifications;
+using {ProjectName}.Domain.Notifications;
+using {ProjectName}.Infrastructure.Notifications.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Mapster;
 
-namespace ECO.WebApi.Infrastructure.Notifications;
+namespace {ProjectName}.Infrastructure.Notifications;
 
 /// <summary>
 /// Notification service implementation
@@ -682,7 +683,7 @@ public class NotificationService : INotificationService
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
-namespace ECO.WebApi.Infrastructure.Notifications.Hubs;
+namespace {ProjectName}.Infrastructure.Notifications.Hubs;
 
 /// <summary>
 /// SignalR Hub for real-time notifications
@@ -759,12 +760,12 @@ public class NotificationHub : Hub
 
 ### Bước 6.1: Notification Specifications
 
-**File:** `src/Core/Application/Notifications/NotificationSpecifications.cs`
+**File:** `src/Application/Notifications/NotificationSpecifications.cs`
 
 ```csharp
 using Ardalis.Specification;
 
-namespace ECO.WebApi.Application.Notifications;
+namespace {ProjectName}.Application.Notifications;
 
 /// <summary>
 /// Specification to get user notifications with pagination
@@ -785,6 +786,7 @@ public class UserNotificationsSpec : Specification<Notification>
   }
   }
 }
+
 
 /// <summary>
 /// Specification to get unread notifications for user
@@ -809,11 +811,11 @@ public class UserUnreadNotificationsSpec : Specification<Notification>
 **File:** `src/Infrastructure/Notifications/Startup.cs`
 
 ```csharp
-using ECO.WebApi.Infrastructure.Notifications.Hubs;
+using {ProjectName}.Infrastructure.Notifications.Hubs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Infrastructure.Notifications;
+namespace {ProjectName}.Infrastructure.Notifications;
 
 public static class Startup
 {
@@ -828,7 +830,7 @@ public static class Startup
    {
             signalRBuilder.AddStackExchangeRedis(redisConnection, options =>
           {
-        options.Configuration.ChannelPrefix = "ECO.Notifications";
+        options.Configuration.ChannelPrefix = "{ProjectName}.Notifications";
             });
       }
 
@@ -873,11 +875,11 @@ app.UseNotifications();
 **File:** `src/Infrastructure/Notifications/EventHandlers/ProductEventHandlers.cs`
 
 ```csharp
-using ECO.WebApi.Application.Notifications;
-using ECO.WebApi.Domain.Catalog.Events;
+using {ProjectName}.Application.Notifications;
+using {ProjectName}.Domain.Catalog.Events;
 using MediatR;
 
-namespace ECO.WebApi.Infrastructure.Notifications.EventHandlers;
+namespace {ProjectName}.Infrastructure.Notifications.EventHandlers;
 
 /// <summary>
 /// Send notification when product stock is low
@@ -968,10 +970,10 @@ public class ProductPublishedNotificationHandler : INotificationHandler<ProductP
 **File:** `src/Host/Controllers/NotificationsController.cs`
 
 ```csharp
-using ECO.WebApi.Application.Notifications;
+using {ProjectName}.Application.Notifications;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers;
+namespace {ProjectName}.Host.Controllers;
 
 /// <summary>
 /// Notifications API endpoints
@@ -1056,7 +1058,7 @@ public class NotificationsController : BaseApiController
 
     /// <summary>
 /// Send test notification (Admin only)
-    /// </summary>
+/// </summary>
     [HttpPost("test")]
     [MustHavePermission("Notifications.Send")]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
@@ -1156,11 +1158,11 @@ async function getUnreadCount() {
 **File:** `src/Infrastructure/Persistence/Configurations/NotificationConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Notifications;
+using {ProjectName}.Domain.Notifications;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations;
 
 public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
 {
@@ -1263,7 +1265,7 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
 ### 📁 File Structure:
 
 ```
-ECO.WebApi/
+{ProjectName}/
 ├── Domain/Notifications/
 │   ├── Notification.cs
 │   └── NotificationType.cs

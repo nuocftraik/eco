@@ -31,10 +31,10 @@ Tài liệu này hướng dẫn xây dựng **Application Layer** cho Catalog Mo
 
 ### Bước 2.1: Product DTOs
 
-**File:** `src/Core/Application/Catalog/Products/ProductDto.cs`
+**File:** `src/Application/Catalog/Products/ProductDto.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 /// <summary>
 /// Product DTO for API responses
@@ -112,13 +112,13 @@ public class ProductListDto
 
 ### Bước 3.1: Create Product Command
 
-**File:** `src/Core/Application/Catalog/Products/CreateProductCommand.cs`
+**File:** `src/Application/Catalog/Products/CreateProductCommand.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Catalog;
-using ECO.WebApi.Domain.Catalog.ValueObjects;
+using {ProjectName}.Domain.Catalog;
+using {ProjectName}.Domain.Catalog.ValueObjects;
 
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 /// <summary>
 /// Command to create a new product
@@ -298,13 +298,13 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
 
 ### Bước 3.2: Update Product Command
 
-**File:** `src/Core/Application/Catalog/Products/UpdateProductCommand.cs`
+**File:** `src/Application/Catalog/Products/UpdateProductCommand.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Catalog;
-using ECO.WebApi.Domain.Catalog.ValueObjects;
+using {ProjectName}.Domain.Catalog;
+using {ProjectName}.Domain.Catalog.ValueObjects;
 
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 /// <summary>
 /// Command to update an existing product
@@ -424,10 +424,10 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
 
 ### Bước 3.3: Delete Product Command
 
-**File:** `src/Core/Application/Catalog/Products/DeleteProductCommand.cs`
+**File:** `src/Application/Catalog/Products/DeleteProductCommand.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 /// <summary>
 /// Command to delete a product
@@ -475,12 +475,12 @@ public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand,
 
 ### Bước 4.1: Get Product Query
 
-**File:** `src/Core/Application/Catalog/Products/GetProductQuery.cs`
+**File:** `src/Application/Catalog/Products/GetProductQuery.cs`
 
 ```csharp
 using Mapster;
 
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 /// <summary>
 /// Query to get a single product by ID
@@ -533,12 +533,12 @@ public class GetProductQueryHandler : IRequestHandler<GetProductQuery, ProductDt
 
 ### Bước 4.2: Search Products Query
 
-**File:** `src/Core/Application/Catalog/Products/SearchProductsQuery.cs`
+**File:** `src/Application/Catalog/Products/SearchProductsQuery.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Models;
+using {ProjectName}.Application.Common.Models;
 
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 /// <summary>
 /// Query to search products with filters and pagination
@@ -606,12 +606,12 @@ public class SearchProductsQueryHandler : IRequestHandler<SearchProductsQuery, P
 
 ### Bước 5.1: Product Specifications
 
-**File:** `src/Core/Application/Catalog/Products/ProductSpecifications.cs`
+**File:** `src/Application/Catalog/Products/ProductSpecifications.cs`
 
 ```csharp
 using Ardalis.Specification;
 
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 /// <summary>
 /// Specification to get product by ID
@@ -714,10 +714,10 @@ public class ProductBySKUSpec : Specification<Product>, ISingleResultSpecificati
 
 ### Bước 6.1: Create Category Command
 
-**File:** `src/Core/Application/Catalog/Categories/CreateCategoryCommand.cs`
+**File:** `src/Application/Catalog/Categories/CreateCategoryCommand.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Catalog.Categories;
+namespace {ProjectName}.Application.Catalog.Categories;
 
 /// <summary>
 /// Command to create a new category
@@ -804,12 +804,12 @@ displayOrder: request.DisplayOrder,
 
 ### Bước 6.2: Search Categories Query
 
-**File:** `src/Core/Application/Catalog/Categories/SearchCategoriesQuery.cs`
+**File:** `src/Application/Catalog/Categories/SearchCategoriesQuery.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Models;
+using {ProjectName}.Application.Common.Models;
 
-namespace ECO.WebApi.Application.Catalog.Categories;
+namespace {ProjectName}.Application.Catalog.Categories;
 
 /// <summary>
 /// Category DTO
@@ -943,7 +943,7 @@ public class CreateProductCommandValidator : AbstractValidator<CreateProductComm
 ### 📁 File Structure:
 
 ```
-src/Core/Application/Catalog/
+src/Application/Catalog/
 ├── Products/
 │   ├── ProductDto.cs
 │   ├── CreateProductCommand.cs
