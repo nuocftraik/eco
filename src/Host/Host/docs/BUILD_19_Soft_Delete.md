@@ -117,10 +117,10 @@ await _context.SaveChangesAsync();
 - Global query filters sẽ tự động apply cho tất cả `ISoftDelete` entities
 - Type-safe - compiler enforce việc có `DeletedOn`/`DeletedBy` properties
 
-**File:** `src/Core/Domain/Common/Contracts/ISoftDelete.cs`
+**File:** `src/Domain/Common/Contracts/ISoftDelete.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Common.Contracts;
+namespace {ProjectName}.Domain.Common.Contracts;
 
 /// <summary>
 /// Marker interface cho entities hỗ trợ soft delete.
@@ -189,10 +189,10 @@ public DateTime? DeletedOn { get; set; }
 
 **Tại sao:** Hầu hết entities trong hệ thống kế thừa `AuditableEntity`, nên chúng tự động có soft delete support mà không cần code thêm.
 
-**File:** `src/Core/Domain/Common/Contracts/AuditableEntity.cs`
+**File:** `src/Domain/Common/Contracts/AuditableEntity.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Common.Contracts;
+namespace {ProjectName}.Domain.Common.Contracts;
 
 /// <summary>
 /// Base auditable entity với Guid primary key.
@@ -335,7 +335,7 @@ protected AuditableEntity()
 
 **Tại sao:** EF Core's `HasQueryFilter()` chỉ work với concrete types. Chúng ta muốn filter trên interface (`ISoftDelete`) để apply cho TẤT CẢ entities implement interface đó.
 
-**File:** `src/Infrastructure/Infrastructure/Persistence/Extensions/ModelBuilderExtensions.cs`
+**File:** `src/Infrastructure/Persistence/Extensions/ModelBuilderExtensions.cs`
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
@@ -343,7 +343,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Extensions;
+namespace {ProjectName}.Infrastructure.Persistence.Extensions;
 
 /// <summary>
 /// Extension methods for ModelBuilder to work with global query filters
@@ -513,16 +513,16 @@ if (existingFilter != null)
 
 **Tại sao:** Filter tự động exclude deleted entities khỏi TẤT CẢ queries (trừ khi dùng `IgnoreQueryFilters()`).
 
-**File:** `src/Infrastructure/Infrastructure/Persistence/Context/BaseDbContext.cs`
+**File:** `src/Infrastructure/Persistence/Context/BaseDbContext.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Events;
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Domain.Common.Contracts;
-using ECO.WebApi.Infrastructure.Persistence.Extensions;
+using {ProjectName}.Application.Common.Events;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Domain.Common.Contracts;
+using {ProjectName}.Infrastructure.Persistence.Extensions;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Context;
+namespace {ProjectName}.Infrastructure.Persistence.Context;
 
 /// <summary>
 /// Base DbContext với audit trail, domain events, và soft delete support
@@ -721,13 +721,13 @@ case EntityState.Modified:
 
 **Tại sao:** Default queries exclude deleted entities (via global filter). Cần specification để query deleted items khi cần.
 
-**File:** `src/Core/Application/Common/Specifications/ISoftDeleteSpecification.cs`
+**File:** `src/Application/Common/Specifications/ISoftDeleteSpecification.cs`
 
 ```csharp
 using Ardalis.Specification;
-using ECO.WebApi.Domain.Common.Contracts;
+using {ProjectName}.Domain.Common.Contracts;
 
-namespace ECO.WebApi.Application.Common.Specifications;
+namespace {ProjectName}.Application.Common.Specifications;
 
 /// <summary>
 /// Specification base cho soft delete queries.
@@ -816,12 +816,12 @@ var recentlyDeleted = await _repository.ListAsync(
 
 **Tại sao:** Encapsulate restore logic, dễ sử dụng và test.
 
-**File:** `src/Core/Application/Common/Extensions/SoftDeleteExtensions.cs`
+**File:** `src/Application/Common/Extensions/SoftDeleteExtensions.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Common.Contracts;
+using {ProjectName}.Domain.Common.Contracts;
 
-namespace ECO.WebApi.Application.Common.Extensions;
+namespace {ProjectName}.Application.Common.Extensions;
 
 /// <summary>
 /// Extension methods cho soft delete operations
@@ -912,16 +912,16 @@ await _context.SaveChangesAsync();
 
 ### Bước 6.1: Product Service với Soft Delete
 
-**File:** `src/Core/Application/Catalog/Products/ProductService.cs` (example)
+**File:** `src/Application/Catalog/Products/ProductService.cs` (example)
 
 ```csharp
-using ECO.WebApi.Application.Common.Extensions;
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Application.Common.Specifications;
-using ECO.WebApi.Domain.Catalog;
+using {ProjectName}.Application.Common.Extensions;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Application.Common.Specifications;
+using {ProjectName}.Domain.Catalog;
 using Mapster;
 
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 public interface IProductService : ITransientService
 {
@@ -1022,7 +1022,7 @@ public class ProductService : IProductService
     {
         // Need to query deleted items explicitly
         var spec = new ProductByIdIncludingDeletedSpec(id);
-  var product = await _repository.FirstOrDefaultAsync(spec, ct);
+        var product = await _repository.FirstOrDefaultAsync(spec, ct);
         
   if (product == null)
   throw new NotFoundException("Product not found");
@@ -1075,15 +1075,15 @@ public ProductByIdIncludingDeletedSpec(Guid id)
 
 ### Bước 6.2: Products Controller
 
-**File:** `src/Host/Host/Controllers/Catalog/ProductsController.cs` (example)
+**File:** `src/Host/Controllers/Catalog/ProductsController.cs` (example)
 
 ```csharp
-using ECO.WebApi.Application.Catalog.Products;
-using ECO.WebApi.Infrastructure.Auth.Permissions;
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Application.Catalog.Products;
+using {ProjectName}.Infrastructure.Auth.Permissions;
+using {ProjectName}.Shared.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers.Catalog;
+namespace {ProjectName}.Host.Controllers.Catalog;
 
 [Route("api/catalog/products")]
 public class ProductsController : BaseApiController
@@ -1097,7 +1097,7 @@ public class ProductsController : BaseApiController
 
     // ===== GET: Get all active products =====
     [HttpGet]
-    [MustHavePermission(ECOAction.View, ECOFunction.Products)]
+    [MustHavePermission({ProjectName}Action.View, {ProjectName}Function.Products)]
   public async Task<ActionResult<List<ProductDto>>> GetAll(CancellationToken ct)
     {
         var products = await _productService.GetAllAsync(ct);
@@ -1106,7 +1106,7 @@ public class ProductsController : BaseApiController
 
   // ===== GET: Get product by ID =====
     [HttpGet("{id:guid}")]
-  [MustHavePermission(ECOAction.View, ECOFunction.Products)]
+  [MustHavePermission({ProjectName}Action.View, {ProjectName}Function.Products)]
 public async Task<ActionResult<ProductDto>> GetById(Guid id, CancellationToken ct)
   {
       var product = await _productService.GetByIdAsync(id, ct);
@@ -1115,7 +1115,7 @@ public async Task<ActionResult<ProductDto>> GetById(Guid id, CancellationToken c
 
     // ===== GET: Get deleted products (Admin only) =====
   [HttpGet("deleted")]
-    [MustHavePermission(ECOAction.View, ECOFunction.Products)]
+    [MustHavePermission({ProjectName}Action.View, {ProjectName}Function.Products)]
     public async Task<ActionResult<List<ProductDto>>> GetDeleted(CancellationToken ct)
     {
    var deletedProducts = await _productService.GetDeletedAsync(ct);
@@ -1124,7 +1124,7 @@ public async Task<ActionResult<ProductDto>> GetById(Guid id, CancellationToken c
 
     // ===== POST: Create product =====
     [HttpPost]
-    [MustHavePermission(ECOAction.Create, ECOFunction.Products)]
+    [MustHavePermission({ProjectName}Action.Create, {ProjectName}Function.Products)]
   public async Task<ActionResult<Guid>> Create(CreateProductRequest request, CancellationToken ct)
     {
    var productId = await _productService.CreateAsync(request, ct);
@@ -1133,7 +1133,7 @@ public async Task<ActionResult<ProductDto>> GetById(Guid id, CancellationToken c
 
     // ===== PUT: Update product =====
     [HttpPut("{id:guid}")]
-    [MustHavePermission(ECOAction.Update, ECOFunction.Products)]
+    [MustHavePermission({ProjectName}Action.Update, {ProjectName}Function.Products)]
     public async Task<ActionResult> Update(Guid id, UpdateProductRequest request, CancellationToken ct)
     {
         await _productService.UpdateAsync(id, request, ct);
@@ -1142,7 +1142,7 @@ public async Task<ActionResult<ProductDto>> GetById(Guid id, CancellationToken c
 
     // ===== DELETE: Soft delete product =====
     [HttpDelete("{id:guid}")]
-    [MustHavePermission(ECOAction.Delete, ECOFunction.Products)]
+    [MustHavePermission({ProjectName}Action.Delete, {ProjectName}Function.Products)]
     public async Task<ActionResult> Delete(Guid id, CancellationToken ct)
     {
         await _productService.DeleteAsync(id, ct);
@@ -1151,7 +1151,7 @@ public async Task<ActionResult<ProductDto>> GetById(Guid id, CancellationToken c
 
     // ===== POST: Restore deleted product =====
 [HttpPost("{id:guid}/restore")]
-    [MustHavePermission(ECOAction.Update, ECOFunction.Products)]
+    [MustHavePermission({ProjectName}Action.Update, {ProjectName}Function.Products)]
     public async Task<ActionResult> Restore(Guid id, CancellationToken ct)
     {
         await _productService.RestoreAsync(id, ct);
@@ -1160,7 +1160,7 @@ public async Task<ActionResult<ProductDto>> GetById(Guid id, CancellationToken c
 
     // ===== DELETE: Permanent delete (Admin only) =====
     [HttpDelete("{id:guid}/permanent")]
-    [MustHavePermission(ECOAction.Delete, ECOFunction.Products)]
+    [MustHavePermission({ProjectName}Action.Delete, {ProjectName}Function.Products)]
     public async Task<ActionResult> PermanentDelete(Guid id, CancellationToken ct)
     {
      await _productService.PermanentDeleteAsync(id, ct);
@@ -1203,17 +1203,17 @@ DELETE /api/catalog/products/123e4567-.../permanent
 
 ```powershell
 # Navigate to Migrators.MSSQL project
-cd src/Migrators/Migrators.MSSQL
+cd src/Migrators.MSSQL
 
 # Add migration
 dotnet ef migrations add Add_SoftDelete_To_AuditableEntity `
-    --startup-project ../../Host/Host `
+    --startup-project ../Host `
     --context ApplicationDbContext `
     --output-dir Migrations
 
 # Apply migration
 dotnet ef database update `
-    --startup-project ../../Host/Host `
+    --startup-project ../Host `
     --context ApplicationDbContext
 ```
 
@@ -1487,25 +1487,11 @@ migrationBuilder.CreateIndex(
 
 ### Soft Delete Detection trong Audit Trail
 
-**File:** `src/Infrastructure/Infrastructure/Auditing/AuditTrail.cs` (từ BUILD_20)
+**File:** `src/Infrastructure/Auditing/AuditTrail.cs` (từ BUILD_20)
 
 ```csharp
 // Audit trail tự động detect soft delete
-foreach (var property in modifiedProperties)
-{
-    var propertyName = property.Metadata.Name;
-    
-    // ⭐ Detect soft delete: DeletedOn changed from null → value
-    if (property.IsModified && 
-        entry.Entity is ISoftDelete && 
-        propertyName == nameof(ISoftDelete.DeletedOn) &&
-        property.OriginalValue == null && 
-        property.CurrentValue != null)
-    {
-        trailEntry.TrailType = TrailType.Delete;  // ✅ Log as Delete
-     break;
-    }
-}
+// ...existing code...
 ```
 
 **Effect:**
@@ -1663,26 +1649,26 @@ Audit trail shows soft delete as "Delete" event:
 ### 📁 File Structure:
 
 ```
-src/Core/Domain/Common/
+src/Domain/Common/
 ├── Contracts/
 │   ├── ISoftDelete.cs       ⭐ NEW
 │   ├── IAuditableEntity.cs   (from BUILD_09)
 │└── AuditableEntity.cs              ⭐ UPDATED (implements ISoftDelete)
 │
-src/Core/Application/Common/
+src/Application/Common/
 ├── Specifications/
 │└── SoftDeleteSpecification.cs        ⭐ NEW
 ├── Extensions/
 │   └── SoftDeleteExtensions.cs        ⭐ NEW
 │
-src/Infrastructure/Infrastructure/
+src/Infrastructure/
 ├── Persistence/
 │   ├── Extensions/
 │   │   └── ModelBuilderExtensions.cs     ⭐ NEW (AppendGlobalQueryFilter)
 │   └── Context/
 │ └── BaseDbContext.cs         ⭐ UPDATED (global filter + soft delete logic)
 │
-src/Host/Host/
+src/Host/
 └── Controllers/
     └── Catalog/
         └── ProductsController.cs   ⭐ EXAMPLE (with soft delete endpoints)

@@ -242,10 +242,10 @@ public abstract class BaseDbContext : DbContext
 
 **Tại sao:** Type-safe, dễ query, clear semantics (Create/Update/Delete).
 
-**File:** `src/Core/Domain/Auditing/TrailType.cs`
+**File:** `src/Domain/Auditing/TrailType.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Auditing;
+namespace {ProjectName}.Domain.Auditing;
 
 /// <summary>
 /// Type of audit trail entry.
@@ -300,12 +300,12 @@ public TrailType Type { get; set; } = TrailType.Create;
 
 **Tại sao:** Persistent storage cho audit trails, có thể query, report, compliance.
 
-**File:** `src/Core/Domain/Auditing/Trail.cs`
+**File:** `src/Domain/Auditing/Trail.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Common.Contracts;
+using {ProjectName}.Domain.Common.Contracts;
 
-namespace ECO.WebApi.Domain.Auditing;
+namespace {ProjectName}.Domain.Auditing;
 
 /// <summary>
 /// Audit trail entity - lưu trữ tất cả thay đổi trong hệ thống.
@@ -518,16 +518,16 @@ CREATE INDEX IX_Trails_Type ON Trails(Type);
 
 **Tại sao:** Encapsulate complex logic, reusable, testable, separate concerns.
 
-**File:** `src/Infrastructure/Infrastructure/Auditing/AuditTrail.cs`
+**File:** `src/Infrastructure/Auditing/AuditTrail.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Domain.Auditing;
-using ECO.WebApi.Domain.Common.Contracts;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Domain.Auditing;
+using {ProjectName}.Domain.Common.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
-namespace ECO.WebApi.Infrastructure.Auditing;
+namespace {ProjectName}.Infrastructure.Auditing;
 
 /// <summary>
 /// Helper class để build audit trail entries từ EF Core EntityEntry
@@ -736,7 +736,7 @@ if (property.IsModified &&
 ```
 
 **Critical logic:**
-- Detect when `DeletedOn` changes from `null` → `DateTime`
+- Detect khi `DeletedOn` changes from `null` → `DateTime`
 - This is a soft delete, not regular update!
 - Log as `TrailType.Delete` (not Update)
 
@@ -797,18 +797,18 @@ trail.PrimaryKey = serializer.Serialize(keyValues);
 
 **Tại sao:** Intercept tất cả database changes, automatic audit logging, transparent to application code.
 
-**File:** `src/Infrastructure/Infrastructure/Persistence/Context/BaseDbContext.cs`
+**File:** `src/Infrastructure/Persistence/Context/BaseDbContext.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Events;
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Domain.Auditing;
-using ECO.WebApi.Domain.Common.Contracts;
-using ECO.WebApi.Infrastructure.Auditing;
-using ECO.WebApi.Infrastructure.Persistence.Extensions;
+using {ProjectName}.Application.Common.Events;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Domain.Auditing;
+using {ProjectName}.Domain.Common.Contracts;
+using {ProjectName}.Infrastructure.Auditing;
+using {ProjectName}.Infrastructure.Persistence.Extensions;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Context;
+namespace {ProjectName}.Infrastructure.Persistence.Context;
 
 /// <summary>
 /// Base DbContext với audit trail, soft delete, và domain events support
@@ -1082,12 +1082,12 @@ private List<Trail> CaptureAuditTrails()
 
 **Tại sao:** Abstraction, testable, follow Clean Architecture.
 
-**File:** `src/Core/Application/Auditing/IAuditService.cs`
+**File:** `src/Application/Auditing/IAuditService.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Models;
+using {ProjectName}.Application.Common.Models;
 
-namespace ECO.WebApi.Application.Auditing;
+namespace {ProjectName}.Application.Auditing;
 
 /// <summary>
 /// Service interface for querying audit trails
@@ -1111,12 +1111,12 @@ public interface IAuditService
 
 **Tại sao:** Không expose entity trực tiếp, control data shape, versioning.
 
-**File:** `src/Core/Application/Auditing/AuditDto.cs`
+**File:** `src/Application/Auditing/AuditDto.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Auditing;
+using {ProjectName}.Domain.Auditing;
 
-namespace ECO.WebApi.Application.Auditing;
+namespace {ProjectName}.Application.Auditing;
 
 /// <summary>
 /// DTO for audit trail entry
@@ -1187,12 +1187,12 @@ dto.Type = trail.Type.ToString(); // "Create", "Update", "Delete"
 
 **Tại sao:** Audit logs có thể rất nhiều, cần pagination.
 
-**File:** `src/Core/Application/Auditing/GetMyAuditLogsRequest.cs`
+**File:** `src/Application/Auditing/GetMyAuditLogsRequest.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Models;
+using {ProjectName}.Application.Common.Models;
 
-namespace ECO.WebApi.Application.Auditing;
+namespace {ProjectName}.Application.Auditing;
 
 /// <summary>
 /// Request to get current user's audit logs
@@ -1238,18 +1238,18 @@ public class PaginationFilter
 
 **Tại sao:** Business logic for querying, filtering, pagination.
 
-**File:** `src/Infrastructure/Infrastructure/Auditing/AuditService.cs`
+**File:** `src/Infrastructure/Auditing/AuditService.cs`
 
 ```csharp
-using ECO.WebApi.Application.Auditing;
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Application.Common.Models;
-using ECO.WebApi.Domain.Auditing;
-using ECO.WebApi.Infrastructure.Persistence.Context;
+using {ProjectName}.Application.Auditing;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Application.Common.Models;
+using {ProjectName}.Domain.Auditing;
+using {ProjectName}.Infrastructure.Persistence.Context;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Infrastructure.Auditing;
+namespace {ProjectName}.Infrastructure.Auditing;
 
 /// <summary>
 /// Service implementation for querying audit trails
@@ -1394,17 +1394,17 @@ PageNumber = 2, PageSize = 10: Skip 10, Take 10 (records 11-20)
 
 **Tại sao:** Users có thể xem lịch sử thay đổi của chính họ.
 
-**File:** `src/Host/Host/Controllers/Identity/PersonalController.cs` (UPDATE)
+**File:** `src/Host/Controllers/Identity/PersonalController.cs` (UPDATE)
 
 ```csharp
-using ECO.WebApi.Application.Auditing;
-using ECO.WebApi.Application.Common.Models;
-using ECO.WebApi.Infrastructure.Auth.Permissions;
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Application.Auditing;
+using {ProjectName}.Application.Common.Models;
+using {ProjectName}.Infrastructure.Auth.Permissions;
+using {ProjectName}.Shared.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers.Identity;
+namespace {ProjectName}.Host.Controllers.Identity;
 
 /// <summary>
 /// Controller for current user's personal information and audit logs
@@ -1423,7 +1423,7 @@ public class PersonalController : BaseApiController
 /// <param name="cancellationToken">Cancellation token</param>
 /// <returns>Paginated list of audit logs</returns>
     [HttpGet("audit-logs")]
-    [MustHavePermission(ECOAction.View, ECOFunction.Users)]
+    [MustHavePermission({ProjectName}Action.View, {ProjectName}Function.Users)]
     public async Task<ActionResult<PaginationResponse<AuditDto>>> GetMyAuditLogs(
         [FromQuery] GetMyAuditLogsRequest request,
      [FromServices] IAuditService auditService,
@@ -1472,7 +1472,7 @@ GET /api/personal/audit-logs?FromDate=2024-01-01&ToDate=2024-01-31&PageNumber=1&
   "type": "Delete",
       "tableName": "Products",
 "dateTime": "2024-01-30T09:15:00Z",
-    "oldValues": "{\"Name\":\"iPhone 15\",\"DeletedOn\":null}",
+    "oldValues": "{\"Name\":\"iPhone 15\",\"Price\":999,\"DeletedOn\":null,\"DeletedBy\":null}",
       "newValues": "{\"DeletedOn\":\"2024-01-30T09:15:00Z\",\"DeletedBy\":\"user-456\"}",
    "affectedColumns": "DeletedOn,DeletedBy",
       "primaryKey": "{\"Id\":\"product-789\"}"
@@ -1497,17 +1497,17 @@ GET /api/personal/audit-logs?FromDate=2024-01-01&ToDate=2024-01-31&PageNumber=1&
 
 ```powershell
 # Navigate to Migrators.MSSQL project
-cd src/Migrators/Migrators.MSSQL
+cd src/Migrators.MSSQL
 
 # Add migration
 dotnet ef migrations add Add_AuditTrails_Table `
-    --startup-project ../../Host/Host `
+    --startup-project ../Host `
     --context ApplicationDbContext `
     --output-dir Migrations
 
 # Apply migration
 dotnet ef database update `
-    --startup-project ../../Host/Host `
+    --startup-project ../Host `
     --context ApplicationDbContext
 ```
 
@@ -1646,7 +1646,7 @@ await _context.SaveChangesAsync();
 //   TableName = 'Products',
 //   DateTime = '2024-01-30T11:00:00Z',
 //   OldValues = '{"Name":"iPhone 15","Price":999,"DeletedOn":null,"DeletedBy":null}',
-//   NewValues = '{"DeletedOn":"2024-01-30T11:00:00Z","DeletedBy":"user-456"}',
+//   NewValues = '{"DeletedOn":"2024-01-30T11:15:00Z","DeletedBy":"user-456"}',
 //   AffectedColumns = 'DeletedOn,DeletedBy',
 //   PrimaryKey = '{"Id":"product-789"}'
 // )
@@ -1679,7 +1679,7 @@ var result = await _auditService.GetMyAuditLogsAsync(request, ct);
 //       "affectedColumns": "FirstName,Email"
 //     },
 //     {
-//    "id": "trail-2",
+//      "id": "trail-2",
 //       "type": "Delete",
 //       "tableName": "Products",
 //       "dateTime": "2024-01-30T09:15:00Z",
@@ -2052,18 +2052,18 @@ await _context.SaveChangesAsync();
 ### 📁 File Structure:
 
 ```
-src/Core/Domain/
+src/Domain/
 ├── Auditing/
 │   ├── Trail.cs  ⭐ NEW (audit log entity)
 │   └── TrailType.cs   ⭐ NEW (enum)
 │
-src/Core/Application/
+src/Application/
 ├── Auditing/
 │ ├── IAuditService.cs    ⭐ NEW (service interface)
 │   ├── AuditDto.cs           ⭐ NEW (response DTO)
 │   └── GetMyAuditLogsRequest.cs  ⭐ NEW (query request)
 │
-src/Infrastructure/Infrastructure/
+src/Infrastructure/
 ├── Auditing/
 │   ├── AuditTrail.cs       ⭐ NEW (helper class)
 │   └── AuditService.cs     ⭐ NEW (service implementation)
@@ -2071,7 +2071,7 @@ src/Infrastructure/Infrastructure/
 │   └── Context/
 │    └── BaseDbContext.cs  ⭐ UPDATED (audit interceptor)
 │
-src/Host/Host/
+src/Host/
 └── Controllers/
     └── Identity/
         └── PersonalController.cs  ⭐ UPDATED (audit logs endpoint)

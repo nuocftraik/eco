@@ -207,10 +207,10 @@ public async Task<IActionResult> GoogleLogin([FromBody] OAuthRequest request)
 
 **Tại sao:** Centralize configuration, dễ quản lý và thay đổi.
 
-**File:** `src/Infrastructure/Infrastructure/Auth/OAuth2/GoogleAuthSettings.cs`
+**File:** `src/Infrastructure/Auth/OAuth2/GoogleAuthSettings.cs`
 
 ```csharp
-namespace ECO.WebApi.Infrastructure.Auth.OAuth2;
+namespace {ProjectName}.Infrastructure.Auth.OAuth2;
 
 /// <summary>
 /// Google OAuth2 authentication settings
@@ -231,8 +231,8 @@ public class GoogleAuthSettings
 
     /// <summary>
  /// Google OAuth2 Client Secret
-    /// Lấy từ Google Cloud Console
-    /// </summary>
+ /// Lấy từ Google Cloud Console
+ /// </summary>
     public string ClientSecret { get; set; } = default!;
 }
 ```
@@ -259,10 +259,10 @@ public class GoogleAuthSettings
 
 **Tại sao:** Centralize configuration cho Facebook authentication.
 
-**File:** `src/Infrastructure/Infrastructure/Auth/OAuth2/FacebookAuthSettings.cs`
+**File:** `src/Infrastructure/Auth/OAuth2/FacebookAuthSettings.cs`
 
 ```csharp
-namespace ECO.WebApi.Infrastructure.Auth.OAuth2;
+namespace {ProjectName}.Infrastructure.Auth.OAuth2;
 
 /// <summary>
 /// Facebook OAuth2 authentication settings
@@ -283,8 +283,8 @@ public class FacebookAuthSettings
 
     /// <summary>
  /// Facebook App Secret
-    /// Lấy từ Facebook Developers Console
-    /// </summary>
+ /// Lấy từ Facebook Developers Console
+ /// </summary>
     public string AppSecret { get; set; } = default!;
 }
 ```
@@ -312,13 +312,13 @@ public class FacebookAuthSettings
 
 **Tại sao:** Configure ASP.NET Core Authentication với Google/Facebook providers.
 
-**File:** `src/Infrastructure/Infrastructure/Auth/OAuth2/Startup.cs`
+**File:** `src/Infrastructure/Auth/OAuth2/Startup.cs`
 
 ```csharp
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Infrastructure.Auth.OAuth2;
+namespace {ProjectName}.Infrastructure.Auth.OAuth2;
 
 internal static class Startup
 {
@@ -392,7 +392,7 @@ internal static class Startup
 
 ### Bước 5.1: Add Google Authentication Package
 
-**File:** `src/Infrastructure/Infrastructure/Infrastructure.csproj`
+**File:** `src/Infrastructure/Infrastructure.csproj`
 
 ```xml
 <ItemGroup>
@@ -416,7 +416,7 @@ internal static class Startup
 
 ### Bước 5.2: Add Facebook Authentication Package
 
-**File:** `src/Infrastructure/Infrastructure/Infrastructure.csproj`
+**File:** `src/Infrastructure/Infrastructure.csproj`
 
 ```xml
 <ItemGroup>
@@ -438,12 +438,12 @@ internal static class Startup
 
 **Tại sao:** Abstraction để dễ test và thay đổi implementation.
 
-**File:** `src/Core/Application/Identity/O2Auth/IAuthenticationService.cs`
+**File:** `src/Application/Identity/O2Auth/IAuthenticationService.cs`
 
 ```csharp
-using ECO.WebApi.Application.Identity.Tokens;
+using {ProjectName}.Application.Identity.Tokens;
 
-namespace ECO.WebApi.Application.Identity.O2Auth;
+namespace {ProjectName}.Application.Identity.O2Auth;
 
 /// <summary>
 /// Authentication service cho OAuth2 social login
@@ -507,22 +507,22 @@ public interface IAuthenticationService : ITransientService
 
 **Tại sao:** ID Token Flow đơn giản và phổ biến nhất.
 
-**File:** `src/Infrastructure/Infrastructure/Identity/AuthenticationService.cs`
+**File:** `src/Infrastructure/Identity/AuthenticationService.cs`
 
 ```csharp
-using ECO.WebApi.Application.Identity.O2Auth;
-using ECO.WebApi.Domain.Identity;
+using {ProjectName}.Application.Identity.O2Auth;
+using {ProjectName}.Domain.Identity;
 using Microsoft.AspNetCore.Identity;
 using Google.Apis.Auth;
-using ECO.WebApi.Infrastructure.Auth.OAuth2;
+using {ProjectName}.Infrastructure.Auth.OAuth2;
 using Microsoft.Extensions.Options;
-using ECO.WebApi.Application.Identity.Tokens;
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Application.Identity.Tokens;
+using {ProjectName}.Shared.Authorization;
 using Google.Apis.Auth.OAuth2.Flows;
 using Google.Apis.Auth.OAuth2;
-using ECO.WebApi.Application.Common.Interfaces;
+using {ProjectName}.Application.Common.Interfaces;
 
-namespace ECO.WebApi.Infrastructure.Identity;
+namespace {ProjectName}.Infrastructure.Identity;
 
 /// <summary>
 /// Authentication service implementation cho OAuth2 social login
@@ -586,7 +586,7 @@ public class AuthenticationService : IAuthenticationService
         await _userManager.CreateAsync(existingUser);
 
      // Gán role "Basic" cho user mới
-         await _userManager.AddToRoleAsync(existingUser, ECORoles.Basic);
+         await _userManager.AddToRoleAsync(existingUser, {ProjectName}Roles.Basic);
  }
 
         // Note: Nếu user đã tồn tại nhưng email chưa link với Google account
@@ -659,7 +659,7 @@ public class AuthenticationService : IAuthenticationService
             };
 
             await _userManager.CreateAsync(existingUser);
-            await _userManager.AddToRoleAsync(existingUser, ECORoles.Basic);
+            await _userManager.AddToRoleAsync(existingUser, {ProjectName}Roles.Basic);
    }
 
         // 6. Generate JWT token
@@ -726,13 +726,13 @@ public class GoogleUserInfo
 
 **Tại sao:** Expose REST APIs cho OAuth2 authentication.
 
-**File:** `src/Host/Host/Controllers/Identity/AuthController.cs`
+**File:** `src/Host/Controllers/Identity/AuthController.cs`
 
 ```csharp
-using ECO.WebApi.Application.Identity.O2Auth;
+using {ProjectName}.Application.Identity.O2Auth;
 using NSwag.Annotations;
 
-namespace ECO.WebApi.Host.Controllers.Identity;
+namespace {ProjectName}.Host.Controllers.Identity;
 
 /// <summary>
 /// Authentication controller cho OAuth2 social login
@@ -842,7 +842,7 @@ public class OAuthRequest
 
 **Tại sao:** Centralize configuration, không hardcode credentials trong code.
 
-**File:** `src/Host/Host/appsettings.json`
+**File:** `src/Host/appsettings.json`
 
 ```json
 {
@@ -886,7 +886,7 @@ public class OAuthRequest
 
 ```bash
 # Initialize user secrets
-cd src/Host/Host
+cd src/Host
 dotnet user-secrets init
 
 # Set Google credentials
@@ -1035,8 +1035,8 @@ Content-Type: application/json
   "fullName": "John Doe",
   "permission": "Permissions.Dashboard.View",
   "exp": 1706529600,
-  "iss": "ECO.WebApi",
-  "aud": "ECO.WebApi"
+  "iss": "{ProjectName}",
+  "aud": "{ProjectName}"
 }
 ```
 
@@ -1113,7 +1113,7 @@ Content-Type: application/json
 
 **Tại sao:** Support nhiều OAuth providers.
 
-**File:** `src/Infrastructure/Infrastructure/Identity/AuthenticationService.cs` (update existing)
+**File:** `src/Infrastructure/Identity/AuthenticationService.cs` (update existing)
 
 ```csharp
 using System.Net.Http.Json;
@@ -1165,7 +1165,7 @@ public async Task<TokenResponse> FacebookSignIn(string accessToken, string ipAdd
     };
 
     await _userManager.CreateAsync(existingUser);
-        await _userManager.AddToRoleAsync(existingUser, ECORoles.Basic);
+        await _userManager.AddToRoleAsync(existingUser, {ProjectName}Roles.Basic);
     }
 
     // 4. Generate JWT token
@@ -1308,7 +1308,7 @@ public class FacebookPictureData
 **Token Types:**
 - **Google ID Token:** JWT signed by Google, contains user info
 - **Facebook Access Token:** Opaque token, cần call Graph API để lấy user info
-- **JWT Token (ECO API):** Token của API, contains permissions
+- **JWT Token ({ProjectName} API):** Token của API, contains permissions
 
 **Security Considerations (Cân nhắc Bảo mật):**
 - Always validate tokens với provider
@@ -1321,41 +1321,26 @@ public class FacebookPictureData
 
 ```
 src/
-├── Core/
-│   └── Application/
-│    └── Identity/
-│      └── O2Auth/
-│               └── IAuthenticationService.cs
+├── Application/
+│   └── Identity/
+│       └── O2Auth/
+│           └── IAuthenticationService.cs
 ├── Infrastructure/
-│   └── Infrastructure/
-│       ├── Auth/
-││   └── OAuth2/
-│       │       ├── GoogleAuthSettings.cs
-│       │├── FacebookAuthSettings.cs
-│       │       └── Startup.cs
-│     └── Identity/
-│     └── AuthenticationService.cs
+│   ├── Auth/
+│   │   └── OAuth2/
+│   │       ├── GoogleAuthSettings.cs
+│   │       ├── FacebookAuthSettings.cs
+│   │       └── Startup.cs
+│   └── Identity/
+│       └── AuthenticationService.cs
 └── Host/
-    └── Host/
-     ├── Controllers/
+    ├── Controllers/
     │   └── Identity/
-  │       └── AuthController.cs
-        └── appsettings.json (Authentication configuration)
+    │       └── AuthController.cs
+    └── appsettings.json (Authentication configuration)
 ```
 
 ---
 
-## 12. Next Steps (Các Bước Tiếp theo)
-
-**Tiếp theo:** [BUILD_19 - Caching Services](BUILD_19_Caching_Services.md)
-
-Trong bước tiếp theo, chúng ta sẽ implement Caching:
-1. ✅ ICacheService interface (Interface Dịch vụ Cache)
-2. ✅ LocalCacheService (IMemoryCache) (Cache cục bộ)
-3. ✅ DistributedCacheService (Redis/SQL Server) (Cache phân tán)
-4. ✅ CacheSettings configuration (Cấu hình Cache)
-5. ✅ Cache patterns (Cache-Aside, Write-Through) (Các mẫu Cache)
-
----
 
 **Quay lại:** [Mục lục](BUILD_INDEX.md)

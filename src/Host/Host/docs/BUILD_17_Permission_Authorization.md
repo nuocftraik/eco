@@ -555,7 +555,7 @@ internal class PermissionPolicyProvider : IAuthorizationPolicyProvider
     public Task<AuthorizationPolicy?> GetPolicyAsync(string policyName)
     {
         // Kiểm tra xem policy có phải là permission policy không
-        if (policyName.StartsWith(ECOClaims.Permission, StringComparison.OrdinalIgnoreCase))
+        if (policyName.StartsWith({ProjectName}Claims.Permission, StringComparison.OrdinalIgnoreCase))
         {
             // Tạo permission policy động
              var policy = new AuthorizationPolicyBuilder();
@@ -618,7 +618,7 @@ namespace {ProjectName}.Infrastructure.Auth.Permissions;
 
 /// <summary>
 /// Thuộc tính MustHavePermission (authorization khai báo)
-/// Cách dùng: [MustHavePermission(ECOAction.View, ECOFunction.User)]
+/// Cách dùng: [MustHavePermission({ProjectName}Action.View, {ProjectName}Function.User)]
 /// Tạo policy: "Permissions.User.View"
 /// </summary>
 public class MustHavePermissionAttribute : AuthorizeAttribute
@@ -626,12 +626,12 @@ public class MustHavePermissionAttribute : AuthorizeAttribute
     /// <summary>
     /// Constructor với tham số action và function
     /// </summary>
-    /// <param name="action">Action (VD: ECOAction.View)</param>
-    /// <param name="function">Function (VD: ECOFunction.User)</param>
+    /// <param name="action">Action (VD: {ProjectName}Action.View)</param>
+    /// <param name="function">Function (VD: {ProjectName}Function.User)</param>
     public MustHavePermissionAttribute(string action, string function)
     {
         // Tạo tên policy: "Permissions.{Function}.{Action}"
-        Policy = ECOPermission.NameFor(action, function);
+        Policy = {ProjectName}Permission.NameFor(action, function);
     }
 }
 ```
@@ -1338,7 +1338,7 @@ public Task<string> SelfRegisterAsync(CreateUserRequest request)
 **Giải thích:**
 
 **Permission Attributes (Thuộc tính Quyền):**
-- `[MustHavePermission(ECOAction.View, ECOFunction.User)]`
+- `[MustHavePermission({ProjectName}Action.View, {ProjectName}Function.User)]`
   - Tạo policy: "Permissions.User.View"
   - Chỉ users có quyền "Users.View" mới có thể truy cập
 
@@ -1417,7 +1417,7 @@ Request → JWT Authentication → Permission Check → Controller Action
 3. GỌI API VỚI JWT
    GET /api/users
    Authorization: Bearer {JWT}
- [MustHavePermission(ECOAction.View, ECOFunction.User)]
+ [MustHavePermission({ProjectName}Action.View, {ProjectName}Function.User)]
    → JWT middleware validates token
    → Trích xuất claims từ JWT
 
