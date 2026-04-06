@@ -1,7 +1,7 @@
 ﻿# Email Service - SMTP Mail với Razor Templates
 
 > 📚 [Quay lại Mục lục](BUILD_INDEX.md)  
-> 📋 **Prerequisites:** Bước 20 (File Storage) đã hoàn thành
+
 
 Tài liệu này hướng dẫn xây dựng Email Service - hệ thống gửi email với SMTP và render email templates bằng Razor Engine.
 
@@ -60,7 +60,7 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserRequest, Guid>
         // Send email
    var mailRequest = new MailRequest(
             to: new List<string> { user.Email },
-            subject: "Welcome to ECO.WebApi - Confirm Your Email",
+            subject: "Welcome to {ProjectName}.WebApi - Confirm Your Email",
             body: emailBody
         );
         await _mailService.SendAsync(mailRequest, ct);
@@ -80,7 +80,7 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserRequest, Guid>
 
 **Tại sao:** MailKit là modern, cross-platform email library (.NET Standard), thay thế System.Net.Mail.
 
-**File:** `src/Infrastructure/Infrastructure/Infrastructure.csproj`
+**File:** `src/Infrastructure/Infrastructure.csproj`
 
 ```xml
 <ItemGroup>
@@ -103,7 +103,7 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserRequest, Guid>
 
 **Tại sao:** Render Razor templates (.cshtml) outside of ASP.NET Core MVC context.
 
-**File:** `src/Infrastructure/Infrastructure/Infrastructure.csproj`
+**File:** `src/Infrastructure/Infrastructure.csproj`
 
 ```xml
 <ItemGroup>
@@ -128,10 +128,10 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserRequest, Guid>
 
 **Tại sao:** Type-safe email request model với tất cả email fields.
 
-**File:** `src/Core/Application/Common/Mailing/MailRequest.cs`
+**File:** `src/Application/Common/Mailing/MailRequest.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Mailing;
+namespace {ProjectName}.Application.Common.Mailing;
 
 /// <summary>
 /// Email request model
@@ -268,12 +268,12 @@ var request = new MailRequest(
 
 **Tại sao:** Abstraction để dễ dàng switch email providers (SMTP → SendGrid → AWS SES).
 
-**File:** `src/Core/Application/Common/Mailing/IMailService.cs`
+**File:** `src/Application/Common/Mailing/IMailService.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
+using {ProjectName}.Application.Common.Interfaces;
 
-namespace ECO.WebApi.Application.Common.Mailing;
+namespace {ProjectName}.Application.Common.Mailing;
 
 /// <summary>
 /// Mail service interface
@@ -313,12 +313,12 @@ public interface IMailService : ITransientService
 
 **Tại sao:** Separate concerns - template rendering vs email sending.
 
-**File:** `src/Core/Application/Common/Mailing/IEmailTemplateService.cs`
+**File:** `src/Application/Common/Mailing/IEmailTemplateService.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
+using {ProjectName}.Application.Common.Interfaces;
 
-namespace ECO.WebApi.Application.Common.Mailing;
+namespace {ProjectName}.Application.Common.Mailing;
 
 /// <summary>
 /// Email template service interface
@@ -383,10 +383,10 @@ await _mailService.SendAsync(mailRequest, ct);
 
 **Tại sao:** Type-safe configuration, easy to bind từ appsettings.json.
 
-**File:** `src/Infrastructure/Infrastructure/Mailing/SMTPEmailSettings.cs`
+**File:** `src/Infrastructure/Mailing/SMTPEmailSettings.cs`
 
 ```csharp
-namespace ECO.WebApi.Infrastructure.Mailing;
+namespace {ProjectName}.Infrastructure.Mailing;
 
 /// <summary>
 /// SMTP email configuration settings
@@ -465,16 +465,16 @@ public class SMTPEmailSettings
 
 **Tại sao:** MailKit là production-ready, cross-platform email library.
 
-**File:** `src/Infrastructure/Infrastructure/Mailing/SmtpMailService.cs`
+**File:** `src/Infrastructure/Mailing/SmtpMailService.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Mailing;
+using {ProjectName}.Application.Common.Mailing;
 using MailKit.Net.Smtp;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
 
-namespace ECO.WebApi.Infrastructure.Mailing;
+namespace {ProjectName}.Infrastructure.Mailing;
 
 /// <summary>
 /// SMTP mail service implementation (MailKit)
@@ -637,14 +637,14 @@ email.Sender = new MailboxAddress(
 
 **Tại sao:** Render Razor templates (.cshtml) để generate dynamic HTML emails.
 
-**File:** `src/Infrastructure/Infrastructure/Mailing/EmailTemplateService.cs`
+**File:** `src/Infrastructure/Mailing/EmailTemplateService.cs`
 
 ```csharp
 using System.Text;
-using ECO.WebApi.Application.Common.Mailing;
+using {ProjectName}.Application.Common.Mailing;
 using RazorEngineCore;
 
-namespace ECO.WebApi.Infrastructure.Mailing;
+namespace {ProjectName}.Infrastructure.Mailing;
 
 /// <summary>
 /// Email template service (RazorEngineCore)
@@ -727,7 +727,7 @@ IRazorEngine razorEngine = new RazorEngine();
 
 **Template folder structure:**
 ```
-src/Host/Host/Email Templates/
+src/Host/Email Templates/
 ├── email-confirmation.cshtml
 ├── password-reset.cshtml
 ├── welcome-email.cshtml
@@ -753,7 +753,7 @@ src/Host/Host/Email Templates/
 
 **Tại sao:** User registration cần confirm email trước khi activate account.
 
-**File:** `src/Host/Host/Email Templates/email-confirmation.cshtml`
+**File:** `src/Host/Email Templates/email-confirmation.cshtml`
 
 ```razor
 <!DOCTYPE html>
@@ -808,7 +808,7 @@ src/Host/Host/Email Templates/
         <tr>
             <td bgcolor="#3eaf7c" align="center" style="padding: 40px 10px 40px 10px;">
     <h1 style="color: #ffffff; font-family: Arial, sans-serif; font-size: 48px; font-weight: 400; margin: 0;">
-         ECO.WebApi
+         {ProjectName}
      </h1>
             </td>
       </tr>
@@ -891,7 +891,7 @@ src/Host/Host/Email Templates/
               style="padding: 0px 30px 40px 30px; border-radius: 0px 0px 4px 4px; color: #666666; font-family: Arial, sans-serif; font-size: 18px; font-weight: 400; line-height: 25px;">
      <p style="margin: 0;">
             Cheers,<br>
-     The ECO.WebApi Team
+     The {ProjectName} Team
   </p>
   </td>
        </tr>
@@ -934,7 +934,7 @@ var model = new
 
 **Tại sao:** User quên password cần reset link.
 
-**File:** `src/Host/Host/Email Templates/password-reset.cshtml`
+**File:** `src/Host/Email Templates/password-reset.cshtml`
 
 ```razor
 <!DOCTYPE html>
@@ -1003,7 +1003,7 @@ var model = new
        <td class="content">
             <p>Hi @Model?.UserName,</p>
    <p>
-            You recently requested to reset your password for your ECO.WebApi account. 
+            You recently requested to reset your password for your {ProjectName} account. 
             Click the button below to reset it.
       </p>
   
@@ -1037,7 +1037,7 @@ var model = new
         This is an automated message, please do not reply to this email.
          </p>
  <p>
-    &copy; @DateTime.Now.Year ECO.WebApi. All rights reserved.
+    &copy; @DateTime.Now.Year {ProjectName}. All rights reserved.
            </p>
     </td>
    </tr>
@@ -1079,12 +1079,12 @@ var model = new
 
 **Tại sao:** Externalized configuration, easy to change per environment.
 
-**File:** `src/Host/Host/Configurations/mail.json` (hoặc trong `appsettings.json`)
+**File:** `src/Host/Configurations/mail.json` (hoặc trong `appsettings.json`)
 
 ```json
 {
   "SMTPEmailSettings": {
-    "DisplayName": "ECO.WebApi",
+    "DisplayName": "{ProjectName}",
     "EnableVerification": true,
     "From": "noreply@ecowebapi.com",
     "SMTPServer": "smtp.gmail.com",
@@ -1139,7 +1139,7 @@ var model = new
 **⚠️ Security - User Secrets (Development):**
 ```bash
 # Set password using User Secrets
-cd src/Host/Host
+cd src/Host
 dotnet user-secrets set "SMTPEmailSettings:Password" "your-app-password"
 ```
 
@@ -1163,13 +1163,13 @@ dotnet user-secrets set "SMTPEmailSettings:Password" "your-app-password"
 
 **Tại sao:** Auto-wire dependencies, configure options.
 
-**File:** `src/Infrastructure/Infrastructure/Mailing/Startup.cs`
+**File:** `src/Infrastructure/Mailing/Startup.cs`
 
 ```csharp
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Infrastructure.Mailing;
+namespace {ProjectName}.Infrastructure.Mailing;
 
 /// <summary>
 /// Mailing startup configuration
@@ -1212,7 +1212,7 @@ internal static class Startup
 
 **Tại sao:** Modular startup pattern.
 
-**File:** `src/Infrastructure/Infrastructure/Startup.cs`
+**File:** `src/Infrastructure/Startup.cs`
 
 Thêm dòng này trong `AddInfrastructure()`:
 
@@ -1238,7 +1238,7 @@ public static IServiceCollection AddInfrastructure(this IServiceCollection servi
 
 **Tại sao:** Templates phải available khi run application.
 
-**File:** `src/Host/Host/Host.csproj`
+**File:** `src/Host/Host.csproj`
 
 Thêm ItemGroup này:
 
@@ -1274,13 +1274,13 @@ Thêm ItemGroup này:
 
 **Handler:**
 ```csharp
-using ECO.WebApi.Application.Common.Mailing;
-using ECO.WebApi.Domain.Identity;
+using {ProjectName}.Application.Common.Mailing;
+using {ProjectName}.Domain.Identity;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 /// <summary>
 /// Register new user request
@@ -1294,12 +1294,13 @@ public class RegisterUserRequest : IRequest<Guid>
     public string LastName { get; set; } = default!;
 }
 
+
 /// <summary>
 /// Register new user handler
 /// </summary>
 public class RegisterUserHandler : IRequestHandler<RegisterUserRequest, Guid>
 {
- private readonly UserManager<ApplicationUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly IEmailTemplateService _templateService;
     private readonly IMailService _mailService;
     private readonly IConfiguration _configuration;
@@ -1355,7 +1356,7 @@ Url = confirmUrl
         // 5. Send email
         var mailRequest = new MailRequest(
             to: new List<string> { user.Email },
-     subject: "Welcome to ECO.WebApi - Confirm Your Email",
+     subject: "Welcome to {ProjectName} - Confirm Your Email",
 body: emailBody
      );
 
@@ -1368,11 +1369,11 @@ body: emailBody
 
 **Controller:**
 ```csharp
-using ECO.WebApi.Application.Identity.Users;
+using {ProjectName}.Application.Identity.Users;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers.Identity;
+namespace {ProjectName}.Host.Controllers.Identity;
 
 [ApiController]
 [Route("api/identity/users")]
@@ -1460,7 +1461,7 @@ Email confirmed successfully! You can now login.
 ```csharp
 using MediatR;
 
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 public class ForgotPasswordRequest : IRequest<string>
 {
@@ -1470,14 +1471,14 @@ public class ForgotPasswordRequest : IRequest<string>
 
 **Handler:**
 ```csharp
-using ECO.WebApi.Application.Common.Exceptions;
-using ECO.WebApi.Application.Common.Mailing;
-using ECO.WebApi.Domain.Identity;
+using {ProjectName}.Application.Common.Exceptions;
+using {ProjectName}.Application.Common.Mailing;
+using {ProjectName}.Domain.Identity;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordRequest, string>
 {
@@ -1504,7 +1505,7 @@ public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordRequest, stri
         var user = await _userManager.FindByEmailAsync(request.Email);
       if (user == null)
         {
-      // Security: Don't reveal if email exists
+      // Security: don't reveal if email exists
         return "If the email exists, a password reset link has been sent.";
      }
 
@@ -1527,7 +1528,7 @@ Url = resetUrl
         // 5. Send email
         var mailRequest = new MailRequest(
       to: new List<string> { user.Email },
-            subject: "ECO.WebApi - Password Reset Request",
+            subject: "{ProjectName} - Password Reset Request",
   body: emailBody
         );
 
@@ -1615,7 +1616,7 @@ curl -X POST https://localhost:7001/api/identity/users/reset-password \
 
 **Usage example:**
 ```csharp
-using ECO.WebApi.Application.Common.Mailing;
+using {ProjectName}.Application.Common.Mailing;
 
 public class SendOrderConfirmationEmailHandler
 {
@@ -1664,7 +1665,7 @@ private readonly IPdfGenerator _pdfGenerator; // Assume we have this
 **⚠️ Best practice:** Use background job (Hangfire) để send emails asynchronously.
 
 ```csharp
-using ECO.WebApi.Application.Common.Mailing;
+using {ProjectName}.Application.Common.Mailing;
 using Hangfire;
 
 public class SendNewsletterHandler
@@ -1715,6 +1716,7 @@ TXT record for @yourdomain.com:
 v=spf1 include:_spf.google.com ~all
 ```
 
+
 **2. DKIM (DomainKeys Identified Mail):**
 - Sign emails với private key
 - Recipient verify với public key trong DNS
@@ -1758,7 +1760,7 @@ v=DMARC1; p=quarantine; rua=mailto:postmaster@yourdomain.com
 </head>
 <body>
     <div class="header">
-    <h1>ECO.WebApi</h1>
+    <h1>{ProjectName}</h1>
     </div>
     
     <div class="content">
@@ -1766,7 +1768,7 @@ v=DMARC1; p=quarantine; rua=mailto:postmaster@yourdomain.com
     </div>
     
     <div class="footer">
-     <p>&copy; @DateTime.Now.Year ECO.WebApi</p>
+     <p>&copy; @DateTime.Now.Year {ProjectName}</p>
     </div>
 </body>
 </html>
@@ -1784,7 +1786,7 @@ v=DMARC1; p=quarantine; rua=mailto:postmaster@yourdomain.com
 }
 
 <p>Hi @Model.UserName,</p>
-<p>Welcome to ECO.WebApi!</p>
+<p>Welcome to {ProjectName}!</p>
 ```
 
 ---
@@ -1807,7 +1809,6 @@ docker run -d -p 1025:1025 -p 8025:8025 mailhog/mailhog
   "Port": 1025,
     "EnableVerification": true
   }
-}
 
 # View emails: http://localhost:8025
 ```
@@ -1837,6 +1838,7 @@ docker run -d -p 1025:1025 -p 8025:8025 mailhog/mailhog
 
 ```csharp
 using Hangfire;
+using {ProjectName}.Application.Common.Mailing;
 
 public class EmailQueueService
 {
@@ -1967,10 +1969,10 @@ public async Task<IActionResult> TrackEmail(Guid trackingId)
 ### 11.1: Unit Test - EmailTemplateService
 
 ```csharp
-using ECO.WebApi.Infrastructure.Mailing;
+using {ProjectName}.Infrastructure.Mailing;
 using Xunit;
 
-namespace ECO.WebApi.Infrastructure.Tests.Mailing;
+namespace {ProjectName}.Infrastructure.Tests.Mailing;
 
 public class EmailTemplateServiceTests
 {
@@ -2017,14 +2019,14 @@ public class EmailTemplateServiceTests
 ### 11.2: Integration Test - SmtpMailService
 
 ```csharp
-using ECO.WebApi.Application.Common.Mailing;
-using ECO.WebApi.Infrastructure.Mailing;
+using {ProjectName}.Application.Common.Mailing;
+using {ProjectName}.Infrastructure.Mailing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
-namespace ECO.WebApi.Infrastructure.Tests.Mailing;
+namespace {ProjectName}.Infrastructure.Tests.Mailing;
 
 public class SmtpMailServiceTests
 {
@@ -2036,7 +2038,7 @@ public class SmtpMailServiceTests
       {
             DisplayName = "Test",
   From = "test@example.com",
-   SMTPServer = "localhost",
+    SMTPServer = "localhost",
         Port = 1025, // MailHog
             UseSsl = false,
  Username = "test",
@@ -2139,7 +2141,8 @@ _smtpClient.ServerCertificateValidationCallback = (s, c, h, e) => true;
 **Solution:** Use background jobs
 ```csharp
 // Don't block request
-_backgroundJobClient.Enqueue<IMailService>(x => x.SendAsync(request, CancellationToken.None));
+_backgroundJobClient.Enqueue<IMailService>(mailService => 
+   mailService.SendAsync(request, CancellationToken.None));
 
 // Return immediately
 return Ok("Email queued for sending");
@@ -2254,40 +2257,24 @@ Email Templates (Razor)
 ### 📁 File Structure:
 
 ```
-src/Core/Application/Common/Mailing/
+src/Application/Common/Mailing/
 ├── IMailService.cs
 ├── IEmailTemplateService.cs
 └── MailRequest.cs
 
-src/Infrastructure/Infrastructure/Mailing/
+src/Infrastructure/Mailing/
 ├── SmtpMailService.cs
 ├── EmailTemplateService.cs
 ├── SMTPEmailSettings.cs
 └── Startup.cs
 
-src/Host/Host/Email Templates/
+src/Host/Email Templates/
 ├── email-confirmation.cshtml
 ├── password-reset.cshtml
 └── [custom templates]
 
-src/Host/Host/Configurations/
+src/Host/Configurations/
 └── mail.json (or appsettings.json)
 ```
 
 ---
-
-## 14. Next Steps
-
-**Tiếp theo:** [BUILD_22 - Blob Storage](BUILD_22_Blob_Storage.md)
-
-Trong bước tiếp theo, chúng ta sẽ:
-1. ✅ Tạo `IBlobStorageService` interface
-2. ✅ Implement Azure Blob Storage service
-3. ✅ Container management (create, list, delete)
-4. ✅ Blob upload/download/delete operations
-5. ✅ Public vs Private containers
-6. ✅ SAS token generation for secure access
-
----
-
-**Quay lại:** [Mục lục](BUILD_INDEX.md)

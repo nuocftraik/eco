@@ -62,7 +62,7 @@ public class UsersController : ControllerBase
 
 ### Bước 2.1: Distributed Cache Packages
 
-**File:** `src/Infrastructure/Infrastructure/Infrastructure.csproj`
+**File:** `src/Infrastructure/Infrastructure.csproj`
 
 ```xml
 <ItemGroup>
@@ -89,10 +89,10 @@ public class UsersController : ControllerBase
 
 **Tại sao:** Abstraction giúp switch giữa Local/Distributed cache mà không thay đổi code.
 
-**File:** `src/Core/Application/Common/Caching/ICacheService.cs`
+**File:** `src/Application/Common/Caching/ICacheService.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Caching;
+namespace {ProjectName}.Application.Common.Caching;
 
 /// <summary>
 /// Interface for caching service
@@ -115,7 +115,7 @@ public interface ICacheService
     void Refresh(string key);
 
 /// <summary>
-    /// Làm mới mục cache (phiên bản async).
+    /// Làm mới mục cache (phiên bản async)
   /// </summary>
     Task RefreshAsync(string key, CancellationToken token = default);
 
@@ -166,14 +166,14 @@ public interface ICacheService
 - Miễn phí (không cần Redis/SQL Server)
 - Phù hợp cho single-instance applications hoặc development
 
-**File:** `src/Infrastructure/Infrastructure/Caching/LocalCacheService.cs`
+**File:** `src/Infrastructure/Caching/LocalCacheService.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Caching;
+using {ProjectName}.Application.Common.Caching;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
-namespace ECO.WebApi.Infrastructure.Caching;
+namespace {ProjectName}.Infrastructure.Caching;
 
 /// <summary>
 /// Local cache service using IMemoryCache (in-process cache)
@@ -294,16 +294,16 @@ public class LocalCacheService : ICacheService
 - Persistent data (không mất khi restart)
 - Scale horizontally (thêm RAM cho Redis cluster)
 
-**File:** `src/Infrastructure/Infrastructure/Caching/DistributedCacheService.cs`
+**File:** `src/Infrastructure/Caching/DistributedCacheService.cs`
 
 ```csharp
 using System.Text;
-using ECO.WebApi.Application.Common.Caching;
-using ECO.WebApi.Application.Common.Interfaces;
+using {ProjectName}.Application.Common.Caching;
+using {ProjectName}.Application.Common.Interfaces;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 
-namespace ECO.WebApi.Infrastructure.Caching;
+namespace {ProjectName}.Infrastructure.Caching;
 
 /// <summary>
 /// Distributed cache service using IDistributedCache (Redis/SQL Server)
@@ -356,7 +356,7 @@ public class DistributedCacheService : ICacheService
     /// <summary>
     /// Lấy giá trị từ distributed cache (async) và deserialize
     /// </summary>
-    public async Task<T?> GetAsync<T>(string key, CancellationToken token = default) =>
+    public async Task<T?>(GetAsync<T>)(string key, CancellationToken token = default) =>
      await GetAsync(key, token) is { } data
    ? Deserialize<T>(data)
             : default;
@@ -562,10 +562,10 @@ private T Deserialize<T>(byte[] cachedData) =>
 
 **Tại sao:** Type-safe configuration, validation, IntelliSense support.
 
-**File:** `src/Infrastructure/Infrastructure/Caching/CacheSettings.cs`
+**File:** `src/Infrastructure/Caching/CacheSettings.cs`
 
 ```csharp
-namespace ECO.WebApi.Infrastructure.Caching;
+namespace {ProjectName}.Infrastructure.Caching;
 
 /// <summary>
 /// Configuration settings for caching service
@@ -607,7 +607,7 @@ public class CacheSettings
 
 **Tại sao:** External configuration, dễ dàng thay đổi mà không rebuild code.
 
-**File:** `src/Host/Host/Configurations/cache.json`
+**File:** `src/Host/Configurations/cache.json`
 
 ```json
 {
@@ -667,14 +667,14 @@ public class CacheSettings
 
 **Tại sao:** Clean separation, conditional registration dựa trên configuration.
 
-**File:** `src/Infrastructure/Infrastructure/Caching/Startup.cs`
+**File:** `src/Infrastructure/Caching/Startup.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Caching;
+using {ProjectName}.Application.Common.Caching;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ECO.WebApi.Infrastructure.Caching;
+namespace {ProjectName}.Infrastructure.Caching;
 
 /// <summary>
 /// Caching services startup module
@@ -774,7 +774,7 @@ ELSE
 
 **Tại sao:** Modular startup pattern - clean separation of concerns.
 
-**File:** `src/Infrastructure/Infrastructure/Startup.cs`
+**File:** `src/Infrastructure/Startup.cs`
 
 Đảm bảo có dòng này trong `AddInfrastructure()` method:
 
@@ -804,7 +804,7 @@ public static IServiceCollection AddInfrastructure(this IServiceCollection servi
 
 **Tại sao:** Tách biệt cache config ra file riêng, dễ quản lý.
 
-**File:** `src/Host/Host/Program.cs`
+**File:** `src/Host/Program.cs`
 
 Đảm bảo có dòng này trong `builder.Configuration`:
 
@@ -820,7 +820,7 @@ builder.Configuration
 - `reloadOnChange: true` → Hot reload khi file thay đổi
 
 **⚠️ Lưu ý:**
-- Đã có sẵn pattern này trong ECO.WebApi
+- Đã có sẵn pattern này trong {ProjectName}
 - Chỉ cần đảm bảo file `cache.json` tồn tại trong `Configurations/` folder
 
 ---
@@ -833,7 +833,7 @@ builder.Configuration
 
 **Request DTO:**
 ```csharp
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 public class GetUserRequest : IRequest<UserDto>
 {
@@ -843,7 +843,7 @@ public class GetUserRequest : IRequest<UserDto>
 
 **Response DTO:**
 ```csharp
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 public class UserDto
 {
@@ -857,14 +857,14 @@ public class UserDto
 
 **Handler với Cache-Aside Pattern:**
 ```csharp
-using ECO.WebApi.Application.Common.Caching;
-using ECO.WebApi.Application.Common.Exceptions;
-using ECO.WebApi.Domain.Identity;
+using {ProjectName}.Application.Common.Caching;
+using {ProjectName}.Application.Common.Exceptions;
+using {ProjectName}.Domain.Identity;
 using Mapster;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 /// <summary>
 /// Handler lấy user profile với caching
@@ -892,7 +892,7 @@ public class GetUserHandler : IRequestHandler<GetUserRequest, UserDto>
             return cachedUser; // Cache hit - return immediately
         }
 
-        // Cache miss - query from database
+        // Cache miss - query database
         var user = await _userManager.FindByIdAsync(request.UserId)
       ?? throw new NotFoundException("User not found");
 
@@ -909,11 +909,11 @@ public class GetUserHandler : IRequestHandler<GetUserRequest, UserDto>
 
 **Controller:**
 ```csharp
-using ECO.WebApi.Application.Identity.Users;
+using {ProjectName}.Application.Identity.Users;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers.Identity;
+namespace {ProjectName}.Host.Controllers.Identity;
 
 [ApiController]
 [Route("api/users")]
@@ -974,7 +974,7 @@ curl -X GET https://localhost:7001/api/users/550e8400-e29b-41d4-a716-44665544000
 
 **Update Request:**
 ```csharp
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 public class UpdateUserRequest : IRequest<string>
 {
@@ -986,13 +986,13 @@ public class UpdateUserRequest : IRequest<string>
 
 **Handler với Cache Invalidation:**
 ```csharp
-using ECO.WebApi.Application.Common.Caching;
-using ECO.WebApi.Application.Common.Exceptions;
-using ECO.WebApi.Domain.Identity;
+using {ProjectName}.Application.Common.Caching;
+using {ProjectName}.Application.Common.Exceptions;
+using {ProjectName}.Domain.Identity;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 /// <summary>
 /// Handler update user với cache invalidation
@@ -1014,8 +1014,8 @@ public class UpdateUserHandler : IRequestHandler<UpdateUserRequest, string>
   var user = await _userManager.FindByIdAsync(request.UserId)
           ?? throw new NotFoundException("User not found");
 
-// Update user properties
-user.FullName = request.FullName;
+        // Update user properties
+        user.FullName = request.FullName;
      user.Email = request.Email;
 
         // Save to database
@@ -1075,7 +1075,7 @@ curl -X PUT https://localhost:7001/api/users/550e8400-e29b-41d4-a716-44665544000
 
 **GetPermissionsRequest:**
 ```csharp
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 public class GetUserPermissionsRequest : IRequest<List<string>>
 {
@@ -1085,14 +1085,14 @@ public class GetUserPermissionsRequest : IRequest<List<string>>
 
 **Handler với Complex Caching:**
 ```csharp
-using ECO.WebApi.Application.Common.Caching;
-using ECO.WebApi.Application.Common.Exceptions;
-using ECO.WebApi.Domain.Identity;
+using {ProjectName}.Application.Common.Caching;
+using {ProjectName}.Application.Common.Exceptions;
+using {ProjectName}.Domain.Identity;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 /// <summary>
 /// Handler lấy user permissions với caching (expensive query)
@@ -1208,7 +1208,7 @@ curl -X GET https://localhost:7001/api/users/550e8400-e29b-41d4-a716-44665544000
 
 **SearchProductsRequest:**
 ```csharp
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 public class SearchProductsRequest : IRequest<PaginatedResult<ProductDto>>
 {
@@ -1220,11 +1220,11 @@ public class SearchProductsRequest : IRequest<PaginatedResult<ProductDto>>
 
 **Handler với Pagination Caching:**
 ```csharp
-using ECO.WebApi.Application.Common.Caching;
-using ECO.WebApi.Application.Common.Models;
+using {ProjectName}.Application.Common.Caching;
+using {ProjectName}.Application.Common.Models;
 using MediatR;
 
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 /// <summary>
 /// Handler search products với caching per page
@@ -1253,7 +1253,7 @@ public class SearchProductsHandler : IRequestHandler<SearchProductsRequest, Pagi
      if (cachedResult is not null)
  {
        return cachedResult;
-        }
+    }
 
         // Cache miss - query database
         var spec = new ProductsBySearchSpec(request);
@@ -1349,12 +1349,12 @@ public async Task InvalidateProductCaches()
 
 **Background Job (Hangfire):**
 ```csharp
-using ECO.WebApi.Application.Common.Caching;
-using ECO.WebApi.Application.Catalog.Products;
+using {ProjectName}.Application.Common.Caching;
+using {ProjectName}.Application.Catalog.Products;
 using Hangfire;
 using MediatR;
 
-namespace ECO.WebApi.Infrastructure.BackgroundJobs;
+namespace {ProjectName}.Infrastructure.BackgroundJobs;
 
 /// <summary>
 /// Background job để refresh product cache định kỳ
@@ -1766,11 +1766,11 @@ await _cache.SetAsync($"user-permissions:{userId}", permissions); // Not PII
 ### 11.1: Unit Test với Mock Cache
 
 ```csharp
-using ECO.WebApi.Application.Common.Caching;
+using {ProjectName}.Application.Common.Caching;
 using Moq;
 using Xunit;
 
-namespace ECO.WebApi.Application.Tests.Identity.Users;
+namespace {ProjectName}.Application.Tests.Identity.Users;
 
 public class GetUserHandlerTests
 {
@@ -1842,13 +1842,13 @@ var userId = "user-123";
 ### 11.2: Integration Test với Real Cache
 
 ```csharp
-using ECO.WebApi.Infrastructure.Caching;
+using {ProjectName}.Infrastructure.Caching;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
-namespace ECO.WebApi.Infrastructure.Tests.Caching;
+namespace {ProjectName}.Infrastructure.Tests.Caching;
 
 public class LocalCacheServiceTests
 {
@@ -2148,16 +2148,16 @@ Configuration
 ### 📁 File Structure:
 
 ```
-src/Core/Application/Common/Caching/
+src/Application/Common/Caching/
 └── ICacheService.cs
 
-src/Infrastructure/Infrastructure/Caching/
+src/Infrastructure/Caching/
 ├── CacheSettings.cs
 ├── LocalCacheService.cs
 ├── DistributedCacheService.cs
 └── Startup.cs
 
-src/Host/Host/Configurations/
+src/Host/Configurations/
 ├── cache.json
 ├── cache.Development.json
 └── cache.Production.json
@@ -2167,7 +2167,7 @@ src/Host/Host/Configurations/
 
 ## 14. Next Steps
 
-**Tiếp theo:** [BUILD_20 - File Storage](BUILD_20_File_Storage.md)
+**Tiếp theo:** [BUILD_22 - File Storage](BUILD_22_File_Storage.md)
 
 Trong bước tiếp theo, chúng ta sẽ:
 1. ✅ Tạo `IFileStorageService` interface

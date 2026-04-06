@@ -70,12 +70,12 @@ public class UpdateUserAvatarHandler : IRequestHandler<UpdateAvatarRequest, stri
 - Centralized extension whitelist
 - Easy to extend (add Video, Document types...)
 
-**File:** `src/Core/Domain/Common/FileType.cs`
+**File:** `src/Domain/Common/FileType.cs`
 
 ```csharp
 using System.ComponentModel;
 
-namespace ECO.WebApi.Domain.Common;
+namespace {ProjectName}.Domain.Common;
 
 /// <summary>
 /// Supported file types với extensions whitelist
@@ -131,12 +131,12 @@ public enum FileType
 - FluentValidation integration
 - Base64 data format (standard for API uploads)
 
-**File:** `src/Core/Application/Common/FileStorage/FileUploadRequest.cs`
+**File:** `src/Application/Common/FileStorage/FileUploadRequest.cs`
 
 ```csharp
 using FluentValidation;
 
-namespace ECO.WebApi.Application.Common.FileStorage;
+namespace {ProjectName}.Application.Common.FileStorage;
 
 /// <summary>
 /// File upload request DTO
@@ -209,13 +209,13 @@ public class FileUploadRequestValidator : AbstractValidator<FileUploadRequest>
 
 **Tại sao:** Abstraction để dễ dàng switch storage providers (Local → S3 → Azure Blob).
 
-**File:** `src/Core/Application/Common/FileStorage/IFileStorageService.cs`
+**File:** `src/Application/Common/FileStorage/IFileStorageService.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Domain.Common;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Domain.Common;
 
-namespace ECO.WebApi.Application.Common.FileStorage;
+namespace {ProjectName}.Application.Common.FileStorage;
 
 /// <summary>
 /// File storage service interface
@@ -275,13 +275,13 @@ public interface IFileStorageService : ITransientService
 
 **Tại sao:** Validate file extension against whitelist từ enum Description.
 
-**File:** `src/Infrastructure/Infrastructure/Common/Extensions/EnumExtensions.cs`
+**File:** `src/Infrastructure/Common/Extensions/EnumExtensions.cs`
 
 ```csharp
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 
-namespace ECO.WebApi.Infrastructure.Common.Extensions;
+namespace {ProjectName}.Infrastructure.Common.Extensions;
 
 /// <summary>
 /// Extension methods cho Enum
@@ -358,12 +358,12 @@ bool isValid = allowedExtensions.Contains(extension.ToLower());
 - Filename không nên có spaces (URL encoding issues)
 - Replace spaces with hyphens: `"my file.jpg"` → `"my-file.jpg"`
 
-**File:** `src/Infrastructure/Infrastructure/Common/Extensions/RegexExtensions.cs`
+**File:** `src/Infrastructure/Common/Extensions/RegexExtensions.cs`
 
 ```csharp
 using System.Text.RegularExpressions;
 
-namespace ECO.WebApi.Infrastructure.Common.Extensions;
+namespace {ProjectName}.Infrastructure.Common.Extensions;
 
 /// <summary>
 /// Extension methods cho string (Regex operations)
@@ -422,16 +422,16 @@ string sanitized = filename.ReplaceWhitespace("-");
 - Perfect cho development và small applications
 - Easy to understand và debug
 
-**File:** `src/Infrastructure/Infrastructure/FileStorage/LocalFileStorageService.cs`
+**File:** `src/Infrastructure/FileStorage/LocalFileStorageService.cs`
 
 ```csharp
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using ECO.WebApi.Application.Common.FileStorage;
-using ECO.WebApi.Domain.Common;
-using ECO.WebApi.Infrastructure.Common.Extensions;
+using {ProjectName}.Application.Common.FileStorage;
+using {ProjectName}.Domain.Common;
+using {ProjectName}.Infrastructure.Common.Extensions;
 
-namespace ECO.WebApi.Infrastructure.FileStorage;
+namespace {ProjectName}.Infrastructure.FileStorage;
 
 /// <summary>
 /// Local file storage service (disk-based)
@@ -691,14 +691,14 @@ Files/
 - Better performance (IIS/Kestrel optimization)
 - Standard ASP.NET Core pattern
 
-**File:** `src/Infrastructure/Infrastructure/FileStorage/Startup.cs`
+**File:** `src/Infrastructure/FileStorage/Startup.cs`
 
 ```csharp
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.FileProviders;
 
-namespace ECO.WebApi.Infrastructure.FileStorage;
+namespace {ProjectName}.Infrastructure.FileStorage;
 
 /// <summary>
 /// File storage startup configuration
@@ -758,7 +758,7 @@ RequestPath = new PathString("/Files")
 
 **Tại sao:** Modular startup pattern - clean separation.
 
-**File:** `src/Infrastructure/Infrastructure/Startup.cs`
+**File:** `src/Infrastructure/Startup.cs`
 
 Đảm bảo có dòng này trong `AddInfrastructure()`:
 
@@ -789,7 +789,7 @@ public static IServiceCollection AddInfrastructure(this IServiceCollection servi
 
 **Tại sao:** Enable static file serving.
 
-**File:** `src/Host/Host/Program.cs`
+**File:** `src/Host/Program.cs`
 
 Thêm middleware sau `app.UseStaticFiles()`:
 
@@ -819,7 +819,7 @@ app.UseAuthorization();
 
 **Request DTO:**
 ```csharp
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 /// <summary>
 /// Update user avatar request
@@ -833,15 +833,15 @@ public class UpdateUserAvatarRequest : IRequest<string>
 
 **Handler:**
 ```csharp
-using ECO.WebApi.Application.Common.Exceptions;
-using ECO.WebApi.Application.Common.FileStorage;
-using ECO.WebApi.Domain.Common;
-using ECO.WebApi.Domain.Identity;
+using {ProjectName}.Application.Common.Exceptions;
+using {ProjectName}.Application.Common.FileStorage;
+using {ProjectName}.Domain.Common;
+using {ProjectName}.Domain.Identity;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 
-namespace ECO.WebApi.Application.Identity.Users;
+namespace {ProjectName}.Application.Identity.Users;
 
 /// <summary>
 /// Handler update user avatar
@@ -895,12 +895,12 @@ public class UpdateUserAvatarHandler : IRequestHandler<UpdateUserAvatarRequest, 
 
 **Controller:**
 ```csharp
-using ECO.WebApi.Application.Identity.Users;
+using {ProjectName}.Application.Identity.Users;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers.Identity;
+namespace {ProjectName}.Host.Controllers.Identity;
 
 [ApiController]
 [Route("api/users")]
@@ -964,7 +964,7 @@ curl -X PUT https://localhost:7001/api/users/550e8400-e29b-41d4-a716-44665544000
 
 **Request DTO:**
 ```csharp
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 public class CreateProductRequest : IRequest<Guid>
 {
@@ -977,12 +977,12 @@ public class CreateProductRequest : IRequest<Guid>
 
 **Handler:**
 ```csharp
-using ECO.WebApi.Application.Common.FileStorage;
-using ECO.WebApi.Domain.Catalog;
-using ECO.WebApi.Domain.Common;
+using {ProjectName}.Application.Common.FileStorage;
+using {ProjectName}.Domain.Catalog;
+using {ProjectName}.Domain.Common;
 using MediatR;
 
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 public class CreateProductHandler : IRequestHandler<CreateProductRequest, Guid>
 {
@@ -1030,7 +1030,7 @@ var product = Product.Create(
 **Controller:**
 ```csharp
 [HttpPost]
-[MustHavePermission("Products.Create")]
+[MustHavePermission({ProjectName}Action.Create, {ProjectName}Function.Products)]
 public async Task<ActionResult<Guid>> CreateProduct([FromBody] CreateProductRequest request)
 {
     var productId = await _mediator.Send(request);
@@ -1070,12 +1070,12 @@ curl -X POST https://localhost:7001/api/products \
 
 **Handler:**
 ```csharp
-using ECO.WebApi.Application.Common.Exceptions;
-using ECO.WebApi.Application.Common.FileStorage;
-using ECO.WebApi.Domain.Catalog;
+using {ProjectName}.Application.Common.Exceptions;
+using {ProjectName}.Application.Common.FileStorage;
+using {ProjectName}.Domain.Catalog;
 using MediatR;
 
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 public class DeleteProductRequest : IRequest<string>
 {
@@ -1120,7 +1120,7 @@ public class DeleteProductHandler : IRequestHandler<DeleteProductRequest, string
 **Controller:**
 ```csharp
 [HttpDelete("{id}")]
-[MustHavePermission("Products.Delete")]
+[MustHavePermission({ProjectName}Action.Delete, {ProjectName}Function.Products)]
 public async Task<ActionResult<string>> DeleteProduct(Guid id)
 {
     var result = await _mediator.Send(new DeleteProductRequest { ProductId = id });
@@ -1141,7 +1141,7 @@ public async Task<ActionResult<string>> DeleteProduct(Guid id)
 
 **Extension Method:**
 ```csharp
-namespace ECO.WebApi.Application.Common.Extensions;
+namespace {ProjectName}.Application.Common.Extensions;
 
 public static class FilePathExtensions
 {
@@ -1164,7 +1164,7 @@ public static class FilePathExtensions
 
 **Usage trong DTOs:**
 ```csharp
-namespace ECO.WebApi.Application.Catalog.Products;
+namespace {ProjectName}.Application.Catalog.Products;
 
 public class ProductDto
 {
@@ -1525,10 +1525,10 @@ Files/
 ### 9.1: Unit Test - RemoveSpecialCharacters
 
 ```csharp
-using ECO.WebApi.Infrastructure.FileStorage;
+using {ProjectName}.Infrastructure.FileStorage;
 using Xunit;
 
-namespace ECO.WebApi.Infrastructure.Tests.FileStorage;
+namespace {ProjectName}.Infrastructure.Tests.FileStorage;
 
 public class LocalFileStorageServiceTests
 {
@@ -1554,15 +1554,15 @@ public class LocalFileStorageServiceTests
 ### 9.2: Integration Test - Upload File
 
 ```csharp
-using ECO.WebApi.Application.Common.FileStorage;
-using ECO.WebApi.Domain.Common;
-using ECO.WebApi.Domain.Identity;
-using ECO.WebApi.Infrastructure.FileStorage;
+using {ProjectName}.Application.Common.FileStorage;
+using {ProjectName}.Domain.Common;
+using {ProjectName}.Domain.Identity;
+using {ProjectName}.Infrastructure.FileStorage;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
-namespace ECO.WebApi.Infrastructure.Tests.FileStorage;
+namespace {ProjectName}.Infrastructure.Tests.FileStorage;
 
 public class FileUploadIntegrationTests : IDisposable
 {
@@ -1648,7 +1648,7 @@ private readonly string _testFilesPath;
 ls Files/Images/User/avatar.jpg
 
 # 2. Check path format (forward slashes)
-# Wrong: Files\Images\User\avatar.jpg
+# Wrong: Files\Images>User\avatar.jpg
 # Correct: Files/Images/User/avatar.jpg
 
 # 3. Check static file middleware order in Program.cs
@@ -1796,65 +1796,26 @@ Infrastructure Layer (Implementation)
 
 File Organization
   │
-    Files/
-    ├── Images/
-    │   ├── ApplicationUser/
-    │   ├── Product/
-    │   └── Category/
-    └── Others/
-        └── Document/
+    Files/{FileType}/{EntityName}/
 ```
-
----
-
-### 📌 Key Concepts:
-
-**File Upload Flow:**
-1. Client sends base64 data
-2. Validate extension whitelist
-3. Convert base64 to bytes
-4. Organize folder by entity type
-5. Sanitize filename
-6. Handle duplicates (add suffix)
-7. Save to disk
-8. Return relative path
-
-**Folder Organization:**
-- Generic `<T>` parameter determines folder
-- `Files/{FileType}/{EntityName}/`
-- Example: `Files/Images/ApplicationUser/avatar.jpg`
-
-**Filename Sanitization:**
-- Remove special characters: `[^a-zA-Z0-9_.]+`
-- Replace whitespace with hyphen: `-`
-- Result: `"My File (2023).jpg"` → `"MyFile2023.jpg"`
-
-**Duplicate Handling:**
-- Binary search algorithm (O(log n))
-- Add suffix: `file.jpg` → `file-1.jpg` → `file-2.jpg`
-
-**Static File Serving:**
-- PhysicalFileProvider maps `/Files` → `{CurrentDirectory}/Files`
-- No MVC pipeline overhead
-- Fast serving
 
 ---
 
 ### 📁 File Structure:
 
 ```
-src/Core/Domain/Common/
+src/Domain/Common/
 └── FileType.cs
 
-src/Core/Application/Common/FileStorage/
+src/Application/Common/FileStorage/
 ├── IFileStorageService.cs
 └── FileUploadRequest.cs
 
-src/Infrastructure/Infrastructure/Common/Extensions/
+src/Infrastructure/Common/Extensions/
 ├── EnumExtensions.cs
 └── RegexExtensions.cs
 
-src/Infrastructure/Infrastructure/FileStorage/
+src/Infrastructure/FileStorage/
 ├── LocalFileStorageService.cs
 └── Startup.cs
 
@@ -1871,7 +1832,7 @@ Files/ (runtime)
 
 ## 12. Next Steps
 
-**Tiếp theo:** [BUILD_21 - Email Service](BUILD_21_Email_Service.md)
+**Tiếp theo:** [BUILD_23 - Email Service](BUILD_23_Email_Service.md)
 
 Trong bước tiếp theo, chúng ta sẽ:
 1. ✅ Tạo `IMailService` interface
