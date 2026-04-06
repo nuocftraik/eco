@@ -201,12 +201,12 @@ nvarchar_500 Url "Menu URL"
 
 ### **2.1. UserUserGroup Entity** ⭐ (NEW - Pure Junction Table)
 
-**File:** `src/Core/Domain/Identity/UserUserGroup.cs`
+**File:** `src/Domain/Identity/UserUserGroup.cs`
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Domain.Identity;
+namespace {ProjectName}.Domain.Identity;
 
 /// <summary>
 /// Junction table: User ↔ UserGroup (Many-to-Many)
@@ -282,12 +282,12 @@ public sealed class UserUserGroup
 
 ### **2.2. UserGroup Entity (Updated)**
 
-**File:** `src/Core/Domain/Identity/UserGroup.cs`
+**File:** `src/Domain/Identity/UserGroup.cs`
 
 ```csharp
 using System.ComponentModel.DataAnnotations;
 
-namespace ECO.WebApi.Domain.Identity;
+namespace {ProjectName}.Domain.Identity;
 
 /// <summary>
 /// User group for authorization purposes only
@@ -435,12 +435,12 @@ public sealed class UserGroup
 
 ### **2.3. ApplicationUser Entity (Updated)**
 
-**File:** `src/Core/Domain/Identity/ApplicationUser.cs`
+**File:** `src/Domain/Identity/ApplicationUser.cs`
 
 ```csharp
 using Microsoft.AspNetCore.Identity;
 
-namespace ECO.WebApi.Domain.Identity;
+namespace {ProjectName}.Domain.Identity;
 
 /// <summary>
 /// Extended IdentityUser with custom fields
@@ -524,11 +524,11 @@ public ICollection<IdentityUserClaim<Guid>> Claims { get; set; } = new List<Iden
 **File:** `src/Infrastructure/Persistence/Configurations/Identity/UserUserGroupConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Identity;
+using {ProjectName}.Domain.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations.Identity;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations.Identity;
 
 /// <summary>
 /// EF Core configuration for UserUserGroup junction table
@@ -586,11 +586,11 @@ public class UserUserGroupConfiguration : IEntityTypeConfiguration<UserUserGroup
 **File:** `src/Infrastructure/Persistence/Configurations/Identity/UserGroupConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Identity;
+using {ProjectName}.Domain.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations.Identity;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations.Identity;
 
 /// <summary>
 /// EF Core configuration for UserGroup entity
@@ -643,11 +643,11 @@ public class UserGroupConfiguration : IEntityTypeConfiguration<UserGroup>
 **File:** `src/Infrastructure/Persistence/Configurations/Identity/ApplicationUserConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Identity;
+using {ProjectName}.Domain.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations.Identity;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations.Identity;
 
 /// <summary>
 /// EF Core configuration for ApplicationUser (extended IdentityUser)
@@ -969,7 +969,7 @@ CREATE TABLE UserUserGroups (
 ```bash
 dotnet ef migrations add Identity_Module_MultiGroup \
   --project ../Infrastructure \
-  --startup-project ../../Host/Host \
+  --startup-project ../../Host \
   --context ApplicationDbContext
 ```
 
