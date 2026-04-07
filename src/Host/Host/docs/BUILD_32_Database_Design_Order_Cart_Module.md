@@ -216,10 +216,10 @@ nvarchar_50 Code UK "Coupon code"
 
 ### 2.1. OrderStatus Enum
 
-**File:** `src/Core/Domain/Enum/OrderStatus.cs`
+**File:** `src/Domain/Enum/OrderStatus.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Enum;
+namespace {ProjectName}.Domain.Enum;
 
 /// <summary>
 /// Order status workflow
@@ -276,10 +276,10 @@ Cancelled       Cancelled
 
 ### 2.2. PaymentMethod Enum
 
-**File:** `src/Core/Domain/Enum/PaymentMethod.cs`
+**File:** `src/Domain/Enum/PaymentMethod.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Enum;
+namespace {ProjectName}.Domain.Enum;
 
 /// <summary>
 /// Payment method types
@@ -322,10 +322,10 @@ public enum PaymentMethod
 
 ### 2.3. PaymentStatus Enum
 
-**File:** `src/Core/Domain/Enum/PaymentStatus.cs`
+**File:** `src/Domain/Enum/PaymentStatus.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Enum;
+namespace {ProjectName}.Domain.Enum;
 
 /// <summary>
 /// Payment transaction status
@@ -365,12 +365,12 @@ public enum PaymentStatus
 
 ### 3.1. Order Entity ⭐⭐⭐
 
-**File:** `src/Core/Domain/Order/Order.cs`
+**File:** `src/Domain/Order/Order.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Enum;
+using {ProjectName}.Domain.Enum;
 
-namespace ECO.WebApi.Domain.Order;
+namespace {ProjectName}.Domain.Order;
 
 /// <summary>
 /// Order aggregate root

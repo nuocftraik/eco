@@ -7,12 +7,12 @@
 
 ## 4. OrderItem Entity (Price Snapshot Strategy) ⭐⭐⭐
 
-**File:** `src/Core/Domain/Order/OrderItem.cs`
+**File:** `src/Domain/Order/OrderItem.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Catalog;
+using {ProjectName}.Domain.Catalog;
 
-namespace ECO.WebApi.Domain.Order;
+namespace {ProjectName}.Domain.Order;
 
 /// <summary>
 /// Order line item with price snapshot
@@ -146,10 +146,10 @@ SnapshotProductName = snapshotProductName;
 
 ### 5.1. Cart Entity ⭐⭐
 
-**File:** `src/Core/Domain/Cart/Cart.cs`
+**File:** `src/Domain/Cart/Cart.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Cart;
+namespace {ProjectName}.Domain.Cart;
 
 /// <summary>
 /// Shopping cart - supports both persistent (UserId) and anonymous (SessionId)
@@ -357,12 +357,12 @@ RemoveItem(variantId);
 
 ### 5.2. CartItem Entity
 
-**File:** `src/Core/Domain/Cart/CartItem.cs`
+**File:** `src/Domain/Cart/CartItem.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Catalog;
+using {ProjectName}.Domain.Catalog;
 
-namespace ECO.WebApi.Domain.Cart;
+namespace {ProjectName}.Domain.Cart;
 
 /// <summary>
 /// Shopping cart line item
@@ -423,10 +423,10 @@ public virtual Variant Variant { get; private set; } = default!;
 
 ## 6. ShippingAddress Entity
 
-**File:** `src/Core/Domain/Order/ShippingAddress.cs`
+**File:** `src/Domain/Order/ShippingAddress.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Order;
+namespace {ProjectName}.Domain.Order;
 
 /// <summary>
 /// Customer shipping address
@@ -542,12 +542,12 @@ public string Country { get; private set; }
 
 ## 7. PaymentTransaction Entity
 
-**File:** `src/Core/Domain/Order/PaymentTransaction.cs`
+**File:** `src/Domain/Order/PaymentTransaction.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Enum;
+using {ProjectName}.Domain.Enum;
 
-namespace ECO.WebApi.Domain.Order;
+namespace {ProjectName}.Domain.Order;
 
 /// <summary>
 /// Payment transaction record
@@ -641,12 +641,12 @@ OrderId = orderId;
 
 ## 8. OrderStatusHistory Entity
 
-**File:** `src/Core/Domain/Order/OrderStatusHistory.cs`
+**File:** `src/Domain/Order/OrderStatusHistory.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Enum;
+using {ProjectName}.Domain.Enum;
 
-namespace ECO.WebApi.Domain.Order;
+namespace {ProjectName}.Domain.Order;
 
 /// <summary>
 /// Order status change audit trail
@@ -699,12 +699,12 @@ public class OrderStatusHistory : BaseEntity
 
 ### 9.1. Coupon Entity
 
-**File:** `src/Core/Domain/Order/Coupon.cs`
+**File:** `src/Domain/Order/Coupon.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Enum;
+using {ProjectName}.Domain.Enum;
 
-namespace ECO.WebApi.Domain.Order;
+namespace {ProjectName}.Domain.Order;
 
 /// <summary>
 /// Discount coupon
@@ -788,12 +788,12 @@ public enum DiscountType
 
 ### 9.2. OrderCoupon Entity (Junction)
 
-**File:** `src/Core/Domain/Order/OrderCoupon.cs`
+**File:** `src/Domain/Order/OrderCoupon.cs`
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Domain.Order;
+namespace {ProjectName}.Domain.Order;
 
 [PrimaryKey(nameof(OrderId), nameof(CouponId))]
 public class OrderCoupon
@@ -825,11 +825,11 @@ public class OrderCoupon
 **File:** `src/Infrastructure/Persistence/Configurations/Order/OrderConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Order;
+using {ProjectName}.Domain.Order;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations.Order;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations.Order;
 
 public class OrderConfiguration : IEntityTypeConfiguration<Order>
 {
@@ -895,11 +895,11 @@ builder.HasIndex(o => o.UserId);
 **File:** `src/Infrastructure/Persistence/Configurations/Order/OrderItemConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Order;
+using {ProjectName}.Domain.Order;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations.Order;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations.Order;
 
 public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
 {
@@ -941,11 +941,11 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
 **File:** `src/Infrastructure/Persistence/Configurations/Cart/CartConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Cart;
+using {ProjectName}.Domain.Cart;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations.Cart;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations.Cart;
 
 public class CartConfiguration : IEntityTypeConfiguration<Cart>
 {
@@ -987,10 +987,10 @@ public class CartConfiguration : IEntityTypeConfiguration<Cart>
 
 ### 11.1. Domain Events
 
-**File:** `src/Core/Domain/Order/Events/OrderEvents.cs`
+**File:** `src/Domain/Order/Events/OrderEvents.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Order.Events;
+namespace {ProjectName}.Domain.Order.Events;
 
 public record OrderCreatedEvent(Guid OrderId) : DomainEvent;
 public record OrderConfirmedEvent(Guid OrderId) : DomainEvent;
@@ -1001,13 +1001,13 @@ public record OrderCancelledEvent(Guid OrderId, string Reason) : DomainEvent;
 
 ### 11.2. Event Handler Example
 
-**File:** `src/Core/Application/Order/EventHandlers/OrderConfirmedEventHandler.cs`
+**File:** `src/Application/Order/EventHandlers/OrderConfirmedEventHandler.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Order.Events;
+using {ProjectName}.Domain.Order.Events;
 using MediatR;
 
-namespace ECO.WebApi.Application.Order.EventHandlers;
+namespace {ProjectName}.Application.Order.EventHandlers;
 
 public class OrderConfirmedEventHandler : INotificationHandler<OrderConfirmedEvent>
 {
@@ -1441,5 +1441,5 @@ public PaymentTransaction? GetSuccessfulPayment() // Get latest paid transaction
 
 **Document Version:** 1.1 (Improved - Sliding Expiration + Payment Helpers)  
 **Last Updated:** 2025-02-01  
-**Author:** ECO.WebApi Development Team  
+**Author:** {ProjectName} Development Team  
 **Status:** ✅ Production-Ready (Research-Based Design)

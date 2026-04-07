@@ -32,10 +32,10 @@ T-Shirt Product:
 
 ### 4.2. AttributeType Enum
 
-**File:** `src/Core/Domain/Enum/AttributeType.cs`
+**File:** `src/Domain/Enum/AttributeType.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Enum;
+namespace {ProjectName}.Domain.Enum;
 
 /// <summary>
 /// Loại hiển thị của attribute
@@ -63,12 +63,12 @@ public enum AttributeType
 
 ### 4.3. Attribute Entity
 
-**File:** `src/Core/Domain/Catalog/Attributes/Attribute.cs`
+**File:** `src/Domain/Catalog/Attributes/Attribute.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Enum;
+using {ProjectName}.Domain.Enum;
 
-namespace ECO.WebApi.Domain.Catalog.Attributes;
+namespace {ProjectName}.Domain.Catalog.Attributes;
 
 /// <summary>
 /// Product attribute (e.g., Size, Color, Material)
@@ -119,10 +119,10 @@ public class Attribute : BaseEntity
 
 ### 4.4. AttributeValue Entity
 
-**File:** `src/Core/Domain/Catalog/Attributes/AttributeValue.cs`
+**File:** `src/Domain/Catalog/Attributes/AttributeValue.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Catalog.Attributes;
+namespace {ProjectName}.Domain.Catalog.Attributes;
 
 /// <summary>
 /// Value for an attribute (e.g., "Small", "Red", "Cotton")
@@ -153,13 +153,13 @@ public class AttributeValue : BaseEntity
 
 ### 4.5. VariantAttributeValue Entity (Junction)
 
-**File:** `src/Core/Domain/Catalog/VariantAttributeValue.cs`
+**File:** `src/Domain/Catalog/VariantAttributeValue.cs`
 
 ```csharp
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Domain.Catalog;
+namespace {ProjectName}.Domain.Catalog;
 
 /// <summary>
 /// Junction table: Variant ↔ AttributeValue (Many-to-Many)
@@ -192,11 +192,11 @@ public class VariantAttributeValue
 **File:** `src/Infrastructure/Persistence/Configurations/Catalog/AttributeConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Catalog.Attributes;
+using {ProjectName}.Domain.Catalog.Attributes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations.Catalog;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations.Catalog;
 
 public class AttributeConfiguration : IEntityTypeConfiguration<Attribute>
 {
@@ -229,11 +229,11 @@ public class AttributeConfiguration : IEntityTypeConfiguration<Attribute>
 **File:** `src/Infrastructure/Persistence/Configurations/Catalog/AttributeValueConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Catalog.Attributes;
+using {ProjectName}.Domain.Catalog.Attributes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations.Catalog;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations.Catalog;
 
 public class AttributeValueConfiguration : IEntityTypeConfiguration<AttributeValue>
 {
@@ -268,10 +268,10 @@ public class AttributeValueConfiguration : IEntityTypeConfiguration<AttributeVal
 
 ### 5.1. Tag Entity
 
-**File:** `src/Core/Domain/Catalog/Tag.cs`
+**File:** `src/Domain/Catalog/Tag.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Catalog;
+namespace {ProjectName}.Domain.Catalog;
 
 /// <summary>
 /// Product tag (flat structure, no hierarchy)
@@ -310,12 +310,12 @@ public class Tag : BaseEntity
 
 ### 5.2. ProductTag Entity (Junction)
 
-**File:** `src/Core/Domain/Catalog/ProductTag.cs`
+**File:** `src/Domain/Catalog/ProductTag.cs`
 
 ```csharp
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Domain.Catalog;
+namespace {ProjectName}.Domain.Catalog;
 
 /// <summary>
 /// Junction table: Product ↔ Tag (Many-to-Many)
@@ -348,11 +348,11 @@ public class ProductTag
 **File:** `src/Infrastructure/Persistence/Configurations/Catalog/TagConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Catalog;
+using {ProjectName}.Domain.Catalog;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations.Catalog;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations.Catalog;
 
 public class TagConfiguration : IEntityTypeConfiguration<Tag>
 {
@@ -383,10 +383,10 @@ public class TagConfiguration : IEntityTypeConfiguration<Tag>
 
 ### 6.1. UserReview Entity
 
-**File:** `src/Core/Domain/Catalog/UserReview.cs`
+**File:** `src/Domain/Catalog/UserReview.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Catalog;
+namespace {ProjectName}.Domain.Catalog;
 
 /// <summary>
 /// Product review by user
@@ -438,11 +438,11 @@ Content = content;
 **File:** `src/Infrastructure/Persistence/Configurations/Catalog/UserReviewConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Catalog;
+using {ProjectName}.Domain.Catalog;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations.Catalog;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations.Catalog;
 
 public class UserReviewConfiguration : IEntityTypeConfiguration<UserReview>
 {
@@ -503,11 +503,11 @@ src/Infrastructure/Persistence/Configurations/Catalog/
 **File:** `src/Infrastructure/Persistence/Configurations/Catalog/ProductCategoryConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Catalog;
+using {ProjectName}.Domain.Catalog;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations.Catalog;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations.Catalog;
 
 public class ProductCategoryConfiguration : IEntityTypeConfiguration<ProductCategory>
 {
@@ -545,11 +545,11 @@ public class ProductCategoryConfiguration : IEntityTypeConfiguration<ProductCate
 **File:** `src/Infrastructure/Persistence/Configurations/Catalog/VariantAttributeValueConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Catalog;
+using {ProjectName}.Domain.Catalog;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations.Catalog;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations.Catalog;
 
 /// <summary>
 /// EF Core configuration for VariantAttributeValue junction table
@@ -887,5 +887,5 @@ private Variant CreateVariantWithAttributes(string sku, decimal price, int quant
 
 **Document Version:** 2.0 (Variant-First Design)  
 **Last Updated:** 2025-02-01  
-**Author:** ECO.WebApi Development Team  
+**Author:** {ProjectName} Development Team  
 **Status:** ✅ Production-Ready

@@ -208,10 +208,10 @@ uniqueidentifier ProductId PK "Composite PK - Product reference"
 
 ### 2.1. ProductType Enum
 
-**File:** `src/Core/Domain/Enum/ProductType.cs`
+**File:** `src/Domain/Enum/ProductType.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Enum;
+namespace {ProjectName}.Domain.Enum;
 
 /// <summary>
 /// Loại sản phẩm
@@ -265,12 +265,12 @@ NEW: Simple Product → 1 Default Variant → Price/Quantity in Variant table
 
 ### 3.1. Product Entity ⭐
 
-**File:** `src/Core/Domain/Catalog/Product.cs`
+**File:** `src/Domain/Catalog/Product.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Enum;
+using {ProjectName}.Domain.Enum;
 
-namespace ECO.WebApi.Domain.Catalog;
+namespace {ProjectName}.Domain.Catalog;
 
 /// <summary>
 /// Product entity - Marketing container ONLY
@@ -427,12 +427,12 @@ public class Product : AuditableEntity, IAggregateRoot
 
 ### 3.2. Variant Entity ⭐
 
-**File:** `src/Core/Domain/Catalog/Variant.cs`
+**File:** `src/Domain/Catalog/Variant.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Enum;
+using {ProjectName}.Domain.Enum;
 
-namespace ECO.WebApi.Domain.Catalog;
+namespace {ProjectName}.Domain.Catalog;
 
 /// <summary>
 /// Product variant - SELLABLE UNIT
@@ -602,10 +602,10 @@ throw new ArgumentException("Compare price must be >= price", nameof(comparePric
 
 ### 3.3. Category Entity (Hierarchical) ⭐
 
-**File:** `src/Core/Domain/Catalog/Category.cs`
+**File:** `src/Domain/Catalog/Category.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Catalog;
+namespace {ProjectName}.Domain.Catalog;
 
 /// <summary>
 /// Category entity with hierarchical structure using Materialized Path pattern
@@ -1006,11 +1006,11 @@ await dbContext.SaveChangesAsync();
 **File:** `src/Infrastructure/Persistence/Configurations/Catalog/CategoryConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Catalog;
+using {ProjectName}.Domain.Catalog;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations.Catalog;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations.Catalog;
 
 public class CategoryConfiguration : IEntityTypeConfiguration<Category>
 {
@@ -1100,5 +1100,5 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
 
 **Document Version:** 2.0 (Variant-First Design)  
 **Last Updated:** 2025-02-01  
-**Author:** ECO.WebApi Development Team  
+**Author:** {ProjectName} Development Team  
 **Status:** ✅ Production-Ready (Part 1 of 2)
