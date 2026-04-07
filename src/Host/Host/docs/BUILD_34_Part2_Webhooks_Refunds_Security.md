@@ -8,12 +8,12 @@
 
 ## 4. PaymentWebhook Entity (Transaction Data) ⭐⭐
 
-**File:** `src/Core/Domain/Payment/PaymentWebhook.cs`
+**File:** `src/Domain/Payment/PaymentWebhook.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Enum;
+using {ProjectName}.Domain.Enum;
 
-namespace ECO.WebApi.Domain.Payment;
+namespace {ProjectName}.Domain.Payment;
 
 /// <summary>
 /// Payment webhook callbacks from gateways (Transaction Data)
@@ -185,12 +185,12 @@ Guid paymentProviderId,
 
 ## 5. Refund Entity (Transaction Data) ⭐⭐
 
-**File:** `src/Core/Domain/Payment/Refund.cs`
+**File:** `src/Domain/Payment/Refund.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Enum;
+using {ProjectName}.Domain.Enum;
 
-namespace ECO.WebApi.Domain.Payment;
+namespace {ProjectName}.Domain.Payment;
 
 /// <summary>
 /// Payment refund (Transaction Data)
@@ -370,14 +370,14 @@ var remaining = transaction.Amount - totalRefunded;  // ₫20,000
 
 ### 6.1. PaymentProviderConfiguration
 
-**File:** `src/Infrastructure/Infrastructure/Persistence/Configurations/PaymentProviderConfiguration.cs`
+**File:** `src/Infrastructure/Persistence/Configurations/PaymentProviderConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Payment;
+using {ProjectName}.Domain.Payment;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations;
 
 public class PaymentProviderConfiguration : IEntityTypeConfiguration<PaymentProvider>
 {
@@ -445,14 +445,14 @@ public class PaymentProviderConfiguration : IEntityTypeConfiguration<PaymentProv
 
 ### 6.2. PaymentTransactionConfiguration
 
-**File:** `src/Infrastructure/Infrastructure/Persistence/Configurations/PaymentTransactionConfiguration.cs`
+**File:** `src/Infrastructure/Persistence/Configurations/PaymentTransactionConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Payment;
+using {ProjectName}.Domain.Payment;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations;
 
 public class PaymentTransactionConfiguration : IEntityTypeConfiguration<PaymentTransaction>
 {
@@ -545,14 +545,14 @@ builder.Property(t => t.PaymentProviderId)
 
 ### 6.3. PaymentWebhookConfiguration
 
-**File:** `src/Infrastructure/Infrastructure/Persistence/Configurations/PaymentWebhookConfiguration.cs`
+**File:** `src/Infrastructure/Persistence/Configurations/PaymentWebhookConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Payment;
+using {ProjectName}.Domain.Payment;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations;
 
 public class PaymentWebhookConfiguration : IEntityTypeConfiguration<PaymentWebhook>
 {
@@ -613,14 +613,14 @@ builder.HasIndex(w => w.PaymentProviderId)
 
 ### 6.4. RefundConfiguration
 
-**File:** `src/Infrastructure/Infrastructure/Persistence/Configurations/RefundConfiguration.cs`
+**File:** `src/Infrastructure/Persistence/Configurations/RefundConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Payment;
+using {ProjectName}.Domain.Payment;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations;
 
 public class RefundConfiguration : IEntityTypeConfiguration<Refund>
 {
@@ -681,14 +681,14 @@ public class RefundConfiguration : IEntityTypeConfiguration<Refund>
 
 ### 6.5. PaymentMethodConfiguration
 
-**File:** `src/Infrastructure/Infrastructure/Persistence/Configurations/PaymentMethodConfiguration.cs`
+**File:** `src/Infrastructure/Persistence/Configurations/PaymentMethodConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Payment;
+using {ProjectName}.Domain.Payment;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations;
 
 public class PaymentMethodConfiguration : IEntityTypeConfiguration<PaymentMethod>
 {
@@ -765,7 +765,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace ECO.WebApi.Migrators.MSSQL.Migrations
+namespace {ProjectName}.Migrators.MSSQL.Migrations
 {
     /// <inheritdoc />
     public partial class AddPaymentGatewayTables : Migration
@@ -1051,7 +1051,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Web;
 
-namespace ECO.WebApi.Infrastructure.Payment.VNPay;
+namespace {ProjectName}.Infrastructure.Payment.VNPay;
 
 public class VNPayService : IPaymentGatewayService
 {
@@ -1262,7 +1262,7 @@ public async Task<RefundResult> ProcessRefundAsync(Refund refund)
 using System.Security.Cryptography;
 using System.Text;
 
-namespace ECO.WebApi.Infrastructure.Payment.Momo;
+namespace {ProjectName}.Infrastructure.Payment.Momo;
 
 public class MomoService : IPaymentGatewayService
 {
@@ -1417,7 +1417,7 @@ public record MomoCallbackRequest(
 using System.Security.Cryptography;
 using System.Text;
 
-namespace ECO.WebApi.Infrastructure.Payment.ZaloPay;
+namespace {ProjectName}.Infrastructure.Payment.ZaloPay;
 
 public class ZaloPayService : IPaymentGatewayService
 {
@@ -1530,7 +1530,7 @@ public class ZaloPayService : IPaymentGatewayService
 **QR Code Generation Example:**
 
 ```csharp
-namespace ECO.WebApi.Infrastructure.Payment.VietQR;
+namespace {ProjectName}.Infrastructure.Payment.VietQR;
 
 public class VietQRService : IPaymentGatewayService
 {
@@ -1583,14 +1583,14 @@ public class VietQRService : IPaymentGatewayService
 
 ### 9.1. Webhook Controller
 
-**File:** `src/Host/Host/Controllers/WebhooksController.cs`
+**File:** `src/Host/Controllers/WebhooksController.cs`
 
 ```csharp
-using ECO.WebApi.Application.Payment.Commands;
+using {ProjectName}.Application.Payment.Commands;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers;
+namespace {ProjectName}.Host.Controllers;
 
 [ApiController]
 [Route("api/webhooks")]
@@ -1690,11 +1690,11 @@ public WebhooksController(
 ### 9.2. Webhook Processing Handler (MediatR)
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Domain.Payment;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Domain.Payment;
 using MediatR;
 
-namespace ECO.WebApi.Application.Payment.Commands;
+namespace {ProjectName}.Application.Payment.Commands;
 
 public record ProcessVNPayWebhookCommand(
     Dictionary<string, string> QueryParams) : IRequest<WebhookProcessResult>;

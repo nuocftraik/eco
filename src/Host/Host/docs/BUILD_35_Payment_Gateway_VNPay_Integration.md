@@ -64,13 +64,13 @@ Tài liệu này hướng dẫn **tích hợp VNPay Payment Gateway** theo resea
 
 **Làm gì:** Seed VNPay provider vào database (theo BUILD_34 pattern).
 
-**File:** `src/Migrators/Migrators.MSSQL/Seeding/PaymentProviderSeeder.cs`
+**File:** `src/Migrators.MSSQL/Seeding/PaymentProviderSeeder.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Payment;
+using {ProjectName}.Domain.Payment;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Migrators.MSSQL.Seeding;
+namespace {ProjectName}.Migrators.MSSQL.Seeding;
 
 public class PaymentProviderSeeder
 {
@@ -112,10 +112,10 @@ configuration: @"{
 
 **Làm gì:** DTO để deserialize VNPay configuration từ PaymentProvider entity.
 
-**File:** `src/Infrastructure/Infrastructure/Payment/VNPay/VNPaySettings.cs`
+**File:** `src/Infrastructure/Payment/VNPay/VNPaySettings.cs`
 
 ```csharp
-namespace ECO.WebApi.Infrastructure.Payment.VNPay;
+namespace {ProjectName}.Infrastructure.Payment.VNPay;
 
 /// <summary>
 /// VNPay payment gateway settings (deserialized from PaymentProvider.Configuration)
@@ -167,7 +167,7 @@ public class VNPaySettings
 
 ### Bước 2.3: Application URLs Configuration
 
-**File:** `src/Host/Host/Configurations/payment.json`
+**File:** `src/Host/Configurations/payment.json`
 
 ```json
 {
@@ -189,10 +189,10 @@ public class VNPaySettings
 
 ### Bước 3.1: IVNPayService Interface
 
-**File:** `src/Core/Application/Common/Interfaces/IVNPayService.cs`
+**File:** `src/Application/Common/Interfaces/IVNPayService.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Interfaces;
+namespace {ProjectName}.Application.Common.Interfaces;
 
 /// <summary>
 /// VNPay payment gateway service (follows BUILD_34 pattern)
@@ -234,21 +234,21 @@ public record VNPayIpnResponse(
 
 ### Bước 3.2: VNPayService Implementation ⭐⭐⭐
 
-**File:** `src/Infrastructure/Infrastructure/Payment/VNPay/VNPayService.cs`
+**File:** `src/Infrastructure/Payment/VNPay/VNPayService.cs`
 
 ```csharp
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Domain.Payment;
-using ECO.WebApi.Domain.Enum;
-using ECO.WebApi.Shared.Events;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Domain.Payment;
+using {ProjectName}.Domain.Enum;
+using {ProjectName}.Shared.Events;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace ECO.WebApi.Infrastructure.Payment.VNPay;
+namespace {ProjectName}.Infrastructure.Payment.VNPay;
 
 public class VNPayService : IVNPayService
 {
@@ -532,13 +532,13 @@ await _webhookRepository.UpdateAsync(webhook, cancellationToken);
 
 ### Bước 4.1: PaymentTransactionByIdempotencyKeySpec
 
-**File:** `src/Core/Application/Payment/Specifications/PaymentTransactionByIdempotencyKeySpec.cs`
+**File:** `src/Application/Payment/Specifications/PaymentTransactionByIdempotencyKeySpec.cs`
 
 ```csharp
 using Ardalis.Specification;
-using ECO.WebApi.Domain.Payment;
+using {ProjectName}.Domain.Payment;
 
-namespace ECO.WebApi.Application.Payment.Specifications;
+namespace {ProjectName}.Application.Payment.Specifications;
 
 public class PaymentTransactionByIdempotencyKeySpec : Specification<PaymentTransaction>
 {
@@ -553,13 +553,13 @@ public class PaymentTransactionByIdempotencyKeySpec : Specification<PaymentTrans
 
 ### Bước 4.2: PaymentProviderByCodeSpec
 
-**File:** `src/Core/Application/Payment/Specifications/PaymentProviderByCodeSpec.cs`
+**File:** `src/Application/Payment/Specifications/PaymentProviderByCodeSpec.cs`
 
 ```csharp
 using Ardalis.Specification;
-using ECO.WebApi.Domain.Payment;
+using {ProjectName}.Domain.Payment;
 
-namespace ECO.WebApi.Application.Payment.Specifications;
+namespace {ProjectName}.Application.Payment.Specifications;
 
 public class PaymentProviderByCodeSpec : Specification<PaymentProvider>
 {
@@ -576,14 +576,14 @@ public class PaymentProviderByCodeSpec : Specification<PaymentProvider>
 
 ## 5. Order Paid Event Handler
 
-**File:** `src/Core/Application/Orders/EventHandlers/OrderPaidEventHandler.cs`
+**File:** `src/Application/Orders/EventHandlers/OrderPaidEventHandler.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Shared.Events;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Shared.Events;
 using MediatR;
 
-namespace ECO.WebApi.Application.Orders.EventHandlers;
+namespace {ProjectName}.Application.Orders.EventHandlers;
 
 public class OrderPaidEventHandler : INotificationHandler<OrderPaidEvent>
 {
@@ -621,14 +621,14 @@ public class OrderPaidEventHandler : INotificationHandler<OrderPaidEvent>
 
 ### Bước 6.1: WebhooksController (VNPay IPN)
 
-**File:** `src/Host/Host/Controllers/WebhooksController.cs`
+**File:** `src/Host/Controllers/WebhooksController.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
+using {ProjectName}.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers;
+namespace {ProjectName}.Host.Controllers;
 
 [ApiController]
 [Route("api/webhooks")]
@@ -678,15 +678,15 @@ public class WebhooksController : ControllerBase
 
 ### Bước 6.2: PaymentController (Create Payment)
 
-**File:** `src/Host/Host/Controllers/PaymentController.cs`
+**File:** `src/Host/Controllers/PaymentController.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Infrastructure.Auth.Permissions;
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Infrastructure.Auth.Permissions;
+using {ProjectName}.Shared.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers;
+namespace {ProjectName}.Host.Controllers;
 
 [ApiController]
 [Route("api/payment")]
@@ -707,7 +707,7 @@ public class PaymentController : ControllerBase
     /// Create VNPay payment URL for order
  /// </summary>
     [HttpPost("vnpay/create")]
-    [MustHavePermission(ECOAction.Create, ECOFunction.Payments)]
+    [MustHavePermission({ProjectName}Action.Create, {ProjectName}Function.Payments)]
     [ProducesResponseType(typeof(CreatePaymentResponse), StatusCodes.Status200OK)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -1114,3 +1114,5 @@ WHERE CreatedAt >= DATEADD(HOUR, -24, GETUTCDATE());
 - **BUILD_39:** Refund Implementation (uses BUILD_34 Refund entity)
 
 ---
+
+**Author:** {ProjectName} Development Team

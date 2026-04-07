@@ -326,10 +326,10 @@ erDiagram
 
 ### 2.1. PaymentStatus Enum (Extended from BUILD_32)
 
-**File:** `src/Core/Domain/Enum/PaymentStatus.cs` (Updated)
+**File:** `src/Domain/Enum/PaymentStatus.cs` (Updated)
 
 ```csharp
-namespace ECO.WebApi.Domain.Enum;
+namespace {ProjectName}.Domain.Enum;
 
 /// <summary>
 /// Payment transaction status
@@ -386,10 +386,10 @@ Expired
 
 ### 2.2. PaymentMethod Enum (Vietnam-Optimized)
 
-**File:** `src/Core/Domain/Enum/PaymentMethod.cs` (Updated)
+**File:** `src/Domain/Enum/PaymentMethod.cs` (Updated)
 
 ```csharp
-namespace ECO.WebApi.Domain.Enum;
+namespace {ProjectName}.Domain.Enum;
 
 /// <summary>
 /// Payment methods (Vietnam market focus)
@@ -447,10 +447,10 @@ public enum PaymentMethod
 
 ### 2.3. RefundStatus Enum
 
-**File:** `src/Core/Domain/Enum/RefundStatus.cs`
+**File:** `src/Domain/Enum/RefundStatus.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Enum;
+namespace {ProjectName}.Domain.Enum;
 
 /// <summary>
 /// Refund status
@@ -478,10 +478,10 @@ public enum RefundStatus
 
 ### 2.4. PaymentMethodType Enum (Vietnam Context)
 
-**File:** `src/Core/Domain/Enum/PaymentMethodType.cs`
+**File:** `src/Domain/Enum/PaymentMethodType.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Enum;
+namespace {ProjectName}.Domain.Enum;
 
 /// <summary>
 /// Saved payment method types (for PaymentMethods entity - Master Data)
@@ -526,10 +526,10 @@ CreditCard = 2,
 
 ### 3.1. PaymentProvider Entity ⭐⭐
 
-**File:** `src/Core/Domain/Payment/PaymentProvider.cs`
+**File:** `src/Domain/Payment/PaymentProvider.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Payment;
+namespace {ProjectName}.Domain.Payment;
 
 /// <summary>
 /// Payment gateway provider (VNPay, Momo, ZaloPay, VietQR, ShopeePay)
@@ -667,10 +667,10 @@ public static class PaymentProviderSeeds
 
 ### 3.2. PaymentTransaction Entity (Extended from BUILD_32) ⭐⭐
 
-**File:** `src/Core/Domain/Payment/PaymentTransaction.cs`
+**File:** `src/Domain/Payment/PaymentTransaction.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Payment;
+namespace {ProjectName}.Domain.Payment;
 
 /// <summary>
 /// Payment transaction (actual payment attempts)
@@ -824,12 +824,12 @@ public class PaymentTransaction : BaseEntity
 
 ### 3.3. PaymentMethod Entity (Master Data) ⭐⭐
 
-**File:** `src/Core/Domain/Payment/PaymentMethod.cs`
+**File:** `src/Domain/Payment/PaymentMethod.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Enum;
+using {ProjectName}.Domain.Enum;
 
-namespace ECO.WebApi.Domain.Payment;
+namespace {ProjectName}.Domain.Payment;
 
 /// <summary>
 /// Customer saved payment methods (Master Data - NOT transaction)
@@ -1126,5 +1126,5 @@ Console.WriteLine(bankMethod.GetDisplayName()); // "VCB *5678"
 
 **Document Version:** 2.0 (Vietnam Local Payment Ecosystem)  
 **Last Updated:** 2025-02-01  
-**Author:** ECO.WebApi Development Team  
+**Author:** {ProjectName} Development Team  
 **Status:** ✅ Production-Ready (Part 1 of 2) - Vietnam Focus

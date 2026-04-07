@@ -96,10 +96,10 @@ int SoldQuantity "Quantity sold (incremented on order confirm)"
 
 ### 2.1. Inventory Entity (All-in-One)
 
-**File:** `src/Core/Domain/Inventory/Inventory.cs`
+**File:** `src/Domain/Inventory/Inventory.cs`
 
 ```csharp
-namespace ECO.WebApi.Domain.Inventory;
+namespace {ProjectName}.Domain.Inventory;
 
 /// <summary>
 /// Inventory tracking for digital products
@@ -351,11 +351,11 @@ public async Task RefundOrderAsync(Guid orderId, CancellationToken ct)
 **File:** `src/Infrastructure/Persistence/Configurations/Inventory/InventoryConfiguration.cs`
 
 ```csharp
-using ECO.WebApi.Domain.Inventory;
+using {ProjectName}.Domain.Inventory;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace ECO.WebApi.Infrastructure.Persistence.Configurations.Inventory;
+namespace {ProjectName}.Infrastructure.Persistence.Configurations.Inventory;
 
 public class InventoryConfiguration : IEntityTypeConfiguration<Inventory>
 {
@@ -396,10 +396,10 @@ builder.HasQueryFilter(i => i.DeletedOn == null);
 
 ### 5.1. IInventoryRepository
 
-**File:** `src/Core/Application/Common/Interfaces/IInventoryRepository.cs`
+**File:** `src/Application/Common/Interfaces/IInventoryRepository.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Interfaces;
+namespace {ProjectName}.Application.Common.Interfaces;
 
 public interface IInventoryRepository : IRepository<Inventory>
 {
@@ -575,5 +575,5 @@ var totalRevenue = await _context.Inventory
 
 **Document Version:** 2.0 (Single Table - Ultra-Simplified)  
 **Last Updated:** 2025-02-01  
-**Author:** ECO.WebApi Development Team  
+**Author:** {ProjectName} Development Team  
 **Status:** ✅ Production-Ready (Complete - No Part 2 Needed!)

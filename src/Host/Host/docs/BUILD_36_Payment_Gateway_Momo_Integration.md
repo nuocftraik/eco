@@ -90,13 +90,13 @@ Tài liệu này hướng dẫn **tích hợp Momo Payment Gateway** theo resear
 
 **Làm gì:** Seed Momo provider vào database (theo BUILD_34 pattern).
 
-**File:** `src/Migrators/Migrators.MSSQL/Seeding/PaymentProviderSeeder.cs` (Update)
+**File:** `src/Migrators.MSSQL/Seeding/PaymentProviderSeeder.cs` (Update)
 
 ```csharp
-using ECO.WebApi.Domain.Payment;
+using {ProjectName}.Domain.Payment;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Migrators.MSSQL.Seeding;
+namespace {ProjectName}.Migrators.MSSQL.Seeding;
 
 public class PaymentProviderSeeder
 {
@@ -145,10 +145,10 @@ public class PaymentProviderSeeder
 
 **Làm gì:** DTO để deserialize Momo configuration từ PaymentProvider entity.
 
-**File:** `src/Infrastructure/Infrastructure/Payment/Momo/MomoSettings.cs`
+**File:** `src/Infrastructure/Payment/Momo/MomoSettings.cs`
 
 ```csharp
-namespace ECO.WebApi.Infrastructure.Payment.Momo;
+namespace {ProjectName}.Infrastructure.Payment.Momo;
 
 /// <summary>
 /// Momo payment gateway settings (deserialized from PaymentProvider.Configuration)
@@ -207,7 +207,7 @@ public class MomoSettings
 
 ### Bước 2.3: Application URLs Configuration
 
-**File:** `src/Host/Host/Configurations/payment.json`
+**File:** `src/Host/Configurations/payment.json`
 
 ```json
 {
@@ -236,12 +236,12 @@ public class MomoSettings
 
 ### Bước 3.1: Momo Request DTOs
 
-**File:** `src/Infrastructure/Infrastructure/Payment/Momo/Dtos/MomoPaymentRequest.cs`
+**File:** `src/Infrastructure/Payment/Momo/Dtos/MomoPaymentRequest.cs`
 
 ```csharp
 using System.Text.Json.Serialization;
 
-namespace ECO.WebApi.Infrastructure.Payment.Momo.Dtos;
+namespace {ProjectName}.Infrastructure.Payment.Momo.Dtos;
 
 /// <summary>
 /// Momo payment request (sent to Momo API)
@@ -252,10 +252,10 @@ public class MomoPaymentRequest
   public string PartnerCode { get; set; } = default!;
     
     [JsonPropertyName("partnerName")]
-    public string PartnerName { get; set; } = "ECO WebApi";
+    public string PartnerName { get; set; } = "{ProjectName}";
     
   [JsonPropertyName("storeId")]
- public string StoreId { get; set; } = "ECO_STORE";
+ public string StoreId { get; set; } = "{ProjectName}_STORE";
     
     [JsonPropertyName("requestId")]
     public string RequestId { get; set; } = default!; // Our IdempotencyKey
@@ -293,12 +293,12 @@ public string OrderInfo { get; set; } = default!;
 
 ### Bước 3.2: Momo Response DTOs
 
-**File:** `src/Infrastructure/Infrastructure/Payment/Momo/Dtos/MomoPaymentResponse.cs`
+**File:** `src/Infrastructure/Payment/Momo/Dtos/MomoPaymentResponse.cs`
 
 ```csharp
 using System.Text.Json.Serialization;
 
-namespace ECO.WebApi.Infrastructure.Payment.Momo.Dtos;
+namespace {ProjectName}.Infrastructure.Payment.Momo.Dtos;
 
 /// <summary>
 /// Momo payment response (from Momo API)
@@ -344,12 +344,12 @@ public class MomoPaymentResponse
 
 ### Bước 3.3: Momo IPN DTO
 
-**File:** `src/Infrastructure/Infrastructure/Payment/Momo/Dtos/MomoIpnRequest.cs`
+**File:** `src/Infrastructure/Payment/Momo/Dtos/MomoIpnRequest.cs`
 
 ```csharp
 using System.Text.Json.Serialization;
 
-namespace ECO.WebApi.Infrastructure.Payment.Momo.Dtos;
+namespace {ProjectName}.Infrastructure.Payment.Momo.Dtos;
 
 /// <summary>
 /// Momo IPN request (sent by Momo to our webhook endpoint)
@@ -403,12 +403,12 @@ public class MomoIpnRequest
 
 ### Bước 4.1: IMomoService Interface
 
-**File:** `src/Core/Application/Common/Interfaces/IMomoService.cs`
+**File:** `src/Application/Common/Interfaces/IMomoService.cs`
 
 ```csharp
-using ECO.WebApi.Infrastructure.Payment.Momo.Dtos;
+using {ProjectName}.Infrastructure.Payment.Momo.Dtos;
 
-namespace ECO.WebApi.Application.Common.Interfaces;
+namespace {ProjectName}.Application.Common.Interfaces;
 
 /// <summary>
 /// Momo e-wallet payment service (follows BUILD_34 pattern)
@@ -454,21 +454,21 @@ public record MomoIpnResponse(
 
 ### Bước 4.2: MomoService Implementation ⭐⭐⭐
 
-**File:** `src/Infrastructure/Infrastructure/Payment/Momo/MomoService.cs`
+**File:** `src/Infrastructure/Payment/Momo/MomoService.cs`
 
 ```csharp
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Domain.Payment;
-using ECO.WebApi.Domain.Enum;
-using ECO.WebApi.Infrastructure.Payment.Momo.Dtos;
-using ECO.WebApi.Shared.Events;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Domain.Payment;
+using {ProjectName}.Domain.Enum;
+using {ProjectName}.Infrastructure.Payment.Momo.Dtos;
+using {ProjectName}.Shared.Events;
 using Microsoft.Extensions.Logging;
 
-namespace ECO.WebApi.Infrastructure.Payment.Momo;
+namespace {ProjectName}.Infrastructure.Payment.Momo;
 
 public class MomoService : IMomoService
 {
@@ -808,7 +808,7 @@ $"&resultCode={ipn.ResultCode}" +
 
 ### Bước 5.1: Extend PaymentTransaction Entity
 
-**File:** `src/Core/Domain/Payment/PaymentTransaction.cs` (Update)
+**File:** `src/Domain/Payment/PaymentTransaction.cs` (Update)
 
 ```csharp
 // Add these methods to PaymentTransaction class
@@ -847,10 +847,10 @@ public void SetRawResponse(string rawResponse)
 
 ### Bước 5.2: Extend PaymentWebhook Entity
 
-**File:** `src/Core/Domain/Payment/PaymentWebhook.cs` (Create if not exists)
+**File:** `src/Domain/Payment/PaymentWebhook.cs` (Create if not exists)
 
 ```csharp
-namespace ECO.WebApi.Domain.Payment;
+namespace {ProjectName}.Domain.Payment;
 
 public class PaymentWebhook : BaseEntity
 {
@@ -908,15 +908,15 @@ public PaymentWebhook(
 
 ### Bước 6.1: Update WebhooksController
 
-**File:** `src/Host/Host/Controllers/WebhooksController.cs` (Update)
+**File:** `src/Host/Controllers/WebhooksController.cs` (Update)
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Infrastructure.Payment.Momo.Dtos;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Infrastructure.Payment.Momo.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers;
+namespace {ProjectName}.Host.Controllers;
 
 [ApiController]
 [Route("api/webhooks")]
@@ -976,15 +976,15 @@ public class WebhooksController : ControllerBase
 
 ### Bước 6.2: Update PaymentController
 
-**File:** `src/Host/Host/Controllers/PaymentController.cs` (Update)
+**File:** `src/Host/Controllers/PaymentController.cs` (Update)
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Infrastructure.Auth.Permissions;
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Infrastructure.Auth.Permissions;
+using {ProjectName}.Shared.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers;
+namespace {ProjectName}.Host.Controllers;
 
 [ApiController]
 [Route("api/payment")]
@@ -1008,7 +1008,7 @@ public class PaymentController : ControllerBase
     /// Create VNPay payment (from BUILD_35)
     /// </summary>
     [HttpPost("vnpay/create")]
-    [MustHavePermission(ECOAction.Create, ECOFunction.Payments)]
+    [MustHavePermission({ProjectName}Action.Create, {ProjectName}Function.Payments)]
     public async Task<ActionResult<CreateVNPayPaymentResponse>> CreateVNPayPayment(
         [FromBody] CreatePaymentRequest request,
         CancellationToken cancellationToken)
@@ -1021,7 +1021,7 @@ public class PaymentController : ControllerBase
     /// Returns multiple payment options: Web URL, App2App deeplink, QR code
  /// </summary>
     [HttpPost("momo/create")]
-    [MustHavePermission(ECOAction.Create, ECOFunction.Payments)]
+    [MustHavePermission({ProjectName}Action.Create, {ProjectName}Function.Payments)]
   [ProducesResponseType(typeof(CreateMomoPaymentResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -1069,14 +1069,14 @@ public record CreateMomoPaymentResponse
 
 ### Bước 7.1: Register Services
 
-**File:** `src/Infrastructure/Infrastructure/Startup.cs` (Update)
+**File:** `src/Infrastructure/Startup.cs` (Update)
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Infrastructure.Payment.Momo;
-using ECO.WebApi.Infrastructure.Payment.VNPay;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Infrastructure.Payment.Momo;
+using {ProjectName}.Infrastructure.Payment.VNPay;
 
-namespace ECO.WebApi.Infrastructure;
+namespace {ProjectName}.Infrastructure;
 
 public static class Startup
 {
@@ -1475,5 +1475,5 @@ AND CreatedAt >= DATEADD(HOUR, -24, GETUTCDATE());
 
 **Document Version:** 1.0 (Momo E-Wallet Integration)  
 **Last Updated:** 2025-02-01  
-**Author:** ECO.WebApi Development Team  
+**Author:** {ProjectName} Development Team  
 **Status:** ✅ Production-Ready - Vietnam E-Wallet Focus
