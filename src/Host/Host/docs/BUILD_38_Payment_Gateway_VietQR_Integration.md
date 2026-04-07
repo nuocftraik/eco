@@ -144,13 +144,13 @@ Customer → Banking App → Bank Server → VietQR Hub → Merchant Server
 
 **Làm gì:** Seed VietQR provider vào database (theo BUILD_34 pattern).
 
-**File:** `src/Migrators/Migrators.MSSQL/Seeding/PaymentProviderSeeder.cs` (Update)
+**File:** `src/Migrators.MSSQL/Seeding/PaymentProviderSeeder.cs` (Update)
 
 ```csharp
-using ECO.WebApi.Domain.Payment;
+using {ProjectName}.Domain.Payment;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Migrators.MSSQL.Seeding;
+namespace {ProjectName}.Migrators.MSSQL.Seeding;
 
 public class PaymentProviderSeeder
 {
@@ -171,7 +171,7 @@ public class PaymentProviderSeeder
      configuration: @"{
              ""BankId"": ""970415"",
      ""AccountNo"": ""1234567890"",
-     ""AccountName"": ""CONG TY TNHH ECO"",
+     ""AccountName"": ""CONG TY TNHH {ProjectName}"",
           ""Template"": ""compact2"",
      ""ApiEndpoint"": ""https://api.vietqr.io/v2"",
        ""WebhookUrl"": ""https://your-domain.com/api/webhooks/vietqr"",
@@ -214,10 +214,10 @@ description: "Universal QR payment - Compatible with 40+ banks + Momo + ZaloPay"
 
 **Làm gì:** DTO để deserialize VietQR configuration từ PaymentProvider entity.
 
-**File:** `src/Infrastructure/Infrastructure/Payment/VietQR/VietQRSettings.cs`
+**File:** `src/Infrastructure/Payment/VietQR/VietQRSettings.cs`
 
 ```csharp
-namespace ECO.WebApi.Infrastructure.Payment.VietQR;
+namespace {ProjectName}.Infrastructure.Payment.VietQR;
 
 /// <summary>
 /// VietQR payment settings (deserialized from PaymentProvider.Configuration)
@@ -237,7 +237,7 @@ public class VietQRSettings
     
     /// <summary>
     /// Account name (uppercase, no accents)
-    /// Example: "CONG TY TNHH ECO"
+    /// Example: "CONG TY TNHH {ProjectName}"
     /// </summary>
     public string AccountName { get; set; } = default!;
     
@@ -278,12 +278,12 @@ public class VietQRSettings
 
 ### Bước 4.1: VietQR Generate QR Request
 
-**File:** `src/Infrastructure/Infrastructure/Payment/VietQR/Dtos/VietQRGenerateRequest.cs`
+**File:** `src/Infrastructure/Payment/VietQR/Dtos/VietQRGenerateRequest.cs`
 
 ```csharp
 using System.Text.Json.Serialization;
 
-namespace ECO.WebApi.Infrastructure.Payment.VietQR.Dtos;
+namespace {ProjectName}.Infrastructure.Payment.VietQR.Dtos;
 
 /// <summary>
 /// VietQR generate QR code request (sent to VietQR API)
@@ -334,12 +334,12 @@ public class VietQRGenerateRequest
 
 ### Bước 4.2: VietQR Generate QR Response
 
-**File:** `src/Infrastructure/Infrastructure/Payment/VietQR/Dtos/VietQRGenerateResponse.cs`
+**File:** `src/Infrastructure/Payment/VietQR/Dtos/VietQRGenerateResponse.cs`
 
 ```csharp
 using System.Text.Json.Serialization;
 
-namespace ECO.WebApi.Infrastructure.Payment.VietQR.Dtos;
+namespace {ProjectName}.Infrastructure.Payment.VietQR.Dtos;
 
 /// <summary>
 /// VietQR generate QR code response (from VietQR API)
@@ -419,10 +419,10 @@ public string QrCode { get; set; } = default!;
 
 ### Bước 5.1: IVietQRService Interface
 
-**File:** `src/Core/Application/Common/Interfaces/IVietQRService.cs`
+**File:** `src/Application/Common/Interfaces/IVietQRService.cs`
 
 ```csharp
-namespace ECO.WebApi.Application.Common.Interfaces;
+namespace {ProjectName}.Application.Common.Interfaces;
 
 /// <summary>
 /// VietQR payment service (follows BUILD_34 pattern)
@@ -486,19 +486,19 @@ public record VietQRWebhookResponse(
 
 ### Bước 5.2: VietQRService Implementation ⭐⭐⭐
 
-**File:** `src/Infrastructure/Infrastructure/Payment/VietQR/VietQRService.cs`
+**File:** `src/Infrastructure/Payment/VietQR/VietQRService.cs`
 
 ```csharp
 using System.Net.Http.Json;
 using System.Text.Json;
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Domain.Payment;
-using ECO.WebApi.Domain.Enum;
-using ECO.WebApi.Infrastructure.Payment.VietQR.Dtos;
-using ECO.WebApi.Shared.Events;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Domain.Payment;
+using {ProjectName}.Domain.Enum;
+using {ProjectName}.Infrastructure.Payment.VietQR.Dtos;
+using {ProjectName}.Shared.Events;
 using Microsoft.Extensions.Logging;
 
-namespace ECO.WebApi.Infrastructure.Payment.VietQR;
+namespace {ProjectName}.Infrastructure.Payment.VietQR;
 
 public class VietQRService : IVietQRService
 {
@@ -846,17 +846,17 @@ public record BankTransactionInfo(
 
 ### Bước 6.1: VietQR Polling Background Service
 
-**File:** `src/Infrastructure/Infrastructure/Payment/VietQR/VietQRPollingService.cs`
+**File:** `src/Infrastructure/Payment/VietQR/VietQRPollingService.cs`
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Domain.Payment;
-using ECO.WebApi.Domain.Enum;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Domain.Payment;
+using {ProjectName}.Domain.Enum;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace ECO.WebApi.Infrastructure.Payment.VietQR;
+namespace {ProjectName}.Infrastructure.Payment.VietQR;
 
 /// <summary>
 /// Background service to poll VietQR payment status
@@ -943,13 +943,13 @@ return;
 
 ### Bước 6.2: Register Background Service
 
-**File:** `src/Infrastructure/Infrastructure/Startup.cs` (Update)
+**File:** `src/Infrastructure/Startup.cs` (Update)
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Infrastructure.Payment.VietQR;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Infrastructure.Payment.VietQR;
 
-namespace ECO.WebApi.Infrastructure;
+namespace {ProjectName}.Infrastructure;
 
 public static class Startup
 {
@@ -986,14 +986,14 @@ public static class Startup
 
 ### Bước 7.1: Update WebhooksController
 
-**File:** `src/Host/Host/Controllers/WebhooksController.cs` (Update)
+**File:** `src/Host/Controllers/WebhooksController.cs` (Update)
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
+using {ProjectName}.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers;
+namespace {ProjectName}.Host.Controllers;
 
 [ApiController]
 [Route("api/webhooks")]
@@ -1053,15 +1053,15 @@ IZaloPayService zalopayService,
 
 ### Bước 7.2: Update PaymentController
 
-**File:** `src/Host/Host/Controllers/PaymentController.cs` (Update)
+**File:** `src/Host/Controllers/PaymentController.cs` (Update)
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Infrastructure.Auth.Permissions;
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Infrastructure.Auth.Permissions;
+using {ProjectName}.Shared.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers;
+namespace {ProjectName}.Host.Controllers;
 
 [ApiController]
 [Route("api/payment")]
@@ -1095,7 +1095,7 @@ public class PaymentController : ControllerBase
     /// Customer scans with ANY banking app
     /// </summary>
     [HttpPost("vietqr/generate")]
-    [MustHavePermission(ECOAction.Create, ECOFunction.Payments)]
+    [{MustHavePermissionName}({ProjectName}Action.Create, {ProjectName}Function.Payments)]
     [ProducesResponseType(typeof(GenerateVietQRResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -1124,7 +1124,7 @@ public class PaymentController : ControllerBase
     /// Frontend calls this every 5 seconds to detect payment
     /// </summary>
     [HttpGet("vietqr/status/{transactionId}")]
-    [MustHavePermission(ECOAction.View, ECOFunction.Payments)]
+    [{MustHavePermissionName}({ProjectName}Action.View, {ProjectName}Function.Payments)]
     [ProducesResponseType(typeof(VietQRStatusResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<VietQRStatusResponse>> CheckVietQRStatus(
         Guid transactionId,
@@ -1281,5 +1281,5 @@ Response:
 
 **Document Version:** 1.0 (VietQR Universal QR Integration)  
 **Last Updated:** 2025-02-01  
-**Author:** ECO.WebApi Development Team  
+**Author:** {ProjectName} Development Team  
 **Status:** ✅ Production-Ready - Vietnam Universal QR Standard

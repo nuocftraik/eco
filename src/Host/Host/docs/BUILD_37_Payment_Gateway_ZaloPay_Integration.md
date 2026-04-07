@@ -91,13 +91,13 @@ Tài liệu này hướng dẫn **tích hợp ZaloPay Payment Gateway** theo res
 
 **Làm gì:** Seed ZaloPay provider vào database (theo BUILD_34 pattern).
 
-**File:** `src/Migrators/Migrators.MSSQL/Seeding/PaymentProviderSeeder.cs` (Update)
+**File:** `src/Migrators.MSSQL/Seeding/PaymentProviderSeeder.cs` (Update)
 
 ```csharp
-using ECO.WebApi.Domain.Payment;
+using {ProjectName}.Domain.Payment;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECO.WebApi.Migrators.MSSQL.Seeding;
+namespace {ProjectName}.Migrators.MSSQL.Seeding;
 
 public class PaymentProviderSeeder
 {
@@ -142,10 +142,10 @@ public class PaymentProviderSeeder
 
 **Làm gì:** DTO để deserialize ZaloPay configuration từ PaymentProvider entity.
 
-**File:** `src/Infrastructure/Infrastructure/Payment/ZaloPay/ZaloPaySettings.cs`
+**File:** `src/Infrastructure/Payment/ZaloPay/ZaloPaySettings.cs`
 
 ```csharp
-namespace ECO.WebApi.Infrastructure.Payment.ZaloPay;
+namespace {ProjectName}.Infrastructure.Payment.ZaloPay;
 
 /// <summary>
 /// ZaloPay payment gateway settings (deserialized from PaymentProvider.Configuration)
@@ -193,12 +193,12 @@ public class ZaloPaySettings
 
 ### Bước 3.1: ZaloPay Request DTOs
 
-**File:** `src/Infrastructure/Infrastructure/Payment/ZaloPay/Dtos/ZaloPayCreateOrderRequest.cs`
+**File:** `src/Infrastructure/Payment/ZaloPay/Dtos/ZaloPayCreateOrderRequest.cs`
 
 ```csharp
 using System.Text.Json.Serialization;
 
-namespace ECO.WebApi.Infrastructure.Payment.ZaloPay.Dtos;
+namespace {ProjectName}.Infrastructure.Payment.ZaloPay.Dtos;
 
 /// <summary>
 /// ZaloPay create order request (sent to ZaloPay API)
@@ -241,12 +241,12 @@ public class ZaloPayCreateOrderRequest
 
 ### Bước 3.2: ZaloPay Response DTOs
 
-**File:** `src/Infrastructure/Infrastructure/Payment/ZaloPay/Dtos/ZaloPayCreateOrderResponse.cs`
+**File:** `src/Infrastructure/Payment/ZaloPay/Dtos/ZaloPayCreateOrderResponse.cs`
 
 ```csharp
 using System.Text.Json.Serialization;
 
-namespace ECO.WebApi.Infrastructure.Payment.ZaloPay.Dtos;
+namespace {ProjectName}.Infrastructure.Payment.ZaloPay.Dtos;
 
 /// <summary>
 /// ZaloPay create order response (from ZaloPay API)
@@ -280,12 +280,12 @@ public class ZaloPayCreateOrderResponse
 
 ### Bước 3.3: ZaloPay Callback DTO
 
-**File:** `src/Infrastructure/Infrastructure/Payment/ZaloPay/Dtos/ZaloPayCallbackRequest.cs`
+**File:** `src/Infrastructure/Payment/ZaloPay/Dtos/ZaloPayCallbackRequest.cs`
 
 ```csharp
 using System.Text.Json.Serialization;
 
-namespace ECO.WebApi.Infrastructure.Payment.ZaloPay.Dtos;
+namespace {ProjectName}.Infrastructure.Payment.ZaloPay.Dtos;
 
 /// <summary>
 /// ZaloPay callback request (sent by ZaloPay to our webhook endpoint)
@@ -343,12 +343,12 @@ public class ZaloPayCallbackRequest
 
 ### Bước 4.1: IZaloPayService Interface
 
-**File:** `src/Core/Application/Common/Interfaces/IZaloPayService.cs`
+**File:** `src/Application/Common/Interfaces/IZaloPayService.cs`
 
 ```csharp
-using ECO.WebApi.Infrastructure.Payment.ZaloPay.Dtos;
+using {ProjectName}.Infrastructure.Payment.ZaloPay.Dtos;
 
-namespace ECO.WebApi.Application.Common.Interfaces;
+namespace {ProjectName}.Application.Common.Interfaces;
 
 /// <summary>
 /// ZaloPay e-wallet payment service (follows BUILD_34 pattern)
@@ -393,21 +393,21 @@ public record ZaloPayCallbackResponse(
 
 ### Bước 4.2: ZaloPayService Implementation ⭐⭐⭐
 
-**File:** `src/Infrastructure/Infrastructure/Payment/ZaloPay/ZaloPayService.cs`
+**File:** `src/Infrastructure/Payment/ZaloPay/ZaloPayService.cs`
 
 ```csharp
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Domain.Payment;
-using ECO.WebApi.Domain.Enum;
-using ECO.WebApi.Infrastructure.Payment.ZaloPay.Dtos;
-using ECO.WebApi.Shared.Events;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Domain.Payment;
+using {ProjectName}.Domain.Enum;
+using {ProjectName}.Infrastructure.Payment.ZaloPay.Dtos;
+using {ProjectName}.Shared.Events;
 using Microsoft.Extensions.Logging;
 
-namespace ECO.WebApi.Infrastructure.Payment.ZaloPay;
+namespace {ProjectName}.Infrastructure.Payment.ZaloPay;
 
 public class ZaloPayService : IZaloPayService
 {
@@ -708,15 +708,15 @@ cancellationToken);
 
 ### Bước 5.1: Update WebhooksController
 
-**File:** `src/Host/Host/Controllers/WebhooksController.cs` (Update)
+**File:** `src/Host/Controllers/WebhooksController.cs` (Update)
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Infrastructure.Payment.ZaloPay.Dtos;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Infrastructure.Payment.ZaloPay.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers;
+namespace {ProjectName}.Host.Controllers;
 
 [ApiController]
 [Route("api/webhooks")]
@@ -797,15 +797,15 @@ public class WebhooksController : ControllerBase
 
 ### Bước 5.2: Update PaymentController
 
-**File:** `src/Host/Host/Controllers/PaymentController.cs` (Update)
+**File:** `src/Host/Controllers/PaymentController.cs` (Update)
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Infrastructure.Auth.Permissions;
-using ECO.WebApi.Shared.Authorization;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Infrastructure.Auth.Permissions;
+using {ProjectName}.Shared.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECO.WebApi.Host.Controllers;
+namespace {ProjectName}.Host.Controllers;
 
 [ApiController]
 [Route("api/payment")]
@@ -899,15 +899,15 @@ public record CreateZaloPayPaymentResponse
 
 ## 6. Dependency Injection
 
-**File:** `src/Infrastructure/Infrastructure/Startup.cs` (Update)
+**File:** `src/Infrastructure/Startup.cs` (Update)
 
 ```csharp
-using ECO.WebApi.Application.Common.Interfaces;
-using ECO.WebApi.Infrastructure.Payment.VNPay;
-using ECO.WebApi.Infrastructure.Payment.Momo;
-using ECO.WebApi.Infrastructure.Payment.ZaloPay;
+using {ProjectName}.Application.Common.Interfaces;
+using {ProjectName}.Infrastructure.Payment.VNPay;
+using {ProjectName}.Infrastructure.Payment.Momo;
+using {ProjectName}.Infrastructure.Payment.ZaloPay;
 
-namespace ECO.WebApi.Infrastructure;
+namespace {ProjectName}.Infrastructure;
 
 public static class Startup
 {
@@ -1145,5 +1145,5 @@ AND CreatedAt >= DATEADD(HOUR, -24, GETUTCDATE());
 
 **Document Version:** 1.0 (ZaloPay E-Wallet Integration)  
 **Last Updated:** 2025-02-01  
-**Author:** ECO.WebApi Development Team  
+**Author:** {ProjectName} Development Team  
 **Status:** ✅ Production-Ready - Zalo Ecosystem Focus
