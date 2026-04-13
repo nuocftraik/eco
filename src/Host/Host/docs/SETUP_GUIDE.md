@@ -1,4 +1,4 @@
-# ECO.WebApi - Setup Guide (Hướng dẫn Setup từ Source Code)
+﻿# {ProjectName} - Setup Guide (Hướng dẫn Setup từ Source Code)
 
 > 📘 **Phân biệt:** 
 > - **BUILD_INDEX.md**: Hướng dẫn **xây dựng solution từ đầu** (for learning)
@@ -96,19 +96,19 @@ Build succeeded.
 
 **Option 1: SQL Server Management Studio (SSMS)**
 ```sql
-CREATE DATABASE ECODb;
+CREATE DATABASE {ProjectName}Db;
 GO
 ```
 
 ### 3.2. Update Connection String
 
-**File:** `src/Host/Host/Configurations/database.json`
+**File:** `src/Host/Configurations/database.json`
 
 ```json
 {
   "DatabaseSettings": {
     "DBProvider": "mssql",
-    "ConnectionString": "Server=localhost;Database=ECODb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
+    "ConnectionString": "Server=localhost;Database={ProjectName}Db;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
   }
 }
 ```
@@ -117,25 +117,25 @@ GO
 
 **SQL Server Authentication:**
 ```json
-"ConnectionString": "Server=localhost;Database=ECODb;User Id=sa;Password=YourPassword123;TrustServerCertificate=True;MultipleActiveResultSets=true"
+"ConnectionString": "Server=localhost;Database={ProjectName}Db;User Id=sa;Password=YourPassword123;TrustServerCertificate=True;MultipleActiveResultSets=true"
 ```
 
 **Azure SQL Database:**
 ```json
-"ConnectionString": "Server=tcp:yourserver.database.windows.net,1433;Database=ECODb;User ID=yourusername;Password=yourpassword;Encrypt=True;Connection Timeout=30;"
+"ConnectionString": "Server=tcp:yourserver.database.windows.net,1433;Database={ProjectName}Db;User ID=yourusername;Password=yourpassword;Encrypt=True;Connection Timeout=30;"
 ```
 
 ### 3.3. Run Migrations
 
 ```bash
 # Di chuyển vào thư mục Host
-cd src/Host/Host/
+cd src/Host/
 
 # Tạo migration (nếu chưa có)
-dotnet ef migrations add InitialCreate --project ../../Migrators/Migrators.MSSQL/Migrators.MSSQL.csproj
+dotnet ef migrations add InitialCreate --project ../Migrators.MSSQL/Migrators.MSSQL.csproj
 
 # Apply migrations
-dotnet ef database update --project ../../Migrators/Migrators.MSSQL/Migrators.MSSQL.csproj
+dotnet ef database update --project ../Migrators.MSSQL/Migrators.MSSQL.csproj
 ```
 
 **Expected Output:**
@@ -158,7 +158,7 @@ Seed data tự động chạy khi application start lần đầu. Bao gồm:
 
 ## 4. Configuration Files
 
-Tất cả configuration files nằm trong `src/Host/Host/Configurations/`:
+Tất cả configuration files nằm trong `src/Host/Configurations/`:
 
 ### 4.1. database.json (✅ Required)
 
@@ -166,7 +166,7 @@ Tất cả configuration files nằm trong `src/Host/Host/Configurations/`:
 {
   "DatabaseSettings": {
     "DBProvider": "mssql",
- "ConnectionString": "Server=localhost;Database=ECODb;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
+ "ConnectionString": "Server=localhost;Database={ProjectName}Db;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
   }
 }
 ```
@@ -177,8 +177,8 @@ Tất cả configuration files nằm trong `src/Host/Host/Configurations/`:
 {
   "SecuritySettings": {
   "Key": "your-super-secret-key-at-least-32-characters-long!",
-    "Issuer": "ECO.WebApi",
-    "Audience": "ECO.WebApi",
+    "Issuer": "{ProjectName}",
+    "Audience": "{ProjectName}",
     "TokenExpirationInMinutes": 60,
     "RefreshTokenExpirationInDays": 7
   }
@@ -224,7 +224,7 @@ Tất cả configuration files nằm trong `src/Host/Host/Configurations/`:
     "Port": 587,
     "UserName": "your-email@gmail.com",
     "Password": "your-app-password",
-    "DisplayName": "ECO System",
+    "DisplayName": "{ProjectName} System",
     "EnableVerification": true,
     "EnableSsl": true
   }
@@ -242,7 +242,7 @@ Tất cả configuration files nằm trong `src/Host/Host/Configurations/`:
     "Port": 1025,
     "UserName": "",
     "Password": "",
-    "DisplayName": "ECO System",
+    "DisplayName": "{ProjectName} System",
     "EnableSsl": false
   }
 }
@@ -254,7 +254,7 @@ Tất cả configuration files nằm trong `src/Host/Host/Configurations/`:
 {
   "HangfireStorageSettings": {
     "StorageProvider": "mssql",
-    "ConnectionString": "Server=localhost;Database=ECODb;Trusted_Connection=True;TrustServerCertificate=True"
+    "ConnectionString": "Server=localhost;Database={ProjectName}Db;Trusted_Connection=True;TrustServerCertificate=True"
   }
 }
 ```
@@ -264,7 +264,7 @@ Tất cả configuration files nằm trong `src/Host/Host/Configurations/`:
 ```json
 {
   "GoogleDriveSettings": {
-    "ApplicationName": "ECO WebApi",
+    "ApplicationName": "{ProjectName}",
     "ClientId": "your-client-id.apps.googleusercontent.com",
     "ClientSecret": "your-client-secret",
     "PathCredentials": "credentials.json"
@@ -291,13 +291,13 @@ Tất cả configuration files nằm trong `src/Host/Host/Configurations/`:
 ### 5.1. Development Mode
 
 **Option 1: Visual Studio**
-1. Open `ECO.WebApi.sln`
+1. Open `{ProjectName}.sln`
 2. Set `Host` as startup project
 3. Press F5 hoặc Ctrl+F5
 
 **Option 2: Command Line**
 ```bash
-cd src/Host/Host/
+cd src/Host/
 dotnet run
 ```
 
@@ -309,7 +309,7 @@ dotnet run
 ### 5.2. Watch Mode (Auto-reload)
 
 ```bash
-cd src/Host/Host/
+cd src/Host/
 dotnet watch run
 ```
 
@@ -317,7 +317,7 @@ dotnet watch run
 
 **Console Output:**
 ```
-info: ECO.WebApi.Host[0]
+info: {ProjectName}.Host[0]
       Application Starting...
 info: Microsoft.Hosting.Lifetime[14]
       Now listening on: https://localhost:7001
@@ -397,15 +397,15 @@ SELECT * FROM AspNetUsers;
 ### 7.1. Tạo Migration mới
 
 ```bash
-cd src/Host/Host/
+cd src/Host/
 
 # Tạo migration
 dotnet ef migrations add YourMigrationName \
-  --project ../../Migrators/Migrators.MSSQL/Migrators.MSSQL.csproj
+  --project ../Migrators.MSSQL/Migrators.MSSQL.csproj
 
 # Apply migration
 dotnet ef database update \
-  --project ../../Migrators/Migrators.MSSQL/Migrators.MSSQL.csproj
+  --project ../Migrators.MSSQL/Migrators.MSSQL.csproj
 ```
 
 ### 7.2. Rollback Migration
@@ -413,11 +413,11 @@ dotnet ef database update \
 ```bash
 # Rollback to specific migration
 dotnet ef database update PreviousMigrationName \
-  --project ../../Migrators/Migrators.MSSQL/Migrators.MSSQL.csproj
+  --project ../Migrators.MSSQL/Migrators.MSSQL.csproj
 
 # Remove last migration
 dotnet ef migrations remove \
-  --project ../../Migrators/Migrators.MSSQL/Migrators.MSSQL.csproj
+  --project ../Migrators.MSSQL/Migrators.MSSQL.csproj
 ```
 
 ### 7.3. Add New Feature
@@ -426,7 +426,7 @@ dotnet ef migrations remove \
 
 **1. Tạo Domain Entity**
 ```csharp
-// src/Core/Domain/Ordering/Order.cs
+// src/Domain/Ordering/Order.cs
 public class Order : AuditableEntity, IAggregateRoot
 {
     public string OrderNumber { get; private set; }
@@ -437,7 +437,7 @@ public class Order : AuditableEntity, IAggregateRoot
 
 **2. Tạo Application DTOs**
 ```csharp
-// src/Core/Application/Ordering/OrderDto.cs
+// src/Application/Ordering/OrderDto.cs
 public class OrderDto
 {
     public Guid Id { get; set; }
@@ -448,7 +448,7 @@ public class OrderDto
 
 **3. Tạo Application Interfaces**
 ```csharp
-// src/Core/Application/Ordering/IOrderService.cs
+// src/Application/Ordering/IOrderService.cs
 public interface IOrderService : ITransientService
 {
     Task<OrderDto> GetByIdAsync(Guid id);
@@ -458,7 +458,7 @@ public interface IOrderService : ITransientService
 
 **4. Implement Service**
 ```csharp
-// src/Infrastructure/Infrastructure/Ordering/OrderService.cs
+// src/Infrastructure/Ordering/OrderService.cs
 public class OrderService : IOrderService
 {
     // Implementation
@@ -467,7 +467,7 @@ public class OrderService : IOrderService
 
 **5. Add Controller**
 ```csharp
-// src/Host/Host/Controllers/Ordering/OrderController.cs
+// src/Host/Controllers/Ordering/OrderController.cs
 public class OrderController : BaseApiController
 {
     // Endpoints
@@ -477,7 +477,7 @@ public class OrderController : BaseApiController
 **6. Create Migration**
 ```bash
 dotnet ef migrations add AddOrderEntity \
-  --project ../../Migrators/Migrators.MSSQL/Migrators.MSSQL.csproj
+  --project ../Migrators.MSSQL/Migrators.MSSQL.csproj
 ```
 
 ---
@@ -488,7 +488,7 @@ dotnet ef migrations add AddOrderEntity \
 
 ```bash
 # Build Release
-dotnet publish src/Host/Host/Host.csproj \
+dotnet publish src/Host/Host.csproj \
   -c Release \
   -o ./publish
 
@@ -513,7 +513,7 @@ dotnet publish src/Host/Host/Host.csproj \
 **Environment Variables:**
 ```bash
 export ASPNETCORE_ENVIRONMENT=Production
-export DatabaseSettings__ConnectionString="Server=prod-server;Database=ECODb;User=sa;Password=xxx"
+export DatabaseSettings__ConnectionString="Server=prod-server;Database={ProjectName}Db;User=sa;Password=xxx"
 export SecuritySettings__Key="production-secret-key-super-long-and-secure-123456789"
 ```
 
@@ -523,8 +523,8 @@ export SecuritySettings__Key="production-secret-key-super-long-and-secure-123456
 - Download: https://dotnet.microsoft.com/download/dotnet/8.0
 
 **2. Create IIS Site**
-- Site name: ECO.WebApi
-- Physical path: C:\inetpub\wwwroot\eco
+- Site name: {ProjectName}
+- Physical path: C:\inetpub\wwwroot\{ProjectName}
 - Binding: https://yourdomain.com
 
 **3. Application Pool Settings**
@@ -534,7 +534,7 @@ export SecuritySettings__Key="production-secret-key-super-long-and-secure-123456
 **4. Deploy Files**
 ```bash
 # Copy publish folder to IIS
-xcopy /E /Y .\publish\* C:\inetpub\wwwroot\eco\
+xcopy /E /Y .\publish\* C:\inetpub\wwwroot\{ProjectName}\
 ```
 
 ### 8.4. Docker Deployment
@@ -558,21 +558,21 @@ RUN dotnet publish -c Release -o /app/publish
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "ECO.WebApi.Host.dll"]
+ENTRYPOINT ["dotnet", "{ProjectName}.Host.dll"]
 ```
 
 **Build và Run:**
 ```bash
 # Build image
-docker build -t eco-webapi:latest .
+docker build -t {ProjectName}-webapi:latest .
 
 # Run container
 docker run -d \
   -p 8080:80 \
   -p 8443:443 \
-  -e DatabaseSettings__ConnectionString="Server=host.docker.internal;Database=ECODb;User=sa;Password=xxx" \
-  --name eco-api \
-  eco-webapi:latest
+  -e DatabaseSettings__ConnectionString="Server=host.docker.internal;Database={ProjectName}Db;User=sa;Password=xxx" \
+  --name {ProjectName}-api \
+  {ProjectName}-webapi:latest
 ```
 
 ---
@@ -600,10 +600,10 @@ dotnet build
 
 ### 9.2. Database Errors
 
-**Error:** `Cannot open database "ECODb"`
+**Error:** `Cannot open database "{ProjectName}Db"`
 ```sql
 -- Solution: Create database
-CREATE DATABASE ECODb;
+CREATE DATABASE {ProjectName}Db;
 GO
 ```
 

@@ -197,7 +197,7 @@ public class ExampleUsage
 
 ```csharp
 // FULL CODE - Không tóm tắt
-namespace ECO.WebApi.[Namespace];
+namespace {ProjectName}.[Namespace];
 
 /// <summary>
 /// [XML comment mô tả class]
@@ -351,7 +351,7 @@ Document này chứa FULL CODE implementation của [Component Name].
 
 ```csharp
 // FULL CODE (có thể 500+ dòng)
-namespace ECO.WebApi.[Namespace];
+namespace {ProjectName}.[Namespace];
 
 public static class ComplexClass
 {
@@ -515,7 +515,7 @@ Component C
 ### 📁 File Structure:
 
 \```
-src/Core/[Project]/
+src/[Project]/
 ├── Folder1/
 │   ├── File1.cs
 │   └── File2.cs
@@ -683,7 +683,7 @@ return new PaginatedResult(products, count);
 - [ ] Section 2: Add Required Packages (nếu có)
 - [ ] Implementation steps có thứ tự logic
 - [ ] **FULL CODE** trong mỗi bước (không tóm tắt)
-- [ ] Code có namespace đúng (`ECO.WebApi.[Layer].[Module]`)
+- [ ] Code có namespace đúng (`{ProjectName}.[Layer].[Module]`)
 - [ ] Code có comments giải thích
 - [ ] Giải thích sau mỗi code block
 - [ ] Examples & Usage với complete code
@@ -919,7 +919,7 @@ Tài liệu này hướng dẫn xây dựng [Feature Name] - [Purpose].
 
 ```csharp
 // FULL CODE
-namespace ECO.WebApi.[Namespace];
+namespace {ProjectName}.[Namespace];
 
 public class ClassName
 {
@@ -1041,7 +1041,7 @@ Trong bước tiếp theo:
 
 ---
 
-**Sử dụng template này để viết documentation nhất quán và chất lượng cao cho {ProjectName}.WebApi!** 📚
+**Sử dụng template này để viết documentation nhất quán và chất lượng cao cho {ProjectName}!** 📚
 
 ☑️ Save files with a specific encoding
 Unicode (UTF-8 with signature) - Code page 65001

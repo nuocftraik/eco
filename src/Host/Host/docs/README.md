@@ -1,6 +1,6 @@
-﻿# ECO.WebApi Documentation Hub
+﻿# {ProjectName} Documentation Hub
 
-> 📚 **Central Hub** cho tất cả documentation của ECO.WebApi solution.
+> 📚 **Central Hub** cho tất cả documentation của {ProjectName} solution.
 
 ---
 
@@ -59,9 +59,9 @@
 | Step | Document | Topics | Time Estimate |
 |------|----------|--------|---------------|
 | 10 | [BUILD_08_Service_Registration](BUILD_08_Service_Registration.md) | Auto Service Registration | 30 mins |
-| 11 | [BUILD_11_Common_Services](BUILD_11_Common_Services.md) | CurrentUser, Exceptions, Validation | 90 mins |
-| 12 | [BUILD_12_Infrastructure_Services](BUILD_12_Infrastructure_Services.md) | Caching, Email, BackgroundJobs | 120 mins |
-| 13 | [BUILD_13_Application_Services](BUILD_13_Application_Services.md) | Token, User, Role Services | 90 mins |
+| 11 | [BUILD_11_COMMON_SERVICES.md](BUILD_11_COMMON_SERVICES.md) | CurrentUser, Exceptions, Validation | 90 mins |
+| 12 | [BUILD_12_INFRASTRUCTURE_SERVICES.md](BUILD_12_INFRASTRUCTURE_SERVICES.md) | Caching, Email, BackgroundJobs | 120 mins |
+| 13 | [BUILD_13_APPLICATION_SERVICES.md](BUILD_13_APPLICATION_SERVICES.md) | Token, User, Role Services | 90 mins |
 
 **Total Time: ~5.5 hours**
 
@@ -129,14 +129,14 @@
 ```bash
 dotnet restore
 dotnet build
-dotnet run --project src/Host/Host/Host.csproj
+dotnet run --project src/Host/Host.csproj
 ```
 
 **Database Migrations**
 ```bash
-cd src/Host/Host/
-dotnet ef migrations add MigrationName --project ../../Migrators/Migrators.MSSQL/Migrators.MSSQL.csproj
-dotnet ef database update --project ../../Migrators/Migrators.MSSQL/Migrators.MSSQL.csproj
+cd src/Host/
+dotnet ef migrations add MigrationName --project ../Migrators.MSSQL/Migrators.MSSQL.csproj
+dotnet ef database update --project ../Migrators.MSSQL/Migrators.MSSQL.csproj
 ```
 
 **Testing**
@@ -148,7 +148,7 @@ dotnet test
 
 ### **Important Files**
 
-**Configuration Files** (`src/Host/Host/Configurations/`)
+**Configuration Files** (`src/Host/Configurations/`)
 - `database.json` - Database connection
 - `security.json` - JWT settings
 - `cache.json` - Redis configuration
@@ -156,9 +156,9 @@ dotnet test
 - `hangfire.json` - Background jobs
 
 **Entry Points**
-- `src/Host/Host/Program.cs` - Application startup
-- `src/Infrastructure/Infrastructure/Startup.cs` - Infrastructure registration
-- `src/Core/Application/Startup.cs` - Application registration
+- `src/Host/Program.cs` - Application startup
+- `src/Infrastructure/Startup.cs` - Infrastructure registration
+- `src/Application/Startup.cs` - Application registration
 
 ---
 
@@ -326,4 +326,4 @@ dotnet test
 
 ---
 
-*Last Updated: 2024 | Version: 1.0 | Maintained by ECO Team*
+*Last Updated: 2024 | Version: 1.0 | Maintained by {ProjectName} Team*
